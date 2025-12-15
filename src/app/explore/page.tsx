@@ -222,7 +222,14 @@ export default function ExplorePage() {
             />
           </div>
           {/* 按鈕 */}
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <Link
+              href="/explore/create"
+              className="hidden sm:flex items-center gap-2 bg-primary text-white px-3 py-2 rounded-full text-sm font-bold shadow-[0_12px_30px_rgba(207,185,165,0.3)] hover:bg-[var(--primary-dark)] active:scale-95 transition"
+            >
+              <span className="material-icons-round text-sm">add</span>
+              發起活動
+            </Link>
             <button className="w-10 h-10 bg-white/60 backdrop-blur-xl rounded-full border border-white/50 shadow-sm flex items-center justify-center text-[#949494] hover:text-[#5C5C5C] transition relative">
               <div className="absolute top-2 right-2 w-2 h-2 bg-[#E8C4C4] rounded-full" />
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
