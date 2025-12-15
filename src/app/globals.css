@@ -3,6 +3,14 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --primary: #cfb9a5;
+  --primary-dark: #b09b88;
+  --primary-light: #e8ded4;
+  --morandi-blue: #a5bccf;
+  --morandi-pink: #cfa5a5;
+  --morandi-green: #a8bfa6;
+  --morandi-yellow: #e0d6a8;
+  --card-dark: #1e1e1e;
 }
 
 @theme inline {
@@ -23,4 +31,167 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.glass-dark {
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.glass-card-dark {
+  background: rgba(35, 35, 35, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.input-clean {
+  transition: all 0.3s ease;
+}
+
+.input-clean:focus-within {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.bg-map-pattern {
+  background-image: radial-gradient(var(--primary) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.bg-primary {
+  background-color: var(--primary);
+}
+
+.bg-primary-dark {
+  background-color: var(--primary-dark);
+}
+
+.bg-primary-light {
+  background-color: var(--primary-light);
+}
+
+.bg-morandi-blue {
+  background-color: var(--morandi-blue);
+}
+
+.bg-morandi-pink {
+  background-color: var(--morandi-pink);
+}
+
+.bg-morandi-green {
+  background-color: var(--morandi-green);
+}
+
+.bg-morandi-yellow {
+  background-color: var(--morandi-yellow);
+}
+
+.bg-card-dark {
+  background-color: var(--card-dark);
+}
+
+.border-card-dark {
+  border-color: var(--card-dark);
+}
+
+.ring-card-dark {
+  --tw-ring-color: var(--card-dark);
+}
+
+.text-morandi-blue {
+  color: var(--morandi-blue);
+}
+
+.text-morandi-pink {
+  color: var(--morandi-pink);
+}
+
+.text-morandi-green {
+  color: var(--morandi-green);
+}
+
+.text-morandi-yellow {
+  color: var(--morandi-yellow);
+}
+
+.text-primary {
+  color: var(--primary);
+}
+
+.border-primary {
+  border-color: var(--primary);
+}
+
+.shadow-primary-soft {
+  box-shadow: 0 12px 30px rgba(207, 185, 165, 0.3);
+}
+
+.puzzle-connector-top::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 16px;
+  background-color: inherit;
+  border-radius: 50%;
+  z-index: 10;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.puzzle-connector-bottom::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 16px;
+  background-color: inherit;
+  border-radius: 50%;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.dashed-border {
+  border: 2px dashed rgba(207, 185, 165, 0.5);
+}
+
+.dashed-line {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(207, 185, 165, 0.7),
+    rgba(207, 185, 165, 0.7) 6px,
+    transparent 6px,
+    transparent 14px
+  );
 }

@@ -198,6 +198,14 @@ export default function ExplorePage() {
         />
       </div>
 
+      <Link
+        href="/explore/create"
+        className="absolute right-6 bottom-28 z-20 bg-primary text-white shadow-[0_12px_30px_rgba(207,185,165,0.3)] rounded-full px-5 py-3 flex items-center gap-2 hover:bg-[var(--primary-dark)] active:scale-95 transition"
+      >
+        <span className="material-icons-round text-lg">add</span>
+        <span className="text-sm font-bold">發起活動</span>
+      </Link>
+
       {/* Header - 浮在地圖上 */}
       <header className="absolute top-0 left-0 right-0 z-20 px-5 pt-4 pb-3">
         <div className="flex items-center justify-between mb-4">
