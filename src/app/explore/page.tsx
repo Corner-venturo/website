@@ -188,9 +188,18 @@ export default function ExplorePage() {
   }, [filteredTrips, selectedTrip]);
 
   return (
-    <div className="bg-[#F5F4F0] h-screen max-h-screen overflow-hidden flex flex-col w-full">
-      {/* Header */}
-      <header className="flex-shrink-0 px-5 pt-4 pb-3 z-20 bg-[#F5F4F0]">
+    <div className="h-screen max-h-screen overflow-hidden relative">
+      {/* 地圖 - 全螢幕背景 */}
+      <div className="absolute inset-0 z-0">
+        <MapComponent
+          trips={filteredTrips}
+          selectedTrip={selectedTrip}
+          onTripSelect={setSelectedTrip}
+        />
+      </div>
+
+      {/* Header - 浮在地圖上 */}
+      <header className="absolute top-0 left-0 right-0 z-20 px-5 pt-4 pb-3">
         <div className="flex items-center justify-between mb-4">
           {/* 搜尋框 */}
           <div className="flex-1 mr-3 flex items-center gap-3 px-4 py-2.5 bg-white/60 backdrop-blur-xl rounded-full border border-white/50 shadow-sm">
@@ -244,24 +253,15 @@ export default function ExplorePage() {
         </div>
       </header>
 
-      {/* 地圖區域 - 滿版 */}
-      <div className="flex-1 relative min-h-0 w-full">
-        <MapComponent
-          trips={filteredTrips}
-          selectedTrip={selectedTrip}
-          onTripSelect={setSelectedTrip}
-        />
+      {/* 開團按鈕 - 浮在地圖上 */}
+      <button className="absolute bottom-52 right-5 z-20 w-14 h-14 rounded-full bg-[#94A3B8] text-white shadow-xl shadow-[#94A3B8]/40 flex items-center justify-center hover:scale-110 transition-transform">
+        <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+          <path d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
 
-        {/* 開團按鈕 */}
-        <button className="absolute bottom-4 right-5 z-[1000] w-14 h-14 rounded-full bg-[#94A3B8] text-white shadow-xl shadow-[#94A3B8]/40 flex items-center justify-center hover:scale-110 transition-transform">
-          <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <path d="M12 4v16m8-8H4" />
-          </svg>
-        </button>
-      </div>
-
-      {/* 底部揪團卡片列表 */}
-      <div className="flex-shrink-0 pb-4 z-30 bg-gradient-to-t from-[#F5F4F0] via-[#F5F4F0] to-transparent pt-4">
+      {/* 底部揪團卡片列表 - 浮在地圖上 */}
+      <div className="absolute bottom-20 left-0 right-0 z-20">
         <div className="flex overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] gap-4 px-5 py-2">
           {filteredTrips.length === 0 ? (
             <div className="snap-center shrink-0 w-[280px] p-4 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/50 flex items-center justify-center">
@@ -333,8 +333,8 @@ export default function ExplorePage() {
         </div>
       </div>
 
-      {/* 底部導覽 */}
-      <nav className="flex-shrink-0 mx-4 mb-4 bg-white/80 backdrop-blur-xl rounded-full px-2 py-2 flex justify-around shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-white/60">
+      {/* 底部導覽 - 浮在地圖上 */}
+      <nav className="absolute bottom-4 left-4 right-4 z-20 bg-white/80 backdrop-blur-xl rounded-full px-2 py-2 flex justify-around shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-white/60">
         <Link href="/" className="flex-1 flex justify-center py-2 text-[#B0B0B0] hover:text-[#8C8C8C] transition">
           <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
             <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />

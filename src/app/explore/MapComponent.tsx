@@ -9,12 +9,15 @@ interface Trip {
   id: string;
   title: string;
   category: string;
+  event_date: string;
+  location: string;
   latitude: number;
   longitude: number;
   member_count: number;
   max_members: number;
   organizer_name: string;
   organizer_avatar: string;
+  image: string;
 }
 
 interface MapComponentProps {
