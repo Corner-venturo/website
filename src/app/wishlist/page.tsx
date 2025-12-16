@@ -247,7 +247,7 @@ export default function WishlistPage() {
             <span className="material-icons-round text-2xl">auto_fix_high</span>
             <span className="absolute top-0 right-0 w-2 h-2 bg-morandi-pink rounded-full border border-white dark:border-card-dark animate-pulse" />
           </button>
-          <Link href="/my" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+          <Link href="/profile" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
             <span className="material-icons-round text-2xl">person_outline</span>
           </Link>
         </div>
