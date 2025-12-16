@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuthStore } from '@/stores/auth-store';
+import { useProfileStore, getDisplayAvatar } from '@/stores/profile-store';
 import { getSupabaseClient } from '@/lib/supabase';
 
 const recommendations = [
@@ -71,16 +72,27 @@ function getGreeting() {
 export default function HomePage() {
   const router = useRouter();
   const { user, initialize } = useAuthStore();
+  const { profile, fetchProfile } = useProfileStore();
   const [dateString, setDateString] = useState('');
   const [greetingText, setGreetingText] = useState('');
-  const [userName] = useState('旅人');
   const [showMessage, setShowMessage] = useState(false);
   const [showPersonalMenu, setShowPersonalMenu] = useState(false);
+
+  // 取得顯示名稱
+  const displayName = profile?.display_name || user?.user_metadata?.name || '旅人';
+  const avatarUrl = getDisplayAvatar(profile, user?.user_metadata as Record<string, string> | undefined);
 
   // 初始化 Auth
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  // 載入 profile
+  useEffect(() => {
+    if (user) {
+      fetchProfile(user.id);
+    }
+  }, [user, fetchProfile]);
 
   // 檢查已登入用戶是否完成個人資料
   useEffect(() => {
@@ -153,18 +165,39 @@ export default function HomePage() {
           <div className="flex items-center justify-between px-5 py-3 bg-white/50 backdrop-blur-2xl rounded-full border border-white/50 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)]">
             {/* 左邊：頭像 + 日期問候 */}
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-[#D6CDC8] text-white font-bold text-lg flex items-center justify-center">
-                {userName.charAt(0)}
-              </div>
+              {avatarUrl ? (
+                <Image
+                  src={avatarUrl}
+                  alt={displayName}
+                  width={44}
+                  height={44}
+                  className="w-11 h-11 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-11 h-11 rounded-full bg-[#D6CDC8] text-white font-bold text-lg flex items-center justify-center">
+                  {displayName.charAt(0)}
+                </div>
+              )}
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-[#949494] font-semibold">{dateString}</p>
-                <h1 className="text-base font-bold text-[#5C5C5C]">{greetingText}，{userName}</h1>
+                <h1 className="text-base font-bold text-[#5C5C5C]">{greetingText}，{displayName}</h1>
               </div>
             </div>
-            {/* 右邊：登入按鈕（未登入時顯示）- 圓形跟頭像對稱 */}
-            <Link href="/login" className="w-11 h-11 rounded-full bg-[#94A3B8] hover:bg-[#8291A6] text-white text-xs font-medium flex items-center justify-center transition">
-              登入
-            </Link>
+            {/* 右邊：未登入顯示登入按鈕，已登入顯示選單按鈕 */}
+            {user ? (
+              <button
+                onClick={() => setShowPersonalMenu(!showPersonalMenu)}
+                className="w-11 h-11 rounded-full bg-[#E8E2DD] hover:bg-[#DED6CF] text-[#5C5C5C] flex items-center justify-center transition"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            ) : (
+              <Link href="/login" className="w-11 h-11 rounded-full bg-[#94A3B8] hover:bg-[#8291A6] text-white text-xs font-medium flex items-center justify-center transition">
+                登入
+              </Link>
+            )}
           </div>
         </header>
 
@@ -341,17 +374,36 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 px-4 py-2 bg-white/60 rounded-full border border-white/40">
-              <div className="w-8 h-8 rounded-full bg-[#D6CDC8] text-white font-bold text-sm flex items-center justify-center">
-                {userName.charAt(0)}
-              </div>
+              {avatarUrl ? (
+                <Image
+                  src={avatarUrl}
+                  alt={displayName}
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-[#D6CDC8] text-white font-bold text-sm flex items-center justify-center">
+                  {displayName.charAt(0)}
+                </div>
+              )}
               <div>
                 <p className="text-[9px] uppercase tracking-wider text-[#949494]">{dateString}</p>
-                <p className="text-sm font-medium text-[#5C5C5C]">{greetingText}，{userName}</p>
+                <p className="text-sm font-medium text-[#5C5C5C]">{greetingText}，{displayName}</p>
               </div>
             </div>
-            <Link href="/login" className="bg-[#94A3B8] hover:bg-[#8291A6] text-white text-sm py-2.5 px-6 rounded-full transition font-medium">
-              登入 / 註冊
-            </Link>
+            {user ? (
+              <button
+                onClick={() => setShowPersonalMenu(!showPersonalMenu)}
+                className="bg-[#E8E2DD] hover:bg-[#DED6CF] text-[#5C5C5C] text-sm py-2.5 px-6 rounded-full transition font-medium"
+              >
+                個人選單
+              </button>
+            ) : (
+              <Link href="/login" className="bg-[#94A3B8] hover:bg-[#8291A6] text-white text-sm py-2.5 px-6 rounded-full transition font-medium">
+                登入 / 註冊
+              </Link>
+            )}
           </div>
         </header>
 
