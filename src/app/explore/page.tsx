@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
@@ -138,7 +138,7 @@ function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon
 
 export default function ExplorePage() {
   const [activeCategory, setActiveCategory] = useState('all');
-  const [selectedTrip, setSelectedTrip] = useState<typeof mockTrips[0] | null>(null);
+  const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number]>([25.033, 121.5654]); // 預設台北
 
   // 取得用戶位置
@@ -155,17 +155,21 @@ export default function ExplorePage() {
   }, []);
 
   // 篩選揪團 - 2公里內 + 類別
-  const filteredTrips = mockTrips
-    .filter((trip) => {
-      const distance = getDistanceFromLatLonInKm(
-        userLocation[0],
-        userLocation[1],
-        trip.latitude,
-        trip.longitude
-      );
-      return distance <= 2; // 2 公里內
-    })
-    .filter((trip) => activeCategory === 'all' || trip.category === activeCategory);
+  const filteredTrips = useMemo(
+    () =>
+      mockTrips
+        .filter((trip) => {
+          const distance = getDistanceFromLatLonInKm(
+            userLocation[0],
+            userLocation[1],
+            trip.latitude,
+            trip.longitude
+          );
+          return distance <= 2; // 2 公里內
+        })
+        .filter((trip) => activeCategory === 'all' || trip.category === activeCategory),
+    [activeCategory, userLocation]
+  );
 
   // 格式化日期
   const formatDate = (dateStr: string) => {
@@ -181,12 +185,15 @@ export default function ExplorePage() {
     return `${date.getMonth() + 1}/${date.getDate()}`;
   };
 
-  // 預設選中第一個
-  useEffect(() => {
-    if (filteredTrips.length > 0 && !selectedTrip) {
-      setSelectedTrip(filteredTrips[0]);
-    }
-  }, [filteredTrips, selectedTrip]);
+  const selectedTrip = useMemo(() => {
+    const fallbackId = filteredTrips[0]?.id ?? null;
+    const effectiveId = selectedTripId ?? fallbackId;
+    return filteredTrips.find((trip) => trip.id === effectiveId) ?? null;
+  }, [filteredTrips, selectedTripId]);
+
+  const handleTripSelect = (trip: typeof mockTrips[number]) => {
+    setSelectedTripId(trip.id);
+  };
 
   return (
     <div className="h-screen max-h-screen overflow-hidden relative">
@@ -195,7 +202,7 @@ export default function ExplorePage() {
         <MapComponent
           trips={filteredTrips}
           selectedTrip={selectedTrip}
-          onTripSelect={setSelectedTrip}
+          onTripSelect={handleTripSelect}
         />
       </div>
 
@@ -252,7 +259,7 @@ export default function ExplorePage() {
               key={cat.id}
               onClick={() => {
                 setActiveCategory(cat.id);
-                setSelectedTrip(null);
+                setSelectedTripId(null);
               }}
               className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all ${
                 activeCategory === cat.id
@@ -297,7 +304,7 @@ export default function ExplorePage() {
               return (
                 <div
                   key={trip.id}
-                  onClick={() => setSelectedTrip(trip)}
+                  onClick={() => handleTripSelect(trip)}
                   className={`snap-center shrink-0 w-[280px] p-3 backdrop-blur-xl rounded-2xl shadow-lg border flex gap-3 cursor-pointer transition-all ${
                     isSelected
                       ? 'bg-white/95 border-white/80 ring-2 ring-[#94A3B8]/50 shadow-xl'

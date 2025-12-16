@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import BottomNav from '@/components/BottomNav';
@@ -67,15 +67,10 @@ function getGreeting() {
 }
 
 export default function HomePage() {
-  const [dateString, setDateString] = useState('');
-  const [greetingText, setGreetingText] = useState('');
+  const [dateString] = useState(() => formatDate());
+  const [greetingText] = useState(() => getGreeting());
   const [userName] = useState('旅人');
   const [showMessage, setShowMessage] = useState(false);
-
-  useEffect(() => {
-    setDateString(formatDate());
-    setGreetingText(getGreeting());
-  }, []);
 
   // 顯示「威廉是不是很可愛」頁面
   if (showMessage) {

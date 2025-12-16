@@ -132,7 +132,7 @@ function MapController({ center }: { center: [number, number] }) {
 
   useEffect(() => {
     map.setView(center, 14); // zoom 14 更適合 2 公里範圍
-  }, []);
+  }, [center, map]);
 
   return null;
 }
