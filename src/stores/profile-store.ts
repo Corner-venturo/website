@@ -35,6 +35,7 @@ interface ProfileState {
   // Actions
   fetchProfile: (userId: string) => Promise<void>
   updateProfile: (userId: string, data: Partial<Profile>) => Promise<{ success: boolean; error?: string }>
+  uploadAvatar: (userId: string, file: File) => Promise<{ success: boolean; url?: string; error?: string }>
   completeProfile: (userId: string, data: {
     full_name: string
     display_name: string
@@ -90,6 +91,36 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '更新個人資料失敗'
       set({ isLoading: false, error: message })
+      return { success: false, error: message }
+    }
+  },
+
+  uploadAvatar: async (userId: string, file: File) => {
+    const supabase = getSupabaseClient()
+
+    try {
+      // 產生唯一檔名
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${userId}/avatar-${Date.now()}.${fileExt}`
+
+      // 上傳到 Storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true, // 覆蓋舊檔案
+        })
+
+      if (uploadError) throw uploadError
+
+      // 取得公開 URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName)
+
+      return { success: true, url: publicUrl }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '上傳頭像失敗'
       return { success: false, error: message }
     }
   },

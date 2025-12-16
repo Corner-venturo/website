@@ -9,7 +9,7 @@ import { useProfileStore } from '@/stores/profile-store';
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, isInitialized, initialize } = useAuthStore();
-  const { profile, isLoading, completeProfile, fetchProfile } = useProfileStore();
+  const { profile, isLoading, completeProfile, fetchProfile, uploadAvatar } = useProfileStore();
 
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -146,16 +146,27 @@ export default function OnboardingPage() {
   const handleSubmit = async () => {
     if (!user) return;
 
-    // TODO: 上傳頭像到 Supabase Storage
-    // 只有用戶主動上傳自訂頭像時才存 avatar_url
-    // 否則顯示時會自動用 Google 頭像
+    let avatarUrl: string | undefined = undefined;
+
+    // 如果有上傳自訂頭像，先上傳到 Storage
+    if (hasCustomAvatar && avatarFile) {
+      const uploadResult = await uploadAvatar(user.id, avatarFile);
+      if (uploadResult.success && uploadResult.url) {
+        avatarUrl = uploadResult.url;
+      } else {
+        // 上傳失敗，顯示錯誤但繼續（不阻擋完成資料）
+        console.error('Avatar upload failed:', uploadResult.error);
+      }
+    }
+
+    // 完成個人資料
     const result = await completeProfile(user.id, {
       full_name: formData.full_name,
       display_name: formData.display_name,
       phone: formData.phone,
       location: formData.location || undefined,
       bio: formData.bio || undefined,
-      avatar_url: hasCustomAvatar ? avatarPreview || undefined : undefined,
+      avatar_url: avatarUrl,
     });
 
     if (result.success) {
