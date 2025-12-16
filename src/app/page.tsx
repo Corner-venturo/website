@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useAuthStore } from '@/stores/auth-store';
+import { getSupabaseClient } from '@/lib/supabase';
 
 const recommendations = [
   {
@@ -66,11 +69,39 @@ function getGreeting() {
 }
 
 export default function HomePage() {
+  const router = useRouter();
+  const { user, initialize } = useAuthStore();
   const [dateString, setDateString] = useState('');
   const [greetingText, setGreetingText] = useState('');
   const [userName] = useState('旅人');
   const [showMessage, setShowMessage] = useState(false);
   const [showPersonalMenu, setShowPersonalMenu] = useState(false);
+
+  // 初始化 Auth
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
+  // 檢查已登入用戶是否完成個人資料
+  useEffect(() => {
+    const checkProfile = async () => {
+      if (!user) return;
+
+      const supabase = getSupabaseClient();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_profile_complete')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      // 如果未完成個人資料，導向 onboarding
+      if (!profile?.is_profile_complete) {
+        router.push('/onboarding');
+      }
+    };
+
+    checkProfile();
+  }, [user, router]);
 
   useEffect(() => {
     setDateString(formatDate());
