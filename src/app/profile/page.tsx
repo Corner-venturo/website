@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import BottomNav from '@/components/BottomNav';
 
 type Achievement = {
   icon: string;
@@ -260,28 +261,7 @@ export default function ProfilePage() {
         </div>
       </main>
 
-      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-        <div className="glass-panel bg-white/80 dark:bg-[#1E1E1E]/90 rounded-full px-2 py-2 flex items-center shadow-soft border border-white/40 dark:border-white/5">
-          <div className="flex items-center gap-1">
-            <Link className="w-12 h-12 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors" href="/">
-              <span className="material-icons-round text-2xl">home</span>
-            </Link>
-            <Link className="w-12 h-12 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors" href="/explore">
-              <span className="material-icons-round text-2xl">explore</span>
-            </Link>
-            <Link className="mx-2 w-12 h-12 rounded-full bg-primary text-white shadow-lg shadow-primary/40 flex items-center justify-center transform hover:scale-105 transition-transform" href="/explore/create">
-              <span className="material-icons-round text-2xl">add</span>
-            </Link>
-            <Link className="w-12 h-12 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors" href="/wishlist">
-              <span className="material-icons-round text-2xl">favorite_border</span>
-            </Link>
-            <button className="w-12 h-12 rounded-full flex items-center justify-center text-primary bg-primary/10 relative" type="button">
-              <span className="material-icons-round text-2xl">person</span>
-              <span className="absolute top-3 right-3 w-2 h-2 bg-morandi-pink rounded-full ring-1 ring-white dark:ring-[#1E1E1E]" />
-            </button>
-          </div>
-        </div>
-      </nav>
+      <BottomNav />
     </div>
   );
 }

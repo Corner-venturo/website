@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import BottomNav from '@/components/BottomNav';
 
 const timelineItems = [
   {
@@ -235,23 +236,7 @@ export default function WishlistPage() {
         </section>
       </div>
 
-      <nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
-        <div className="glass dark:glass-dark rounded-full px-7 py-3.5 flex items-center gap-9 shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-white/20">
-          <Link href="/" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-            <span className="material-icons-round text-2xl">home</span>
-          </Link>
-          <Link href="/explore" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-            <span className="material-icons-round text-2xl">explore</span>
-          </Link>
-          <button className="text-primary relative transform scale-110">
-            <span className="material-icons-round text-2xl">auto_fix_high</span>
-            <span className="absolute top-0 right-0 w-2 h-2 bg-morandi-pink rounded-full border border-white dark:border-card-dark animate-pulse" />
-          </button>
-          <Link href="/profile" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-            <span className="material-icons-round text-2xl">person_outline</span>
-          </Link>
-        </div>
-      </nav>
+      <BottomNav />
     </main>
   );
 }

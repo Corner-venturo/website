@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
+import BottomNav from '@/components/BottomNav';
 
 // 動態載入地圖（避免 SSR 問題）
 const MapComponent = dynamic(() => import('./MapComponent'), {
@@ -349,28 +350,7 @@ export default function ExplorePage() {
       </div>
 
       {/* 底部導覽 - 浮在地圖上 */}
-      <nav className="absolute bottom-4 left-4 right-4 z-20 bg-white/80 backdrop-blur-xl rounded-full px-2 py-2 flex justify-around shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-white/60">
-        <Link href="/" className="flex-1 flex justify-center py-2 text-[#B0B0B0] hover:text-[#8C8C8C] transition">
-          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-          </svg>
-        </Link>
-        <Link href="/explore" className="flex-1 flex justify-center py-2 text-[#94A3B8]">
-          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 10.9c-.61 0-1.1.49-1.1 1.1s.49 1.1 1.1 1.1c.61 0 1.1-.49 1.1-1.1s-.49-1.1-1.1-1.1zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm2.19 12.19L6 18l3.81-8.19L18 6l-3.81 8.19z" />
-          </svg>
-        </Link>
-        <Link href="/wishlist" className="flex-1 flex justify-center py-2 text-[#B0B0B0] hover:text-[#8C8C8C] transition">
-          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-          </svg>
-        </Link>
-        <Link href="/profile" className="flex-1 flex justify-center py-2 text-[#B0B0B0] hover:text-[#8C8C8C] transition">
-          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-          </svg>
-        </Link>
-      </nav>
+      <BottomNav className="absolute bottom-4 left-4 right-4 z-20 xl:hidden" />
     </div>
   );
 }
