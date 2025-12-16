@@ -70,6 +70,7 @@ export default function HomePage() {
   const [greetingText, setGreetingText] = useState('');
   const [userName] = useState('旅人');
   const [showMessage, setShowMessage] = useState(false);
+  const [showPersonalMenu, setShowPersonalMenu] = useState(false);
 
   useEffect(() => {
     setDateString(formatDate());
@@ -201,27 +202,93 @@ export default function HomePage() {
 
         {/* 底部導覽 - 手機版 */}
         <nav className="flex-shrink-0 mx-4 sm:mx-6 mb-4 bg-white/80 backdrop-blur-xl rounded-full px-2 py-2 flex justify-around shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-white/60">
-          <Link href="/" className="flex-1 flex justify-center py-2 text-[#94A3B8]">
+            <Link
+              href="/"
+              className="flex-1 flex justify-center py-2 text-[#94A3B8]"
+              onClick={() => setShowPersonalMenu(false)}
+            >
             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
               <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
             </svg>
           </Link>
-          <Link href="/explore" className="flex-1 flex justify-center py-2 text-[#B0B0B0] hover:text-[#8C8C8C] transition">
+          <Link
+            href="/explore"
+            className="flex-1 flex justify-center py-2 text-[#B0B0B0] hover:text-[#8C8C8C] transition"
+            onClick={() => setShowPersonalMenu(false)}
+          >
             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 10.9c-.61 0-1.1.49-1.1 1.1s.49 1.1 1.1 1.1c.61 0 1.1-.49 1.1-1.1s-.49-1.1-1.1-1.1zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm2.19 12.19L6 18l3.81-8.19L18 6l-3.81 8.19z" />
             </svg>
           </Link>
-          <Link href="/wishlist" className="flex-1 flex justify-center py-2 text-[#B0B0B0] hover:text-[#8C8C8C] transition">
+          <Link
+            href="/wishlist"
+            className="flex-1 flex justify-center py-2 text-[#B0B0B0] hover:text-[#8C8C8C] transition"
+            onClick={() => setShowPersonalMenu(false)}
+          >
             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
             </svg>
           </Link>
-          <Link href="/my" className="flex-1 flex justify-center py-2 text-[#B0B0B0] hover:text-[#8C8C8C] transition">
+          <button
+            type="button"
+            className="flex-1 flex justify-center py-2 text-[#B0B0B0] hover:text-[#8C8C8C] transition"
+            onClick={() => setShowPersonalMenu((prev) => !prev)}
+          >
             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
             </svg>
-          </Link>
+          </button>
         </nav>
+
+        {/* 個人功能選單 */}
+        {showPersonalMenu && (
+          <div className="fixed inset-0 z-40 flex items-end justify-end pb-28 pr-6" onClick={() => setShowPersonalMenu(false)}>
+            <div className="absolute inset-0 bg-black/20" />
+            <div
+              className="relative pointer-events-auto bg-white/95 backdrop-blur-xl border border-white/60 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] rounded-[2rem] p-3 w-[190px] origin-bottom-right flex flex-col gap-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Link
+                href="/profile"
+                className="group flex items-center gap-3 w-full p-2.5 rounded-[1.2rem] hover:bg-[#F5F4F0] transition-all active:scale-95"
+                onClick={() => setShowPersonalMenu(false)}
+              >
+                <div className="w-9 h-9 rounded-full bg-[#F2EBE9] flex items-center justify-center text-[#C5B6AF] group-hover:scale-110 transition-transform">
+                  <span className="material-icons-round text-[18px]">verified_user</span>
+                </div>
+                <span className="text-[13px] font-bold text-[#5C5C5C] tracking-wide">旅人護照</span>
+              </Link>
+              <Link
+                href="#"
+                className="group flex items-center gap-3 w-full p-2.5 rounded-[1.2rem] hover:bg-[#F5F4F0] transition-all active:scale-95"
+              >
+                <div className="w-9 h-9 rounded-full bg-[#EDF2EC] flex items-center justify-center text-[#A8BCA1] group-hover:scale-110 transition-transform">
+                  <span className="material-icons-round text-[18px]">airplane_ticket</span>
+                </div>
+                <span className="text-[13px] font-bold text-[#5C5C5C] tracking-wide">我的訂單</span>
+              </Link>
+              <Link
+                href="/split"
+                className="group flex items-center gap-3 w-full p-2.5 rounded-[1.2rem] hover:bg-[#F5F4F0] transition-all active:scale-95"
+                onClick={() => setShowPersonalMenu(false)}
+              >
+                <div className="w-9 h-9 rounded-full bg-[#E6EBF2] flex items-center justify-center text-[#94A3B8] group-hover:scale-110 transition-transform">
+                  <span className="material-icons-round text-[18px]">pie_chart</span>
+                </div>
+                <span className="text-[13px] font-bold text-[#5C5C5C] tracking-wide">分帳</span>
+              </Link>
+              <Link
+                href="#"
+                className="group flex items-center gap-3 w-full p-2.5 rounded-[1.2rem] hover:bg-[#F5F4F0] transition-all active:scale-95"
+              >
+                <div className="w-9 h-9 rounded-full bg-[#F0EBE6] flex items-center justify-center text-[#BAACA5] group-hover:scale-110 transition-transform">
+                  <span className="material-icons-round text-[18px]">groups</span>
+                </div>
+                <span className="text-[13px] font-bold text-[#5C5C5C] tracking-wide">朋友</span>
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 電腦版佈局 - 固定視窗不滾動 (1280px 以上) */}
