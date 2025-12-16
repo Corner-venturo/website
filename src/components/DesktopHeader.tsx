@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { useAuthStore } from '@/stores/auth-store';
+import { useProfileStore, getDisplayAvatar } from '@/stores/profile-store';
 
 function formatDate() {
   const now = new Date();
@@ -32,14 +35,26 @@ const navItems: NavItem[] = [
 
 export default function DesktopHeader() {
   const pathname = usePathname();
+  const { user } = useAuthStore();
+  const { profile, fetchProfile } = useProfileStore();
   const [dateString, setDateString] = useState('');
   const [greetingText, setGreetingText] = useState('');
-  const [userName] = useState('旅人');
+
+  // 取得顯示名稱和頭像
+  const displayName = profile?.display_name || user?.user_metadata?.name || '旅人';
+  const avatarUrl = getDisplayAvatar(profile, user?.user_metadata as Record<string, string> | undefined);
 
   useEffect(() => {
     setDateString(formatDate());
     setGreetingText(getGreeting());
   }, []);
+
+  // 載入 profile
+  useEffect(() => {
+    if (user) {
+      fetchProfile(user.id);
+    }
+  }, [user, fetchProfile]);
 
   return (
     <header className="hidden xl:flex items-center justify-between py-4 px-8 bg-white/40 backdrop-blur-2xl rounded-2xl border border-white/50 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.06)]">
@@ -71,17 +86,33 @@ export default function DesktopHeader() {
       </div>
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-3 px-4 py-2 bg-white/60 rounded-full border border-white/40">
-          <div className="w-8 h-8 rounded-full bg-[#D6CDC8] text-white font-bold text-sm flex items-center justify-center">
-            {userName.charAt(0)}
-          </div>
+          {avatarUrl ? (
+            <Image
+              src={avatarUrl}
+              alt={displayName}
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-[#D6CDC8] text-white font-bold text-sm flex items-center justify-center">
+              {displayName.charAt(0)}
+            </div>
+          )}
           <div>
             <p className="text-[9px] uppercase tracking-wider text-[#949494]">{dateString}</p>
-            <p className="text-sm font-medium text-[#5C5C5C]">{greetingText}，{userName}</p>
+            <p className="text-sm font-medium text-[#5C5C5C]">{greetingText}，{displayName}</p>
           </div>
         </div>
-        <Link href="/login" className="bg-[#94A3B8] hover:bg-[#8291A6] text-white text-sm py-2.5 px-6 rounded-full transition font-medium">
-          登入 / 註冊
-        </Link>
+        {user ? (
+          <Link href="/my" className="bg-[#E8E2DD] hover:bg-[#DED6CF] text-[#5C5C5C] text-sm py-2.5 px-6 rounded-full transition font-medium">
+            個人中心
+          </Link>
+        ) : (
+          <Link href="/login" className="bg-[#94A3B8] hover:bg-[#8291A6] text-white text-sm py-2.5 px-6 rounded-full transition font-medium">
+            登入 / 註冊
+          </Link>
+        )}
       </div>
     </header>
   );
