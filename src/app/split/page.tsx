@@ -1,5 +1,6 @@
 'use client';
 
+import BottomNav from '@/components/BottomNav';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect } from 'react';
@@ -235,7 +236,7 @@ export default function SplitBillPage() {
           </div>
         </div>
 
-        <div className="fixed bottom-0 left-0 right-0 z-50 p-5 bg-gradient-to-t from-[#F0EEE6] via-[#F0EEE6]/95 to-transparent dark:from-[#1a1a1a] dark:via-[#1a1a1a]/95">
+        <div className="fixed bottom-24 left-0 right-0 z-50 p-5 bg-gradient-to-t from-[#F0EEE6] via-[#F0EEE6]/95 to-transparent dark:from-[#1a1a1a] dark:via-[#1a1a1a]/95">
           <div className="max-w-xl mx-auto pointer-events-none">
             <div className="pointer-events-auto flex items-center gap-3">
               <div className="flex-1">
@@ -250,6 +251,7 @@ export default function SplitBillPage() {
           </div>
         </div>
       </div>
+      <BottomNav />
     </main>
   );
 }

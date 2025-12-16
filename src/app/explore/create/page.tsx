@@ -1,5 +1,6 @@
 'use client';
 
+import BottomNav from '@/components/BottomNav';
 import { useEffect, useMemo, useState } from 'react';
 
 const palette = {
@@ -488,7 +489,7 @@ export default function CreateExplorePage() {
         ) : null}
       </main>
 
-      <div className="fixed bottom-0 inset-x-0 p-5 bg-gradient-to-t from-[#F0EEE6] via-[#F0EEE6] to-transparent dark:from-[#1a1a1a] dark:via-[#1a1a1a] z-50 pt-10">
+      <div className="fixed inset-x-0 bottom-24 p-5 bg-gradient-to-t from-[#F0EEE6] via-[#F0EEE6] to-transparent dark:from-[#1a1a1a] dark:via-[#1a1a1a] z-50 pt-10">
         <button
           onClick={() => setStep((prev) => Math.min(prev + 1, 3))}
           className="w-full bg-primary text-white font-bold py-4 rounded-3xl shadow-[0_12px_30px_rgba(207,185,165,0.3)] flex items-center justify-center gap-2 active:scale-95 transition-transform hover:bg-[var(--primary-dark)]"
@@ -497,6 +498,7 @@ export default function CreateExplorePage() {
           <span className="material-icons-round text-sm">{step === 3 ? 'check_circle' : 'arrow_forward'}</span>
         </button>
       </div>
+      <BottomNav />
     </div>
   );
 }
