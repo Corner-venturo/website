@@ -1,12 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuthStore } from '@/stores/auth-store';
-import { useProfileStore, getDisplayAvatar } from '@/stores/profile-store';
-import { getSupabaseClient } from '@/lib/supabase';
+import BottomNav from '@/components/BottomNav';
 
 const recommendations = [
   {
@@ -70,50 +67,11 @@ function getGreeting() {
 }
 
 export default function HomePage() {
-  const router = useRouter();
-  const { user, initialize } = useAuthStore();
-  const { profile, fetchProfile } = useProfileStore();
   const [dateString, setDateString] = useState('');
   const [greetingText, setGreetingText] = useState('');
+  const [userName] = useState('旅人');
   const [showMessage, setShowMessage] = useState(false);
   const [showPersonalMenu, setShowPersonalMenu] = useState(false);
-
-  // 取得顯示名稱
-  const displayName = profile?.display_name || user?.user_metadata?.name || '旅人';
-  const avatarUrl = getDisplayAvatar(profile, user?.user_metadata as Record<string, string> | undefined);
-
-  // 初始化 Auth
-  useEffect(() => {
-    initialize();
-  }, [initialize]);
-
-  // 載入 profile
-  useEffect(() => {
-    if (user) {
-      fetchProfile(user.id);
-    }
-  }, [user, fetchProfile]);
-
-  // 檢查已登入用戶是否完成個人資料
-  useEffect(() => {
-    const checkProfile = async () => {
-      if (!user) return;
-
-      const supabase = getSupabaseClient();
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('is_profile_complete')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      // 如果未完成個人資料，導向 onboarding
-      if (!profile?.is_profile_complete) {
-        router.push('/onboarding');
-      }
-    };
-
-    checkProfile();
-  }, [user, router]);
 
   useEffect(() => {
     setDateString(formatDate());
@@ -165,39 +123,18 @@ export default function HomePage() {
           <div className="flex items-center justify-between px-5 py-3 bg-white/50 backdrop-blur-2xl rounded-full border border-white/50 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)]">
             {/* 左邊：頭像 + 日期問候 */}
             <div className="flex items-center gap-3">
-              {avatarUrl ? (
-                <Image
-                  src={avatarUrl}
-                  alt={displayName}
-                  width={44}
-                  height={44}
-                  className="w-11 h-11 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-11 h-11 rounded-full bg-[#D6CDC8] text-white font-bold text-lg flex items-center justify-center">
-                  {displayName.charAt(0)}
-                </div>
-              )}
+              <div className="w-11 h-11 rounded-full bg-[#D6CDC8] text-white font-bold text-lg flex items-center justify-center">
+                {userName.charAt(0)}
+              </div>
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-[#949494] font-semibold">{dateString}</p>
-                <h1 className="text-base font-bold text-[#5C5C5C]">{greetingText}，{displayName}</h1>
+                <h1 className="text-base font-bold text-[#5C5C5C]">{greetingText}，{userName}</h1>
               </div>
             </div>
-            {/* 右邊：未登入顯示登入按鈕，已登入顯示選單按鈕 */}
-            {user ? (
-              <button
-                onClick={() => setShowPersonalMenu(!showPersonalMenu)}
-                className="w-11 h-11 rounded-full bg-[#E8E2DD] hover:bg-[#DED6CF] text-[#5C5C5C] flex items-center justify-center transition"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            ) : (
-              <Link href="/login" className="w-11 h-11 rounded-full bg-[#94A3B8] hover:bg-[#8291A6] text-white text-xs font-medium flex items-center justify-center transition">
-                登入
-              </Link>
-            )}
+            {/* 右邊：登入按鈕（未登入時顯示）- 圓形跟頭像對稱 */}
+            <Link href="/login" className="w-11 h-11 rounded-full bg-[#94A3B8] hover:bg-[#8291A6] text-white text-xs font-medium flex items-center justify-center transition">
+              登入
+            </Link>
           </div>
         </header>
 
@@ -265,42 +202,7 @@ export default function HomePage() {
         </div>
 
         {/* 底部導覽 - 手機版 */}
-        <nav className="flex-shrink-0 mx-4 sm:mx-6 mb-4 bg-white/80 backdrop-blur-xl rounded-full px-2 py-2 flex justify-around shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-white/60">
-            <Link
-              href="/"
-              className="flex-1 flex justify-center py-2 text-[#94A3B8]"
-              onClick={() => setShowPersonalMenu(false)}
-            >
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-            </svg>
-          </Link>
-          <Link
-            href="/explore"
-            className="flex-1 flex justify-center py-2 text-[#B0B0B0] hover:text-[#8C8C8C] transition"
-            onClick={() => setShowPersonalMenu(false)}
-          >
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 10.9c-.61 0-1.1.49-1.1 1.1s.49 1.1 1.1 1.1c.61 0 1.1-.49 1.1-1.1s-.49-1.1-1.1-1.1zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm2.19 12.19L6 18l3.81-8.19L18 6l-3.81 8.19z" />
-            </svg>
-          </Link>
-          <Link
-            href="/wishlist"
-            className="flex-1 flex justify-center py-2 text-[#B0B0B0] hover:text-[#8C8C8C] transition"
-            onClick={() => setShowPersonalMenu(false)}
-          >
-            <span className="material-icons-round text-2xl">auto_fix_high</span>
-          </Link>
-          <button
-            type="button"
-            className="flex-1 flex justify-center py-2 text-[#B0B0B0] hover:text-[#8C8C8C] transition"
-            onClick={() => setShowPersonalMenu((prev) => !prev)}
-          >
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-            </svg>
-          </button>
-        </nav>
+        <BottomNav onPersonClick={() => setShowPersonalMenu((prev) => !prev)} />
 
         {/* 個人功能選單 */}
         {showPersonalMenu && (
@@ -366,42 +268,23 @@ export default function HomePage() {
             <nav className="flex items-center gap-8 ml-12">
               <Link href="/" className="text-[#94A3B8] font-medium border-b-2 border-[#94A3B8] pb-1">首頁</Link>
               <Link href="/explore" className="text-[#949494] hover:text-[#5C5C5C] transition">探索</Link>
-              <Link href="/destinations" className="text-[#949494] hover:text-[#5C5C5C] transition">目的地</Link>
-              <Link href="/articles" className="text-[#949494] hover:text-[#5C5C5C] transition">旅遊靈感</Link>
+              <Link href="/orders" className="text-[#949494] hover:text-[#5C5C5C] transition">訂單</Link>
+              <Link href="/wishlist" className="text-[#949494] hover:text-[#5C5C5C] transition">收藏</Link>
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 px-4 py-2 bg-white/60 rounded-full border border-white/40">
-              {avatarUrl ? (
-                <Image
-                  src={avatarUrl}
-                  alt={displayName}
-                  width={32}
-                  height={32}
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-[#D6CDC8] text-white font-bold text-sm flex items-center justify-center">
-                  {displayName.charAt(0)}
-                </div>
-              )}
+            <Link href="/my" className="flex items-center gap-3 px-4 py-2 bg-white/60 rounded-full border border-white/40 hover:bg-white/80 transition">
+              <div className="w-8 h-8 rounded-full bg-[#D6CDC8] text-white font-bold text-sm flex items-center justify-center">
+                {userName.charAt(0)}
+              </div>
               <div>
                 <p className="text-[9px] uppercase tracking-wider text-[#949494]">{dateString}</p>
-                <p className="text-sm font-medium text-[#5C5C5C]">{greetingText}，{displayName}</p>
+                <p className="text-sm font-medium text-[#5C5C5C]">{greetingText}，{userName}</p>
               </div>
-            </div>
-            {user ? (
-              <button
-                onClick={() => setShowPersonalMenu(!showPersonalMenu)}
-                className="bg-[#E8E2DD] hover:bg-[#DED6CF] text-[#5C5C5C] text-sm py-2.5 px-6 rounded-full transition font-medium"
-              >
-                個人選單
-              </button>
-            ) : (
-              <Link href="/login" className="bg-[#94A3B8] hover:bg-[#8291A6] text-white text-sm py-2.5 px-6 rounded-full transition font-medium">
-                登入 / 註冊
-              </Link>
-            )}
+            </Link>
+            <Link href="/login" className="bg-[#94A3B8] hover:bg-[#8291A6] text-white text-sm py-2.5 px-6 rounded-full transition font-medium">
+              登入 / 註冊
+            </Link>
           </div>
         </header>
 

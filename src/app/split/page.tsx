@@ -2,7 +2,34 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect } from 'react';
+
+// 桌面版 Header 組件
+function DesktopHeader() {
+  return (
+    <header className="flex-shrink-0 flex items-center justify-between py-4 px-8 bg-white/80 backdrop-blur-2xl rounded-2xl border border-white/50 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.06)] mb-6">
+      <div className="flex items-center gap-6">
+        <Link href="/" className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-[#D6CDC8] text-white font-bold flex items-center justify-center">V</div>
+          <span className="text-xl font-bold text-[#5C5C5C]">VENTURO</span>
+        </Link>
+        <nav className="flex items-center gap-8 ml-12">
+          <Link href="/" className="text-[#949494] hover:text-[#5C5C5C] transition">首頁</Link>
+          <Link href="/explore" className="text-[#949494] hover:text-[#5C5C5C] transition">探索</Link>
+          <Link href="/orders" className="text-[#949494] hover:text-[#5C5C5C] transition">訂單</Link>
+          <Link href="/wishlist" className="text-[#949494] hover:text-[#5C5C5C] transition">收藏</Link>
+        </nav>
+      </div>
+      <div className="flex items-center gap-4">
+        <Link href="/my" className="flex items-center gap-3 px-4 py-2 bg-white/60 rounded-full border border-white/40 hover:bg-white/80 transition">
+          <div className="w-8 h-8 rounded-full bg-[#D6CDC8] text-white font-bold text-sm flex items-center justify-center">
+            旅
+          </div>
+          <span className="text-sm font-medium text-[#5C5C5C]">我的</span>
+        </Link>
+      </div>
+    </header>
+  );
+}
 
 const participants = [
   {
@@ -56,12 +83,6 @@ const accentChipClass: Record<string, string> = {
 };
 
 export default function SplitBillPage() {
-  useEffect(() => {
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      document.documentElement.classList.add('dark');
-    }
-  }, []);
-
   return (
     <main className="bg-[#F0EEE6] dark:bg-[#1a1a1a] text-gray-900 dark:text-white min-h-screen font-sans relative overflow-hidden">
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
@@ -71,7 +92,191 @@ export default function SplitBillPage() {
         <div className="absolute top-[40%] left-[30%] w-64 h-64 bg-primary/20 dark:bg-primary/5 rounded-full blur-[60px]" />
       </div>
 
-      <div className="relative z-10 max-w-xl mx-auto flex flex-col min-h-screen">
+      {/* ========== 電腦版佈局 ========== */}
+      <div className="hidden xl:flex relative z-10 min-h-screen flex-col p-6">
+        <DesktopHeader />
+
+        <div className="flex-1 grid grid-cols-12 gap-6">
+          {/* 左側 - 分帳對象 */}
+          <div className="col-span-4 space-y-5">
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-lg border border-white/50">
+              <div className="flex items-center gap-3 mb-6">
+                <Link
+                  href="/"
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:text-primary transition-colors"
+                >
+                  <span className="material-icons-round text-xl">arrow_back</span>
+                </Link>
+                <h1 className="text-2xl font-bold text-gray-800">建立分帳</h1>
+              </div>
+
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-bold text-gray-700">分帳對象 <span className="text-primary ml-1 text-xs font-normal">(4人)</span></h2>
+                  <button className="text-xs text-primary font-medium flex items-center gap-0.5">
+                    <span className="material-symbols-outlined text-sm">add</span>
+                    邀請好友
+                  </button>
+                </div>
+                <div className="flex gap-4 flex-wrap">
+                  {participants.map((person) => (
+                    <div key={person.name} className="flex flex-col items-center gap-2">
+                      <div
+                        className={`relative w-14 h-14 rounded-full p-0.5 border-2 ${
+                          person.accent === 'transparent'
+                            ? 'border-transparent hover:border-gray-300'
+                            : accentBorderClass[person.accent] || 'border-transparent'
+                        } shadow-sm transition-colors cursor-pointer group`}
+                      >
+                        <Image
+                          src={person.avatar}
+                          alt={person.name}
+                          fill
+                          className={`rounded-full object-cover ${
+                            person.accent === 'transparent' ? 'grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100' : ''
+                          }`}
+                        />
+                        {person.accent !== 'transparent' && (
+                          <div className={`absolute -bottom-1 -right-1 ${accentChipClass[person.accent] || 'bg-gray-300'} text-white rounded-full p-0.5 border-2 border-white`}>
+                            <span className="material-symbols-outlined text-[10px] font-bold block">check</span>
+                          </div>
+                        )}
+                      </div>
+                      <span className={`text-xs font-medium ${person.accent === 'transparent' ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {person.role}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-gray-100">
+                <h3 className="text-sm font-bold text-gray-700 mb-3">快速統計</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">總金額</span>
+                    <span className="text-lg font-bold text-gray-800">$2,480</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">每人應付</span>
+                    <span className="text-lg font-bold text-primary">$827</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">分帳人數</span>
+                    <span className="text-sm font-bold text-gray-800">3 人</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Link
+              href="/split/record"
+              className="flex items-center justify-center gap-2 py-4 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/50 text-gray-600 hover:text-primary transition font-medium"
+            >
+              <span className="material-symbols-outlined text-lg text-morandi-blue">receipt_long</span>
+              新增費用記錄
+            </Link>
+          </div>
+
+          {/* 右側 - 分帳詳情 */}
+          <div className="col-span-8">
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-lg border border-white/50">
+              {/* 金額輸入 */}
+              <section className="glass-card rounded-3xl p-6 flex flex-col items-center justify-center space-y-2 relative overflow-hidden mb-6">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-morandi-blue via-primary to-morandi-pink opacity-50" />
+                <label className="text-sm font-medium text-gray-500">總金額</label>
+                <div className="flex items-baseline gap-2 text-gray-800">
+                  <span className="text-2xl font-medium text-gray-400">$</span>
+                  <input
+                    className="bg-transparent border-none p-0 text-5xl font-bold text-center w-48 focus:ring-0 placeholder-gray-300"
+                    placeholder="0"
+                    type="number"
+                    defaultValue={2480}
+                  />
+                </div>
+                <div className="w-full pt-4">
+                  <input
+                    className="w-full bg-background-light/50 border-none rounded-xl py-3 px-4 text-center text-sm font-medium placeholder-gray-400 focus:ring-2 focus:ring-primary/50 transition-all"
+                    placeholder="輸入項目名稱 (例如: 晚餐)"
+                    defaultValue="週末爵士樂聚餐"
+                  />
+                </div>
+              </section>
+
+              {/* 分帳方式 */}
+              <section className="glass-card rounded-3xl p-1 overflow-hidden">
+                <div className="flex p-1 bg-gray-100/50 rounded-2xl mb-4">
+                  <button className="flex-1 py-2.5 rounded-xl bg-white shadow-sm text-sm font-bold text-gray-800 transition-all flex items-center justify-center gap-1">
+                    <span className="material-symbols-outlined text-base">call_split</span>
+                    均分
+                  </button>
+                  <button className="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-700 transition-all flex items-center justify-center gap-1">
+                    <span className="material-symbols-outlined text-base">pie_chart</span>
+                    按比例
+                  </button>
+                  <button className="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-700 transition-all flex items-center justify-center gap-1">
+                    <span className="material-symbols-outlined text-base">edit</span>
+                    手動
+                  </button>
+                </div>
+
+                <div className="px-4 pb-2 space-y-4">
+                  {participants.slice(0, 3).map((person, index) => (
+                    <div key={person.name}>
+                      <div className="flex items-center justify-between group">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full relative">
+                            <Image
+                              src={person.avatar}
+                              alt={person.name}
+                              fill
+                              className={`rounded-full object-cover ${index === 0 ? 'ring-2 ring-primary/20' : ''}`}
+                            />
+                          </div>
+                          <div>
+                            {index === 0 ? (
+                              <p className="text-sm font-bold text-gray-800">{person.name} (支付者)</p>
+                            ) : (
+                              <p className="text-sm font-medium text-gray-800">{person.name}</p>
+                            )}
+                            {person.isPayer && (
+                              <p className="text-[10px] text-primary">已先墊付 {person.paid}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-base font-bold text-gray-800 block">{person.amount}</span>
+                          <span className="text-xs text-gray-400">{person.percent}</span>
+                        </div>
+                      </div>
+                      {index < 2 && <div className="h-px bg-gray-100 my-3" />}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-2 py-3 px-4 bg-morandi-yellow/10 border-t border-morandi-yellow/20 flex items-center justify-between">
+                  <span className="text-xs text-morandi-yellow font-bold flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">info</span>
+                    餘數調整
+                  </span>
+                  <span className="text-xs text-gray-500">Ben 少付 $1</span>
+                </div>
+              </section>
+
+              {/* 發送按鈕 */}
+              <div className="mt-8 flex justify-end">
+                <button className="bg-primary hover:bg-primary-dark text-white px-10 py-4 rounded-2xl shadow-lg shadow-primary/30 flex items-center gap-2 font-bold transition-colors text-base">
+                  <span>發送通知</span>
+                  <span className="material-symbols-outlined text-lg">send</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ========== 手機版佈局 ========== */}
+      <div className="xl:hidden relative z-10 max-w-xl mx-auto flex flex-col min-h-screen">
         <header className="px-6 pt-14 pb-4 flex items-center justify-between">
           <Link
             href="/"

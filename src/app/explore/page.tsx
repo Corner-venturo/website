@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import DesktopHeader from '@/components/DesktopHeader';
-import MobileNav from '@/components/MobileNav';
+import BottomNav from '@/components/BottomNav';
 
 // 動態載入地圖（避免 SSR 問題）
 const MapComponent = dynamic(() => import('./MapComponent'), {
@@ -141,13 +140,16 @@ export default function ExplorePage() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [selectedTrip, setSelectedTrip] = useState<typeof mockTrips[0] | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number]>([25.033, 121.5654]); // 預設台北
+  const [searchCenter, setSearchCenter] = useState<[number, number]>([25.033, 121.5654]); // 搜尋中心
 
   // 取得用戶位置
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation([position.coords.latitude, position.coords.longitude]);
+          const loc: [number, number] = [position.coords.latitude, position.coords.longitude];
+          setUserLocation(loc);
+          setSearchCenter(loc);
         },
         () => {},
         { timeout: 5000 }
@@ -155,12 +157,17 @@ export default function ExplorePage() {
     }
   }, []);
 
+  // 回到目前位置
+  const handleBackToMyLocation = () => {
+    setSearchCenter(userLocation);
+  };
+
   // 篩選揪團 - 2公里內 + 類別
   const filteredTrips = mockTrips
     .filter((trip) => {
       const distance = getDistanceFromLatLonInKm(
-        userLocation[0],
-        userLocation[1],
+        searchCenter[0],
+        searchCenter[1],
         trip.latitude,
         trip.longitude
       );
@@ -189,125 +196,204 @@ export default function ExplorePage() {
     }
   }, [filteredTrips, selectedTrip]);
 
-  // 類別篩選器組件
-  const CategoryFilter = ({ className = '' }: { className?: string }) => (
-    <div className={`flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-1 ${className}`}>
-      {categories.map((cat) => (
-        <button
-          key={cat.id}
-          onClick={() => {
-            setActiveCategory(cat.id);
-            setSelectedTrip(null);
-          }}
-          className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all ${
-            activeCategory === cat.id
-              ? 'bg-[#94A3B8] text-white shadow-lg shadow-[#94A3B8]/30'
-              : 'bg-white/60 backdrop-blur-xl text-[#5C5C5C] border border-white/50 hover:bg-white/80'
-          }`}
-        >
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-            <path d={cat.icon} />
+  // 揪團卡片組件
+  const TripCard = ({ trip, isSelected, onClick }: { trip: typeof mockTrips[0]; isSelected: boolean; onClick: () => void }) => (
+    <div
+      onClick={onClick}
+      className={`p-3 backdrop-blur-xl rounded-2xl shadow-lg border flex gap-3 cursor-pointer transition-all ${
+        isSelected
+          ? 'bg-white/95 border-white/80 ring-2 ring-[#94A3B8]/50 shadow-xl'
+          : 'bg-white/80 border-white/50 opacity-80 hover:opacity-100'
+      }`}
+    >
+      {/* 圖片 */}
+      <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 relative">
+        <Image src={trip.image} alt={trip.title} fill className="object-cover" />
+        <div className="absolute top-1 right-1 bg-black/50 rounded-md px-1.5 py-0.5 text-[10px] text-white flex items-center gap-0.5">
+          <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z" />
           </svg>
-          {cat.label}
-        </button>
-      ))}
-    </div>
-  );
-
-  // 揪團卡片列表組件
-  const TripCardList = ({ className = '' }: { className?: string }) => (
-    <div className={`flex overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] gap-4 ${className}`}>
-      {filteredTrips.length === 0 ? (
-        <div className="snap-center shrink-0 w-[280px] p-4 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/50 flex items-center justify-center">
-          <div className="text-center">
-            <svg className="w-10 h-10 text-[#B0B0B0] mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-            </svg>
-            <p className="text-sm text-[#949494]">附近還沒有揪團</p>
-            <button className="text-xs text-[#94A3B8] font-medium mt-2">
-              成為第一個開團的人
-            </button>
-          </div>
+          {trip.member_count}/{trip.max_members}
         </div>
-      ) : (
-        filteredTrips.map((trip) => {
-          const isSelected = selectedTrip?.id === trip.id;
-          return (
-            <div
-              key={trip.id}
-              onClick={() => setSelectedTrip(trip)}
-              className={`snap-center shrink-0 w-[280px] p-3 backdrop-blur-xl rounded-2xl shadow-lg border flex gap-3 cursor-pointer transition-all ${
-                isSelected
-                  ? 'bg-white/95 border-white/80 ring-2 ring-[#94A3B8]/50 shadow-xl'
-                  : 'bg-white/80 border-white/50 opacity-80 scale-95'
-              }`}
-            >
-              {/* 圖片 */}
-              <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 relative">
-                <Image src={trip.image} alt={trip.title} fill className="object-cover" />
-                <div className="absolute top-1 right-1 bg-black/50 rounded-md px-1.5 py-0.5 text-[10px] text-white flex items-center gap-0.5">
-                  <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z" />
-                  </svg>
-                  {trip.member_count}/{trip.max_members}
-                </div>
-              </div>
+      </div>
 
-              {/* 內容 */}
-              <div className="flex flex-col justify-center flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className={`w-1.5 h-1.5 rounded-full ${getCategoryColor(trip.category)}`} />
-                  <span className={`text-[10px] font-bold uppercase tracking-wider ${getCategoryTextColor(trip.category)}`}>
-                    {formatDate(trip.event_date)}
-                  </span>
-                  <span className="text-[10px] text-[#949494] ml-auto truncate max-w-[80px]">
-                    {trip.location}
-                  </span>
-                </div>
-                <h3 className="font-bold text-sm text-[#5C5C5C] truncate mb-1.5">
-                  {trip.title}
-                </h3>
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full overflow-hidden ring-2 ring-white">
-                    <Image
-                      src={trip.organizer_avatar}
-                      alt={trip.organizer_name}
-                      width={20}
-                      height={20}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <span className="text-xs text-[#949494]">{trip.organizer_name}</span>
-                </div>
-              </div>
-            </div>
-          );
-        })
-      )}
+      {/* 內容 */}
+      <div className="flex flex-col justify-center flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 mb-1">
+          <span className={`w-1.5 h-1.5 rounded-full ${getCategoryColor(trip.category)}`} />
+          <span className={`text-[10px] font-bold uppercase tracking-wider ${getCategoryTextColor(trip.category)}`}>
+            {formatDate(trip.event_date)}
+          </span>
+          <span className="text-[10px] text-[#949494] ml-auto truncate max-w-[80px]">
+            {trip.location}
+          </span>
+        </div>
+        <h3 className="font-bold text-sm text-[#5C5C5C] truncate mb-1.5">
+          {trip.title}
+        </h3>
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-full overflow-hidden ring-2 ring-white">
+            <Image
+              src={trip.organizer_avatar}
+              alt={trip.organizer_name}
+              width={20}
+              height={20}
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <span className="text-xs text-[#949494]">{trip.organizer_name}</span>
+        </div>
+      </div>
     </div>
   );
-
 
   return (
-    <div className="bg-[#F5F4F0] min-h-screen">
-      {/* ========== 手機版 + 平板版 (xl 以下) ========== */}
-      <div className="xl:hidden h-screen max-h-screen overflow-hidden relative">
-        {/* 地圖 - 全螢幕背景 */}
-        <div className="absolute inset-0 z-0">
-          <MapComponent
-            trips={filteredTrips}
-            selectedTrip={selectedTrip}
-            onTripSelect={setSelectedTrip}
-          />
-        </div>
+    <div className="h-screen max-h-screen overflow-hidden relative">
+      {/* 地圖 - 全螢幕背景 */}
+      <div className="absolute inset-0 z-0">
+        <MapComponent
+          trips={filteredTrips}
+          selectedTrip={selectedTrip}
+          onTripSelect={setSelectedTrip}
+          searchCenter={searchCenter}
+          onCenterChange={setSearchCenter}
+        />
+      </div>
 
-        <Link
-          href="/explore/create"
-          className="absolute right-6 bottom-28 z-20 bg-primary text-white shadow-[0_12px_30px_rgba(207,185,165,0.3)] rounded-full px-5 py-3 flex items-center gap-2 hover:bg-[var(--primary-dark)] active:scale-95 transition"
+      {/* ========== 電腦版佈局 ========== */}
+      <div className="hidden xl:block absolute inset-0 z-20">
+        {/* 電腦版 Header */}
+        <header className="absolute top-6 left-6 right-6 z-30">
+          <div className="flex items-center justify-between py-4 px-8 bg-white/80 backdrop-blur-2xl rounded-2xl border border-white/50 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)]">
+            <div className="flex items-center gap-6">
+              <Link href="/" className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#D6CDC8] text-white font-bold flex items-center justify-center">
+                  V
+                </div>
+                <span className="text-xl font-bold text-[#5C5C5C]">VENTURO</span>
+              </Link>
+              <nav className="flex items-center gap-8 ml-12">
+                <Link href="/" className="text-[#949494] hover:text-[#5C5C5C] transition">首頁</Link>
+                <Link href="/explore" className="text-[#94A3B8] font-medium border-b-2 border-[#94A3B8] pb-1">探索</Link>
+                <Link href="/orders" className="text-[#949494] hover:text-[#5C5C5C] transition">訂單</Link>
+                <Link href="/wishlist" className="text-[#949494] hover:text-[#5C5C5C] transition">收藏</Link>
+              </nav>
+            </div>
+            <div className="flex items-center gap-4">
+              {/* 搜尋框 */}
+              <div className="flex items-center gap-3 px-4 py-2 bg-white/60 rounded-full border border-white/40 w-64">
+                <svg className="w-5 h-5 text-[#94A3B8]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="M21 21l-4.35-4.35" />
+                </svg>
+                <input
+                  className="flex-1 bg-transparent border-none text-sm placeholder-[#949494] text-[#5C5C5C] focus:outline-none"
+                  placeholder="搜尋揪團..."
+                  type="text"
+                />
+              </div>
+              <Link href="/my" className="flex items-center gap-3 px-4 py-2 bg-white/60 rounded-full border border-white/40 hover:bg-white/80 transition">
+                <div className="w-8 h-8 rounded-full bg-[#D6CDC8] text-white font-bold text-sm flex items-center justify-center">
+                  旅
+                </div>
+                <span className="text-sm font-medium text-[#5C5C5C]">我的</span>
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        {/* 電腦版 - 回到目前位置按鈕 */}
+        <button
+          onClick={handleBackToMyLocation}
+          className="absolute right-6 bottom-6 z-30 w-12 h-12 bg-white/90 backdrop-blur-xl text-[#5C5C5C] shadow-lg rounded-full flex items-center justify-center hover:bg-white active:scale-95 transition border border-white/50"
+          title="回到目前位置"
         >
-          <span className="material-icons-round text-lg">add</span>
-          <span className="text-sm font-bold">發起活動</span>
-        </Link>
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
+          </svg>
+        </button>
+
+        {/* 電腦版側邊欄 - 揪團列表 */}
+        <div className="absolute left-6 top-32 bottom-6 w-[360px] z-20 flex flex-col gap-4">
+          {/* 類別篩選 */}
+          <div className="flex flex-wrap gap-2 p-4 bg-white/80 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg">
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => {
+                  setActiveCategory(cat.id);
+                  setSelectedTrip(null);
+                }}
+                className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all ${
+                  activeCategory === cat.id
+                    ? 'bg-[#94A3B8] text-white shadow-lg shadow-[#94A3B8]/30'
+                    : 'bg-white/60 text-[#5C5C5C] border border-white/50 hover:bg-white/80'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d={cat.icon} />
+                </svg>
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
+          {/* 揪團卡片列表 */}
+          <div className="flex-1 overflow-y-auto space-y-3 pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+            {filteredTrips.length === 0 ? (
+              <div className="p-6 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/50 text-center">
+                <svg className="w-12 h-12 text-[#B0B0B0] mx-auto mb-3" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+                </svg>
+                <p className="text-[#949494] mb-2">附近還沒有揪團</p>
+                <Link href="/explore/create" className="text-sm text-[#94A3B8] font-medium hover:underline">
+                  成為第一個開團的人 →
+                </Link>
+              </div>
+            ) : (
+              filteredTrips.map((trip) => (
+                <TripCard
+                  key={trip.id}
+                  trip={trip}
+                  isSelected={selectedTrip?.id === trip.id}
+                  onClick={() => setSelectedTrip(trip)}
+                />
+              ))
+            )}
+          </div>
+
+          {/* 發起活動按鈕 */}
+          <Link
+            href="/explore/create"
+            className="flex items-center justify-center gap-2 py-4 bg-[#94A3B8] text-white rounded-2xl shadow-lg shadow-[#94A3B8]/30 hover:bg-[#8291A6] transition font-medium"
+          >
+            <span className="material-icons-round">add</span>
+            發起揪團
+          </Link>
+        </div>
+      </div>
+
+      {/* ========== 手機版佈局 ========== */}
+      <div className="xl:hidden">
+        {/* 右側浮動按鈕組 */}
+        <div className="fixed right-5 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-3">
+          {/* 回到目前位置按鈕 */}
+          <button
+            onClick={handleBackToMyLocation}
+            className="w-14 h-14 bg-white/90 backdrop-blur-xl text-[#5C5C5C] shadow-lg rounded-full flex items-center justify-center hover:bg-white active:scale-95 transition border border-white/50"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
+            </svg>
+          </button>
+          {/* 發起揪團按鈕 */}
+          <Link
+            href="/explore/create"
+            className="w-14 h-14 bg-[#94A3B8] text-white shadow-[0_8px_24px_rgba(148,163,184,0.4)] rounded-full flex items-center justify-center hover:bg-[#8291A6] active:scale-95 transition"
+          >
+            <span className="material-icons-round text-2xl">add</span>
+          </Link>
+        </div>
 
         {/* Header - 浮在地圖上 */}
         <header className="absolute top-0 left-0 right-0 z-20 px-5 pt-4 pb-3">
@@ -326,13 +412,6 @@ export default function ExplorePage() {
             </div>
             {/* 按鈕 */}
             <div className="flex items-center gap-2">
-              <Link
-                href="/explore/create"
-                className="hidden sm:flex items-center gap-2 bg-primary text-white px-3 py-2 rounded-full text-sm font-bold shadow-[0_12px_30px_rgba(207,185,165,0.3)] hover:bg-[var(--primary-dark)] active:scale-95 transition"
-              >
-                <span className="material-icons-round text-sm">add</span>
-                發起活動
-              </Link>
               <button className="w-10 h-10 bg-white/60 backdrop-blur-xl rounded-full border border-white/50 shadow-sm flex items-center justify-center text-[#949494] hover:text-[#5C5C5C] transition relative">
                 <div className="absolute top-2 right-2 w-2 h-2 bg-[#E8C4C4] rounded-full" />
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -348,153 +427,104 @@ export default function ExplorePage() {
           </div>
 
           {/* 類別篩選 */}
-          <CategoryFilter />
+          <div className="flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-1">
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => {
+                  setActiveCategory(cat.id);
+                  setSelectedTrip(null);
+                }}
+                className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all ${
+                  activeCategory === cat.id
+                    ? 'bg-[#94A3B8] text-white shadow-lg shadow-[#94A3B8]/30'
+                    : 'bg-white/60 backdrop-blur-xl text-[#5C5C5C] border border-white/50 hover:bg-white/80'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d={cat.icon} />
+                </svg>
+                {cat.label}
+              </button>
+            ))}
+          </div>
         </header>
-
-        {/* 開團按鈕 - 浮在地圖上 */}
-        <button className="absolute bottom-52 right-5 z-20 w-14 h-14 rounded-full bg-[#94A3B8] text-white shadow-xl shadow-[#94A3B8]/40 flex items-center justify-center hover:scale-110 transition-transform">
-          <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <path d="M12 4v16m8-8H4" />
-          </svg>
-        </button>
 
         {/* 底部揪團卡片列表 - 浮在地圖上 */}
         <div className="absolute bottom-20 left-0 right-0 z-20">
-          <TripCardList className="px-5 py-2" />
-        </div>
-
-        {/* 底部導覽 - 浮在地圖上 */}
-        <MobileNav />
-      </div>
-
-      {/* ========== 電腦版 (xl 以上) ========== */}
-      <div className="hidden xl:flex flex-col h-screen max-h-screen overflow-hidden">
-        {/* 背景漸層 */}
-        <div className="fixed inset-0 -z-10 pointer-events-none">
-          <div className="absolute -top-[5%] -left-[15%] w-[500px] h-[500px] bg-[#D8D0C9] opacity-40 blur-[90px] rounded-full" />
-          <div className="absolute -bottom-[10%] -right-[10%] w-[450px] h-[450px] bg-[#C8D6D3] opacity-40 blur-[90px] rounded-full" />
-          <div className="absolute top-[40%] left-[20%] w-[300px] h-[300px] bg-[#E6DFDA] opacity-30 blur-[70px] rounded-full" />
-          <div className="absolute top-[20%] right-[15%] w-[400px] h-[400px] bg-[#D4C4B5] opacity-25 blur-[100px] rounded-full" />
-        </div>
-
-        {/* Header */}
-        <div className="flex-shrink-0 px-8 py-6">
-          <DesktopHeader />
-        </div>
-
-        {/* 主要內容區 */}
-        <div className="flex-1 px-8 pb-6 flex gap-6 min-h-0">
-          {/* 左側 - 篩選 + 卡片列表 */}
-          <div className="w-[400px] flex flex-col gap-4 min-h-0">
-            {/* 搜尋框 */}
-            <div className="flex items-center gap-3 px-5 py-3 bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm">
-              <svg className="w-5 h-5 text-[#94A3B8]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <circle cx="11" cy="11" r="8" />
-                <path d="M21 21l-4.35-4.35" />
-              </svg>
-              <input
-                className="flex-1 bg-transparent border-none text-sm placeholder-[#949494] text-[#5C5C5C] focus:outline-none"
-                placeholder="搜尋附近的揪團..."
-                type="text"
-              />
-            </div>
-
-            {/* 類別篩選 */}
-            <CategoryFilter />
-
-            {/* 標題 + 發起活動 */}
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-[#5C5C5C]">附近揪團</h2>
-              <Link
-                href="/explore/create"
-                className="flex items-center gap-2 bg-[#94A3B8] hover:bg-[#8291A6] text-white px-4 py-2 rounded-full text-sm font-bold transition"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path d="M12 4v16m8-8H4" />
-                </svg>
-                發起活動
-              </Link>
-            </div>
-
-            {/* 揪團卡片 - 垂直列表 */}
-            <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] space-y-3 pr-2">
-              {filteredTrips.length === 0 ? (
-                <div className="p-6 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/50 flex items-center justify-center">
-                  <div className="text-center">
-                    <svg className="w-12 h-12 text-[#B0B0B0] mx-auto mb-3" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-                    </svg>
-                    <p className="text-[#949494]">附近還沒有揪團</p>
-                    <p className="text-sm text-[#94A3B8] font-medium mt-2">成為第一個開團的人</p>
-                  </div>
+          <div className="flex overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] gap-4 px-5 py-2">
+            {filteredTrips.length === 0 ? (
+              <div className="snap-center shrink-0 w-[280px] p-4 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/50 flex items-center justify-center">
+                <div className="text-center">
+                  <svg className="w-10 h-10 text-[#B0B0B0] mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+                  </svg>
+                  <p className="text-sm text-[#949494]">附近還沒有揪團</p>
+                  <button className="text-xs text-[#94A3B8] font-medium mt-2">
+                    成為第一個開團的人
+                  </button>
                 </div>
-              ) : (
-                filteredTrips.map((trip) => {
-                  const isSelected = selectedTrip?.id === trip.id;
-                  return (
-                    <div
-                      key={trip.id}
-                      onClick={() => setSelectedTrip(trip)}
-                      className={`p-4 backdrop-blur-xl rounded-2xl shadow-lg border flex gap-4 cursor-pointer transition-all ${
-                        isSelected
-                          ? 'bg-white/95 border-white/80 ring-2 ring-[#94A3B8]/50 shadow-xl'
-                          : 'bg-white/80 border-white/50 hover:bg-white/90'
-                      }`}
-                    >
-                      {/* 圖片 */}
-                      <div className="w-24 h-24 rounded-xl overflow-hidden shrink-0 relative">
-                        <Image src={trip.image} alt={trip.title} fill className="object-cover" />
-                        <div className="absolute top-1.5 right-1.5 bg-black/50 rounded-md px-2 py-0.5 text-[10px] text-white flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z" />
-                          </svg>
-                          {trip.member_count}/{trip.max_members}
-                        </div>
-                      </div>
-
-                      {/* 內容 */}
-                      <div className="flex flex-col justify-center flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className={`w-2 h-2 rounded-full ${getCategoryColor(trip.category)}`} />
-                          <span className={`text-xs font-bold uppercase tracking-wider ${getCategoryTextColor(trip.category)}`}>
-                            {formatDate(trip.event_date)}
-                          </span>
-                          <span className="text-xs text-[#949494] ml-auto">
-                            {trip.location}
-                          </span>
-                        </div>
-                        <h3 className="font-bold text-base text-[#5C5C5C] mb-2">
-                          {trip.title}
-                        </h3>
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full overflow-hidden ring-2 ring-white">
-                            <Image
-                              src={trip.organizer_avatar}
-                              alt={trip.organizer_name}
-                              width={24}
-                              height={24}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <span className="text-sm text-[#949494]">{trip.organizer_name}</span>
-                        </div>
+              </div>
+            ) : (
+              filteredTrips.map((trip) => {
+                const isSelected = selectedTrip?.id === trip.id;
+                return (
+                  <div
+                    key={trip.id}
+                    onClick={() => setSelectedTrip(trip)}
+                    className={`snap-center shrink-0 w-[280px] p-3 backdrop-blur-xl rounded-2xl shadow-lg border flex gap-3 cursor-pointer transition-all ${
+                      isSelected
+                        ? 'bg-white/95 border-white/80 ring-2 ring-[#94A3B8]/50 shadow-xl'
+                        : 'bg-white/80 border-white/50 opacity-80 scale-95'
+                    }`}
+                  >
+                    {/* 圖片 */}
+                    <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 relative">
+                      <Image src={trip.image} alt={trip.title} fill className="object-cover" />
+                      <div className="absolute top-1 right-1 bg-black/50 rounded-md px-1.5 py-0.5 text-[10px] text-white flex items-center gap-0.5">
+                        <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+                        </svg>
+                        {trip.member_count}/{trip.max_members}
                       </div>
                     </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
 
-          {/* 右側 - 地圖 */}
-          <div className="flex-1 rounded-2xl overflow-hidden shadow-xl border border-white/50">
-            <MapComponent
-              trips={filteredTrips}
-              selectedTrip={selectedTrip}
-              onTripSelect={setSelectedTrip}
-            />
+                    {/* 內容 */}
+                    <div className="flex flex-col justify-center flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className={`w-1.5 h-1.5 rounded-full ${getCategoryColor(trip.category)}`} />
+                        <span className={`text-[10px] font-bold uppercase tracking-wider ${getCategoryTextColor(trip.category)}`}>
+                          {formatDate(trip.event_date)}
+                        </span>
+                        <span className="text-[10px] text-[#949494] ml-auto truncate max-w-[80px]">
+                          {trip.location}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-sm text-[#5C5C5C] truncate mb-1.5">
+                        {trip.title}
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-full overflow-hidden ring-2 ring-white">
+                          <Image
+                            src={trip.organizer_avatar}
+                            alt={trip.organizer_name}
+                            width={20}
+                            height={20}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <span className="text-xs text-[#949494]">{trip.organizer_name}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
+
+        {/* 底部導覽 - 只在手機版顯示 */}
+        <BottomNav />
       </div>
     </div>
   );

@@ -1,111 +1,18 @@
 @import "tailwindcss";
 
-/* ============================================
-   VENTURO Corporate Identity System (CIS)
-   Version: 1.0
-   Last Updated: 2024-12
-   ============================================ */
-
 :root {
-  /* ========== 品牌主色 Brand Colors ========== */
-  --brand-primary: #CFB9A5;           /* 莫蘭迪奶茶 - 主要品牌色 */
-  --brand-primary-dark: #B09B88;      /* 深奶茶 - 按鈕 hover */
-  --brand-primary-light: #E8DED4;     /* 淺奶茶 - 背景點綴 */
-
-  /* ========== 莫蘭迪色系 Morandi Palette ========== */
-  --morandi-blue: #94A3B8;            /* 莫蘭迪藍 - 導航、連結 */
-  --morandi-blue-dark: #8291A6;       /* 深莫蘭迪藍 - hover */
-  --morandi-blue-light: #A5BCCD;      /* 淺莫蘭迪藍 - 標籤 */
-
-  --morandi-pink: #E8C4C4;            /* 莫蘭迪粉 - 美食類別 */
-  --morandi-pink-text: #8B5A5A;       /* 莫蘭迪粉文字 */
-
-  --morandi-green: #A8BFA6;           /* 莫蘭迪綠 - 戶外類別 */
-  --morandi-green-text: #4A6B4A;      /* 莫蘭迪綠文字 */
-
-  --morandi-purple: #C4B8E0;          /* 莫蘭迪紫 - 音樂類別 */
-  --morandi-purple-text: #6B4A8A;     /* 莫蘭迪紫文字 */
-
-  --morandi-yellow: #D4C4A8;          /* 莫蘭迪黃 - 咖啡類別 */
-  --morandi-yellow-text: #6B5A4A;     /* 莫蘭迪黃文字 */
-
-  /* ========== 中性色 Neutral Colors ========== */
-  --neutral-50: #F5F4F0;              /* 頁面背景 */
-  --neutral-100: #E8E4DC;             /* 卡片背景 */
-  --neutral-200: #D6CDC8;             /* 頭像背景 */
-  --neutral-300: #B0B0B0;             /* 禁用文字 */
-  --neutral-400: #949494;             /* 次要文字 */
-  --neutral-500: #8C8C8C;             /* 輔助文字 */
-  --neutral-600: #5C5C5C;             /* 主要文字 */
-  --neutral-700: #3D3D3D;             /* 標題文字 */
-  --neutral-800: #1A1A1A;             /* 深色文字 */
-
-  /* ========== 功能色 Functional Colors ========== */
-  --success: #A8BFA6;                 /* 成功 */
-  --success-text: #4A6B4A;
-  --warning: #E0D6A8;                 /* 警告 */
-  --warning-text: #6B5A4A;
-  --error: #E8C4C4;                   /* 錯誤 */
-  --error-text: #8B5A5A;
-  --info: #A5BCCD;                    /* 資訊 */
-  --info-text: #4A6B8A;
-
-  /* ========== 玻璃效果 Glass Effect ========== */
-  --glass-bg: rgba(255, 255, 255, 0.60);
-  --glass-bg-strong: rgba(255, 255, 255, 0.80);
-  --glass-bg-subtle: rgba(255, 255, 255, 0.40);
-  --glass-border: rgba(255, 255, 255, 0.50);
-  --glass-blur: 12px;
-  --glass-blur-strong: 24px;
-
-  /* ========== 陰影 Shadows ========== */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
-  --shadow-xl: 0 20px 60px -15px rgba(0, 0, 0, 0.10);
-  --shadow-primary: 0 12px 30px rgba(207, 185, 165, 0.30);
-  --shadow-blue: 0 12px 30px rgba(148, 163, 184, 0.30);
-
-  /* ========== 圓角 Border Radius ========== */
-  --radius-sm: 0.5rem;                /* 8px */
-  --radius-md: 1rem;                  /* 16px */
-  --radius-lg: 1.5rem;                /* 24px */
-  --radius-xl: 2rem;                  /* 32px */
-  --radius-full: 9999px;              /* 圓形 */
-
-  /* ========== 間距 Spacing ========== */
-  --spacing-xs: 0.25rem;              /* 4px */
-  --spacing-sm: 0.5rem;               /* 8px */
-  --spacing-md: 1rem;                 /* 16px */
-  --spacing-lg: 1.5rem;               /* 24px */
-  --spacing-xl: 2rem;                 /* 32px */
-  --spacing-2xl: 3rem;                /* 48px */
-
-  /* ========== 字體 Typography ========== */
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-size-xs: 0.625rem;           /* 10px */
-  --font-size-sm: 0.75rem;            /* 12px */
-  --font-size-base: 0.875rem;         /* 14px */
-  --font-size-md: 1rem;               /* 16px */
-  --font-size-lg: 1.25rem;            /* 20px */
-  --font-size-xl: 1.5rem;             /* 24px */
-  --font-size-2xl: 2rem;              /* 32px */
-  --font-size-3xl: 3rem;              /* 48px */
-
-  /* ========== 動畫 Animation ========== */
-  --transition-fast: 150ms ease;
-  --transition-normal: 250ms ease;
-  --transition-slow: 350ms ease;
-
-  /* ========== Legacy Variables (保持向後相容) ========== */
-  --background: #F5F4F0;
-  --foreground: #5C5C5C;
-  --primary: var(--brand-primary);
-  --primary-dark: var(--brand-primary-dark);
-  --primary-light: var(--brand-primary-light);
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary: #cfb9a5;
+  --primary-dark: #b09b88;
+  --primary-light: #e8ded4;
+  --morandi-blue: #a5bccf;
+  --morandi-pink: #cfa5a5;
+  --morandi-green: #a8bfa6;
+  --morandi-yellow: #e0d6a8;
+  --card-dark: #1e1e1e;
 }
 
-/* ========== Theme Integration ========== */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -113,104 +20,134 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* ========== Base Styles ========== */
+
 body {
-  background: var(--neutral-50);
-  color: var(--neutral-600);
-  font-family: var(--font-family);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-/* ========== Utility Classes ========== */
-
-/* Scrollbar */
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-/* Glass Effect */
 .glass {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-.glass-strong {
-  background: var(--glass-bg-strong);
-  backdrop-filter: blur(var(--glass-blur-strong));
-  -webkit-backdrop-filter: blur(var(--glass-blur-strong));
-  border: 1px solid var(--glass-border);
+.glass-dark {
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .glass-card {
-  background: var(--glass-bg-strong);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
-/* Brand Colors */
-.bg-primary { background-color: var(--brand-primary); }
-.bg-primary-dark { background-color: var(--brand-primary-dark); }
-.bg-primary-light { background-color: var(--brand-primary-light); }
-.text-primary { color: var(--brand-primary); }
-.border-primary { border-color: var(--brand-primary); }
+.glass-card-dark {
+  background: rgba(35, 35, 35, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
 
-/* Morandi Colors */
-.bg-morandi-blue { background-color: var(--morandi-blue); }
-.bg-morandi-pink { background-color: var(--morandi-pink); }
-.bg-morandi-green { background-color: var(--morandi-green); }
-.bg-morandi-purple { background-color: var(--morandi-purple); }
-.bg-morandi-yellow { background-color: var(--morandi-yellow); }
-
-.text-morandi-blue { color: var(--morandi-blue); }
-.text-morandi-pink { color: var(--morandi-pink); }
-.text-morandi-green { color: var(--morandi-green); }
-.text-morandi-purple { color: var(--morandi-purple); }
-.text-morandi-yellow { color: var(--morandi-yellow); }
-
-/* Neutral Colors */
-.bg-neutral-50 { background-color: var(--neutral-50); }
-.bg-neutral-100 { background-color: var(--neutral-100); }
-.bg-neutral-200 { background-color: var(--neutral-200); }
-.text-neutral-400 { color: var(--neutral-400); }
-.text-neutral-500 { color: var(--neutral-500); }
-.text-neutral-600 { color: var(--neutral-600); }
-.text-neutral-700 { color: var(--neutral-700); }
-
-/* Shadows */
-.shadow-soft { box-shadow: var(--shadow-md); }
-.shadow-primary-soft { box-shadow: var(--shadow-primary); }
-.shadow-blue-soft { box-shadow: var(--shadow-blue); }
-
-/* Input Styles */
 .input-clean {
-  transition: var(--transition-normal);
+  transition: all 0.3s ease;
 }
+
 .input-clean:focus-within {
   transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-/* Background Patterns */
 .bg-map-pattern {
-  background-image: radial-gradient(var(--brand-primary) 1px, transparent 1px);
+  background-image: radial-gradient(var(--primary) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
-.texture-bg {
-  background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
-  background-size: 20px 20px;
+.bg-primary {
+  background-color: var(--primary);
 }
 
-/* Puzzle Connectors */
+.bg-primary-dark {
+  background-color: var(--primary-dark);
+}
+
+.bg-primary-light {
+  background-color: var(--primary-light);
+}
+
+.bg-morandi-blue {
+  background-color: var(--morandi-blue);
+}
+
+.bg-morandi-pink {
+  background-color: var(--morandi-pink);
+}
+
+.bg-morandi-green {
+  background-color: var(--morandi-green);
+}
+
+.bg-morandi-yellow {
+  background-color: var(--morandi-yellow);
+}
+
+.bg-card-dark {
+  background-color: var(--card-dark);
+}
+
+.border-card-dark {
+  border-color: var(--card-dark);
+}
+
+.ring-card-dark {
+  --tw-ring-color: var(--card-dark);
+}
+
+.text-morandi-blue {
+  color: var(--morandi-blue);
+}
+
+.text-morandi-pink {
+  color: var(--morandi-pink);
+}
+
+.text-morandi-green {
+  color: var(--morandi-green);
+}
+
+.text-morandi-yellow {
+  color: var(--morandi-yellow);
+}
+
+.text-primary {
+  color: var(--primary);
+}
+
+.border-primary {
+  border-color: var(--primary);
+}
+
+.shadow-primary-soft {
+  box-shadow: 0 12px 30px rgba(207, 185, 165, 0.3);
+}
+
 .puzzle-connector-top::before {
   content: "";
   position: absolute;
@@ -239,7 +176,6 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-/* Dashed Lines */
 .dashed-border {
   border: 2px dashed rgba(207, 185, 165, 0.5);
 }
@@ -254,42 +190,11 @@ body {
   );
 }
 
-/* ========== Button Variants ========== */
-.btn-primary {
-  background-color: var(--morandi-blue);
-  color: white;
-  padding: 0.625rem 1.5rem;
-  border-radius: var(--radius-full);
-  font-weight: 500;
-  transition: var(--transition-normal);
-}
-.btn-primary:hover {
-  background-color: var(--morandi-blue-dark);
+.texture-bg {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
-.btn-secondary {
-  background-color: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  color: var(--neutral-600);
-  padding: 0.625rem 1.5rem;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--glass-border);
-  font-weight: 500;
-  transition: var(--transition-normal);
-}
-.btn-secondary:hover {
-  background-color: var(--glass-bg-strong);
-}
-
-.btn-brand {
-  background-color: var(--brand-primary);
-  color: white;
-  padding: 0.625rem 1.5rem;
-  border-radius: var(--radius-full);
-  font-weight: 500;
-  box-shadow: var(--shadow-primary);
-  transition: var(--transition-normal);
-}
-.btn-brand:hover {
-  background-color: var(--brand-primary-dark);
+.shadow-soft {
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
 }

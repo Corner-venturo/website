@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -24,6 +24,8 @@ interface MapComponentProps {
   trips: Trip[];
   selectedTrip: Trip | null;
   onTripSelect: (trip: Trip) => void;
+  searchCenter: [number, number];
+  onCenterChange: (center: [number, number]) => void;
 }
 
 // 類別顏色
@@ -126,40 +128,67 @@ function deg2rad(deg: number) {
   return deg * (Math.PI / 180);
 }
 
-// 自動調整地圖視角
-function MapController({ center }: { center: [number, number] }) {
+// 地圖控制器 - 處理視角和拖曳事件
+function MapController({
+  center,
+  onCenterChange
+}: {
+  center: [number, number];
+  onCenterChange: (center: [number, number]) => void;
+}) {
   const map = useMap();
+  const isUserDragging = useRef(false);
+  const prevCenter = useRef<[number, number]>(center);
+
+  // 只有在 center 從外部真正改變時（例如點擊「回到目前位置」按鈕）才飛過去
+  useEffect(() => {
+    const [prevLat, prevLng] = prevCenter.current;
+    const [newLat, newLng] = center;
+
+    // 如果是用戶拖曳導致的更新，不要重新設定視角
+    if (isUserDragging.current) {
+      isUserDragging.current = false;
+      prevCenter.current = center;
+      return;
+    }
+
+    // 如果 center 有明顯變化（超過 0.0001 度），才飛過去
+    if (Math.abs(prevLat - newLat) > 0.0001 || Math.abs(prevLng - newLng) > 0.0001) {
+      map.flyTo(center, 14, { duration: 0.5 });
+    }
+
+    prevCenter.current = center;
+  }, [center, map]);
 
   useEffect(() => {
-    map.setView(center, 14); // zoom 14 更適合 2 公里範圍
-  }, []);
+    const handleMoveEnd = () => {
+      const newCenter = map.getCenter();
+      isUserDragging.current = true;
+      onCenterChange([newCenter.lat, newCenter.lng]);
+    };
+
+    map.on('moveend', handleMoveEnd);
+    return () => {
+      map.off('moveend', handleMoveEnd);
+    };
+  }, [map, onCenterChange]);
 
   return null;
 }
 
-export default function MapComponent({ trips, selectedTrip, onTripSelect }: MapComponentProps) {
+export default function MapComponent({
+  trips,
+  selectedTrip,
+  onTripSelect,
+  searchCenter,
+  onCenterChange
+}: MapComponentProps) {
   const [mapReady, setMapReady] = useState(false);
-  const [userLocation, setUserLocation] = useState<[number, number]>([25.033, 121.5654]); // 預設台北
 
   useEffect(() => {
-    // 延遲渲染地圖
     const timer = setTimeout(() => {
       setMapReady(true);
     }, 100);
-
-    // 取得用戶位置
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation([position.coords.latitude, position.coords.longitude]);
-        },
-        () => {
-          // 使用預設位置
-        },
-        { timeout: 5000 }
-      );
-    }
-
     return () => clearTimeout(timer);
   }, []);
 
@@ -173,8 +202,8 @@ export default function MapComponent({ trips, selectedTrip, onTripSelect }: MapC
 
   return (
     <MapContainer
-      center={userLocation}
-      zoom={12}
+      center={searchCenter}
+      zoom={14}
       style={{ width: '100%', height: '100%' }}
       zoomControl={false}
     >
@@ -184,11 +213,11 @@ export default function MapComponent({ trips, selectedTrip, onTripSelect }: MapC
         url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
       />
 
-      <MapController center={userLocation} />
+      <MapController center={searchCenter} onCenterChange={onCenterChange} />
 
       {/* 搜尋範圍圓圈 - 2公里 */}
       <Circle
-        center={userLocation}
+        center={searchCenter}
         radius={2000}
         pathOptions={{
           color: '#94A3B8',
@@ -199,17 +228,17 @@ export default function MapComponent({ trips, selectedTrip, onTripSelect }: MapC
         }}
       />
 
-      {/* 用戶位置 */}
-      <Marker position={userLocation} icon={userIcon}>
-        <Popup>你的位置</Popup>
+      {/* 搜尋中心標記 */}
+      <Marker position={searchCenter} icon={userIcon}>
+        <Popup>搜尋中心</Popup>
       </Marker>
 
       {/* 揪團標記 - 只顯示 2 公里內的 */}
       {trips
         .filter((trip) => {
           const distance = getDistanceFromLatLonInKm(
-            userLocation[0],
-            userLocation[1],
+            searchCenter[0],
+            searchCenter[1],
             trip.latitude,
             trip.longitude
           );
