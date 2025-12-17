@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import BottomNav from '@/components/BottomNav';
 
 const recommendations = [
   {
@@ -201,44 +202,7 @@ export default function HomePage() {
         </div>
 
         {/* 底部導覽 - 手機版 */}
-        <nav className="flex-shrink-0 mx-4 sm:mx-6 mb-4 bg-white/80 backdrop-blur-xl rounded-full px-2 py-2 flex justify-around shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-white/60">
-            <Link
-              href="/"
-              className="flex-1 flex justify-center py-2 text-[#94A3B8]"
-              onClick={() => setShowPersonalMenu(false)}
-            >
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-            </svg>
-          </Link>
-          <Link
-            href="/explore"
-            className="flex-1 flex justify-center py-2 text-[#B0B0B0] hover:text-[#8C8C8C] transition"
-            onClick={() => setShowPersonalMenu(false)}
-          >
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 10.9c-.61 0-1.1.49-1.1 1.1s.49 1.1 1.1 1.1c.61 0 1.1-.49 1.1-1.1s-.49-1.1-1.1-1.1zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm2.19 12.19L6 18l3.81-8.19L18 6l-3.81 8.19z" />
-            </svg>
-          </Link>
-          <Link
-            href="/wishlist"
-            className="flex-1 flex justify-center py-2 text-[#B0B0B0] hover:text-[#8C8C8C] transition"
-            onClick={() => setShowPersonalMenu(false)}
-          >
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-            </svg>
-          </Link>
-          <button
-            type="button"
-            className="flex-1 flex justify-center py-2 text-[#B0B0B0] hover:text-[#8C8C8C] transition"
-            onClick={() => setShowPersonalMenu((prev) => !prev)}
-          >
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-            </svg>
-          </button>
-        </nav>
+        <BottomNav onPersonClick={() => setShowPersonalMenu((prev) => !prev)} />
 
         {/* 個人功能選單 */}
         {showPersonalMenu && (
@@ -304,12 +268,12 @@ export default function HomePage() {
             <nav className="flex items-center gap-8 ml-12">
               <Link href="/" className="text-[#94A3B8] font-medium border-b-2 border-[#94A3B8] pb-1">首頁</Link>
               <Link href="/explore" className="text-[#949494] hover:text-[#5C5C5C] transition">探索</Link>
-              <Link href="/destinations" className="text-[#949494] hover:text-[#5C5C5C] transition">目的地</Link>
-              <Link href="/articles" className="text-[#949494] hover:text-[#5C5C5C] transition">旅遊靈感</Link>
+              <Link href="/orders" className="text-[#949494] hover:text-[#5C5C5C] transition">訂單</Link>
+              <Link href="/wishlist" className="text-[#949494] hover:text-[#5C5C5C] transition">收藏</Link>
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 px-4 py-2 bg-white/60 rounded-full border border-white/40">
+            <Link href="/my" className="flex items-center gap-3 px-4 py-2 bg-white/60 rounded-full border border-white/40 hover:bg-white/80 transition">
               <div className="w-8 h-8 rounded-full bg-[#D6CDC8] text-white font-bold text-sm flex items-center justify-center">
                 {userName.charAt(0)}
               </div>
@@ -317,7 +281,7 @@ export default function HomePage() {
                 <p className="text-[9px] uppercase tracking-wider text-[#949494]">{dateString}</p>
                 <p className="text-sm font-medium text-[#5C5C5C]">{greetingText}，{userName}</p>
               </div>
-            </div>
+            </Link>
             <Link href="/login" className="bg-[#94A3B8] hover:bg-[#8291A6] text-white text-sm py-2.5 px-6 rounded-full transition font-medium">
               登入 / 註冊
             </Link>

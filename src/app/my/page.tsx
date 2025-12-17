@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import BottomNav from '@/components/BottomNav';
 
 const achievements = [
-  { icon: 'hiking', label: '百岳挑戰', color: 'bg-morandi-green', rotate: 'rotate-3' },
-  { icon: 'photo_camera', label: '攝影師', color: 'bg-morandi-blue', rotate: '-rotate-2' },
-  { icon: 'restaurant', label: '美食家', color: 'bg-morandi-pink', rotate: 'rotate-6' },
-  { icon: 'flight_takeoff', label: '飛行常客', color: 'bg-morandi-yellow', rotate: '-rotate-3' },
+  { icon: 'hiking', label: '百岳挑戰', color: 'bg-[#A8BCA1]', rotate: 'rotate-3' },
+  { icon: 'photo_camera', label: '攝影師', color: 'bg-[#94A3B8]', rotate: '-rotate-2' },
+  { icon: 'restaurant', label: '美食家', color: 'bg-[#C5B6AF]', rotate: 'rotate-6' },
+  { icon: 'flight_takeoff', label: '飛行常客', color: 'bg-[#D4C4A8]', rotate: '-rotate-3' },
 ];
 
 const quickActions = [
@@ -16,15 +16,17 @@ const quickActions = [
     title: '進行中訂單',
     subtitle: '2 個即將出發',
     icon: 'confirmation_number',
-    color: 'text-morandi-blue',
-    accent: 'bg-morandi-blue/10',
+    color: 'text-[#94A3B8]',
+    accent: 'bg-[#94A3B8]/10',
+    href: '/orders',
   },
   {
     title: '歷史訂單',
     subtitle: '查看過往回憶',
     icon: 'history_edu',
-    color: 'text-gray-400',
-    accent: 'bg-morandi-gray/10',
+    color: 'text-[#949494]',
+    accent: 'bg-[#E8E2DD]',
+    href: '/orders',
   },
 ];
 
@@ -35,260 +37,508 @@ const friends = [
   'https://lh3.googleusercontent.com/aida-public/AB6AXuD5_eWkWytRxj_z3ImVOFNOGbw-3gTjLrh0gJUyGKU2a4p-6Qw9h1Xya8DMPdQmIxwaNeXwgbjRF0271JMx8c8VVhLbPt1sXs9O2X6Z0wm3EdnU3D19GIYooQrZr1uqMCA1l0i9tM-EbMy30MIkmPHUSGd_2FWG8X10WUtwAeJ581lKAdLchWnRl1aMuDSwCXQbIe8kYx0vIGYxhlLHY-8_d-wmc_Rpacqcuy3JoV4hOo0GtBeZ1mZT-_1i3OFfeWdrxu3Gxsbnwvjk',
 ];
 
-export default function ProfilePage() {
-  useEffect(() => {
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, []);
-
+// 桌面版導覽組件
+function DesktopHeader() {
   return (
-    <div className="bg-[#F0EEE6] dark:bg-[#1a1a1a] font-sans antialiased text-gray-900 dark:text-white transition-colors duration-300 min-h-screen flex flex-col overflow-hidden">
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-[#EFEFE8] dark:bg-[#232323] texture-bg" />
-        <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-morandi-blue/20 dark:bg-morandi-blue/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-[20%] left-[-10%] w-80 h-80 bg-primary/20 dark:bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute top-[40%] right-[20%] w-64 h-64 bg-morandi-pink/15 dark:bg-morandi-pink/5 rounded-full blur-3xl" />
+    <header className="flex items-center justify-between py-4 px-6 lg:px-8 bg-white/40 backdrop-blur-2xl rounded-2xl border border-white/50 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.06)] mb-6">
+      <div className="flex items-center gap-6">
+        <Link href="/" className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-[#D6CDC8] text-white font-bold flex items-center justify-center">
+            V
+          </div>
+          <span className="text-xl font-bold text-[#5C5C5C]">VENTURO</span>
+        </Link>
+        <nav className="flex items-center gap-8 ml-12">
+          <Link href="/" className="text-[#949494] hover:text-[#5C5C5C] transition">首頁</Link>
+          <Link href="/explore" className="text-[#949494] hover:text-[#5C5C5C] transition">探索</Link>
+          <Link href="/orders" className="text-[#949494] hover:text-[#5C5C5C] transition">訂單</Link>
+          <Link href="/wishlist" className="text-[#949494] hover:text-[#5C5C5C] transition">收藏</Link>
+        </nav>
       </div>
-
-      <header className="relative z-10 px-6 pt-12 pb-2 flex items-center justify-between">
-        <div className="flex flex-col">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 tracking-tight">數位旅人</h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wider uppercase">Traveler&apos;s Notebook</p>
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 px-4 py-2 bg-[#94A3B8]/10 rounded-full border border-[#94A3B8]/20">
+          <div className="w-8 h-8 rounded-full bg-[#D6CDC8] text-white font-bold text-sm flex items-center justify-center">
+            A
+          </div>
+          <span className="text-sm font-medium text-[#5C5C5C]">Alex Chen</span>
         </div>
-        <button className="glass dark:glass-dark p-2.5 rounded-full shadow-sm text-gray-600 dark:text-gray-300 hover:text-primary transition-colors" aria-label="設定">
+        <button className="p-2.5 rounded-full bg-white/60 border border-white/40 text-[#949494] hover:text-[#94A3B8] transition">
           <span className="material-icons-outlined text-xl">settings</span>
         </button>
-      </header>
+      </div>
+    </header>
+  );
+}
 
-      <main className="relative z-10 flex-1 w-full h-full overflow-y-auto hide-scrollbar pb-32">
-        <div className="px-6 pt-4 pb-6 flex items-center gap-5">
-          <div className="relative">
-            <div className="w-20 h-20 rounded-full p-1 border-2 border-primary/30 dark:border-primary/20">
-              <div className="relative w-full h-full rounded-full overflow-hidden shadow-sm">
-                <Image
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5_eWkWytRxj_z3ImVOFNOGbw-3gTjLrh0gJUyGKU2a4p-6Qw9h1Xya8DMPdQmIxwaNeXwgbjRF0271JMx8c8VVhLbPt1sXs9O2X6Z0wm3EdnU3D19GIYooQrZr1uqMCA1l0i9tM-EbMy30MIkmPHUSGd_2FWG8X10WUtwAeJ581lKAdLchWnRl1aMuDSwCXQbIe8kYx0vIGYxhlLHY-8_d-wmc_Rpacqcuy3JoV4hOo0GtBeZ1mZT-_1i3OFfeWdrxu3Gxsbnwvjk"
-                  alt="Profile"
-                  fill
-                  sizes="80px"
-                  className="object-cover"
-                />
-              </div>
-            </div>
-            <div className="absolute -bottom-1 -right-1 bg-morandi-blue text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm border border-white dark:border-card-dark">
-              LV. 12
-            </div>
-          </div>
-          <div className="flex-1">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-1">Alex Chen</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">
-              尋找世界角落的風景，用鏡頭記錄每一個感動瞬間 📸
-            </p>
-            <div className="flex gap-4 mt-3">
-              <div className="flex flex-col">
-                <span className="text-xs text-gray-400 uppercase font-medium">足跡</span>
-                <span className="text-sm font-bold text-gray-700 dark:text-gray-200">12 國</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs text-gray-400 uppercase font-medium">旅程</span>
-                <span className="text-sm font-bold text-gray-700 dark:text-gray-200">45 次</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs text-gray-400 uppercase font-medium">收藏</span>
-                <span className="text-sm font-bold text-gray-700 dark:text-gray-200">128</span>
-              </div>
-            </div>
-          </div>
-        </div>
+export default function ProfilePage() {
 
-        <section className="px-5 mb-6">
-          <div className="bg-[#DFD7CD]/40 dark:bg-white/5 rounded-3xl p-5 border border-white/40 dark:border-white/5 relative overflow-hidden">
-            <div
-              className="absolute inset-0 opacity-10 pointer-events-none"
-              style={{
-                backgroundImage:
-                  "url('data:image/svg+xml,%3Csvg width=\\'6\\' height=\\'6\\' viewBox=\\'0 0 6 6\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'#000000\\' fill-opacity=\\'1\\' fill-rule=\\'evenodd\\'%3E%3Cpath d=\\'M5 0h1L0 6V5zM6 5v1H5z\\'/%3E%3C/g%3E%3C/svg%3E')",
-              }}
-            />
-            <div className="flex justify-between items-center mb-4 relative z-10">
-              <h3 className="font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-                <span className="material-icons-round text-primary text-lg">military_tech</span>
-                成就勳章
-              </h3>
-              <button className="text-xs text-primary font-medium flex items-center hover:text-primary-dark">
-                查看全部 <span className="material-icons-round text-sm">chevron_right</span>
-              </button>
-            </div>
-            <div className="grid grid-cols-4 gap-3 relative z-10">
-              {achievements.map((item) => (
-                <div key={item.label} className="flex flex-col items-center gap-1 group cursor-pointer">
-                  <div
-                    className={`w-14 h-14 rounded-full ${item.color} shadow-patch flex items-center justify-center transform group-hover:scale-105 transition-transform border-2 border-dashed border-white/30 ${item.rotate}`}
-                  >
-                    <span className="material-icons-round text-white text-2xl drop-shadow-md">{item.icon}</span>
-                  </div>
-                  <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">{item.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+  return (
+    <div className="bg-[#F5F4F0] font-sans antialiased text-[#5C5C5C] transition-colors duration-300 min-h-screen flex flex-col overflow-hidden">
+      {/* 背景光暈 - 統一首頁風格 */}
+      <div className="fixed inset-0 -z-10 pointer-events-none">
+        <div className="absolute -top-[5%] -left-[15%] w-[500px] h-[500px] bg-[#D8D0C9] opacity-40 blur-[90px] rounded-full" />
+        <div className="absolute -bottom-[10%] -right-[10%] w-[450px] h-[450px] bg-[#C8D6D3] opacity-40 blur-[90px] rounded-full" />
+        <div className="absolute top-[40%] left-[20%] w-[300px] h-[300px] bg-[#E6DFDA] opacity-30 blur-[70px] rounded-full" />
+        <div className="hidden lg:block absolute top-[20%] right-[15%] w-[400px] h-[400px] bg-[#D4C4B5] opacity-25 blur-[100px] rounded-full" />
+      </div>
 
-        <div className="px-5 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            {quickActions.map((action) => (
-              <button
-                key={action.title}
-                className="glass-card dark:glass-dark p-4 rounded-2xl shadow-sm text-left hover:bg-white/60 dark:hover:bg-card-dark/60 transition-colors group relative overflow-hidden"
-              >
-                <div className={`absolute top-0 right-0 w-16 h-16 ${action.accent} rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110`} />
-                <span className={`material-symbols-outlined ${action.color} text-3xl mb-2 group-hover:rotate-12 transition-transform duration-300`}>
-                  {action.icon}
-                </span>
-                <div className="font-bold text-gray-800 dark:text-gray-100 text-sm">{action.title}</div>
-                <div className="text-[10px] text-gray-500 mt-1">{action.subtitle}</div>
-              </button>
-            ))}
-          </div>
+      {/* ========== 電腦版佈局 ========== */}
+      <div className="hidden lg:flex flex-col min-h-screen px-6 lg:px-8 py-6 relative z-10">
+        <DesktopHeader />
 
-          <div className="glass-card dark:glass-dark rounded-2xl shadow-sm p-5 relative overflow-hidden transition-all duration-300">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 flex items-center gap-1">旅費管家</h3>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-bold text-gray-800 dark:text-white">$12,450</span>
-                  <span className="text-xs text-gray-500 font-medium">/ $20,000 TWD</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col items-center">
-                  <button
-                    className="group flex items-center justify-center w-10 h-10 rounded-full bg-morandi-green/10 text-morandi-green hover:bg-morandi-green hover:text-white transition-all duration-300 shadow-sm"
-                    title="多人分帳"
-                  >
-                    <span className="material-icons-round text-xl">call_split</span>
-                  </button>
-                  <span className="text-[9px] text-morandi-green font-medium mt-1">分帳</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <button className="w-10 h-10 rounded-full bg-primary text-white shadow-lg shadow-primary/30 flex items-center justify-center hover:scale-110 transition-transform" title="新增消費">
-                    <span className="material-icons-round text-xl">add</span>
-                  </button>
-                  <span className="text-[9px] text-primary font-medium mt-1">記帳</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-2 mb-4">
-              <div className="flex justify-between text-[10px] text-gray-500 mb-1.5">
-                <span>京都自由行</span>
-                <span>62%</span>
-              </div>
-              <div className="h-2 w-full bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full w-[62%]" />
-              </div>
-            </div>
-
-            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-white/5">
-              <div className="flex justify-between items-center mb-3">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 bg-morandi-green rounded-full" />
-                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300">快速分帳群組</span>
-                </div>
-                <button className="text-[10px] text-primary font-medium flex items-center hover:underline">
-                  選擇好友 <span className="material-icons-round text-[10px]">arrow_forward_ios</span>
-                </button>
-              </div>
-
-              <div className="bg-white/40 dark:bg-black/20 rounded-xl p-2.5 flex items-center justify-between border border-white/30 dark:border-white/5">
-                <div className="flex items-center gap-3">
-                  <div className="flex -space-x-3">
-                    {friends.slice(0, 2).map((friend) => (
+        <div className="flex-1 grid grid-cols-12 gap-6 lg:gap-8 min-h-0 overflow-hidden">
+          {/* 左側 - 個人資料 */}
+          <div className="col-span-5 lg:col-span-4 flex flex-col gap-6 overflow-y-auto pr-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#D8D0C9] [&::-webkit-scrollbar-thumb]:rounded-full">
+            {/* 個人資料卡片 */}
+            <div className="bg-white/60 backdrop-blur-xl rounded-3xl border border-white/50 p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)]">
+              <div className="flex flex-col items-center text-center">
+                <div className="relative mb-4">
+                  <div className="w-24 h-24 rounded-full p-1 border-2 border-[#94A3B8]/30">
+                    <div className="relative w-full h-full rounded-full overflow-hidden shadow-sm">
                       <Image
-                        key={friend}
-                        src={friend}
-                        alt="Friend"
-                        width={32}
-                        height={32}
-                        className="w-8 h-8 rounded-full border-2 border-white dark:border-card-dark object-cover"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5_eWkWytRxj_z3ImVOFNOGbw-3gTjLrh0gJUyGKU2a4p-6Qw9h1Xya8DMPdQmIxwaNeXwgbjRF0271JMx8c8VVhLbPt1sXs9O2X6Z0wm3EdnU3D19GIYooQrZr1uqMCA1l0i9tM-EbMy30MIkmPHUSGd_2FWG8X10WUtwAeJ581lKAdLchWnRl1aMuDSwCXQbIe8kYx0vIGYxhlLHY-8_d-wmc_Rpacqcuy3JoV4hOo0GtBeZ1mZT-_1i3OFfeWdrxu3Gxsbnwvjk"
+                        alt="Profile"
+                        fill
+                        sizes="96px"
+                        className="object-cover"
                       />
-                    ))}
-                    <div className="w-8 h-8 rounded-full border-2 border-white dark:border-card-dark bg-morandi-gray text-white flex items-center justify-center text-[9px] font-bold shadow-sm">
-                      +3
                     </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-[9px] font-medium text-gray-400">當前分配</span>
-                    <span className="text-xs font-bold text-gray-800 dark:text-gray-200">5 人均分</span>
+                  <div className="absolute -bottom-1 -right-1 bg-[#94A3B8] text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm border-2 border-white">
+                    LV. 12
                   </div>
                 </div>
-                <button className="w-8 h-8 rounded-full bg-morandi-green/20 text-morandi-green hover:bg-morandi-green hover:text-white flex items-center justify-center transition-colors" aria-label="確認分帳群組">
-                  <span className="material-icons-round text-base">check</span>
+                <h2 className="text-2xl font-bold text-[#5C5C5C] mb-2">Alex Chen</h2>
+                <p className="text-sm text-[#949494] leading-relaxed mb-4">
+                  尋找世界角落的風景，用鏡頭記錄每一個感動瞬間
+                </p>
+                <div className="flex justify-center gap-8">
+                  <div className="flex flex-col items-center">
+                    <span className="text-2xl font-bold text-[#5C5C5C]">12</span>
+                    <span className="text-xs text-[#949494] uppercase">國家</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-2xl font-bold text-[#5C5C5C]">45</span>
+                    <span className="text-xs text-[#949494] uppercase">旅程</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-2xl font-bold text-[#5C5C5C]">128</span>
+                    <span className="text-xs text-[#949494] uppercase">收藏</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 成就勳章 */}
+            <div className="bg-[#E8E2DD]/60 rounded-3xl p-5 border border-white/40 relative overflow-hidden">
+              <div
+                className="absolute inset-0 opacity-10 pointer-events-none"
+                style={{
+                  backgroundImage:
+                    "url('data:image/svg+xml,%3Csvg width=\\'6\\' height=\\'6\\' viewBox=\\'0 0 6 6\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'%23000000\\' fill-opacity=\\'1\\' fill-rule=\\'evenodd\\'%3E%3Cpath d=\\'M5 0h1L0 6V5zM6 5v1H5z\\'/%3E%3C/g%3E%3C/svg%3E')",
+                }}
+              />
+              <div className="flex justify-between items-center mb-4 relative z-10">
+                <h3 className="font-bold text-[#5C5C5C] flex items-center gap-2">
+                  <span className="material-icons-round text-[#94A3B8] text-lg">military_tech</span>
+                  成就勳章
+                </h3>
+                <button className="text-xs text-[#94A3B8] font-medium flex items-center hover:underline">
+                  查看全部 <span className="material-icons-round text-sm">chevron_right</span>
                 </button>
               </div>
+              <div className="grid grid-cols-4 gap-3 relative z-10">
+                {achievements.map((item) => (
+                  <div key={item.label} className="flex flex-col items-center gap-1 group cursor-pointer">
+                    <div
+                      className={`w-14 h-14 rounded-full ${item.color} shadow-lg flex items-center justify-center transform group-hover:scale-105 transition-transform border-2 border-dashed border-white/30 ${item.rotate}`}
+                    >
+                      <span className="material-icons-round text-white text-2xl drop-shadow-md">{item.icon}</span>
+                    </div>
+                    <span className="text-[10px] font-medium text-[#5C5C5C]">{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 我的旅伴 */}
+            <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-bold text-[#5C5C5C] text-sm flex items-center gap-1.5">
+                  <span className="material-icons-round text-[#C5B6AF] text-base">favorite</span>
+                  我的旅伴
+                </h3>
+                <span className="text-xs text-[#949494]">24 位好友</span>
+              </div>
+              <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar pb-1">
+                <button className="shrink-0 w-12 h-12 rounded-full border border-dashed border-[#D8D0C9] flex items-center justify-center text-[#949494] hover:border-[#94A3B8] hover:text-[#94A3B8] transition-colors" aria-label="新增好友">
+                  <span className="material-icons-round">person_add</span>
+                </button>
+                {friends.map((friend, index) => (
+                  <div key={`${friend}-${index}`} className="shrink-0 relative">
+                    <Image
+                      src={friend}
+                      alt="Friend"
+                      width={48}
+                      height={48}
+                      className={`w-12 h-12 rounded-full object-cover ring-2 ring-white ${index === friends.length - 1 ? 'grayscale opacity-70' : ''}`}
+                    />
+                    {index === 0 && (
+                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#A8BCA1] border-2 border-white rounded-full" />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="glass-card dark:glass-dark rounded-2xl shadow-sm p-4">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm flex items-center gap-1.5">
-                <span className="material-icons-round text-morandi-pink text-base">favorite</span>
-                我的旅伴
-              </h3>
-              <span className="text-xs text-gray-400">24 位好友</span>
-            </div>
-            <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar pb-1">
-              <button className="shrink-0 w-12 h-12 rounded-full border border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-400 hover:border-primary hover:text-primary transition-colors" aria-label="新增好友">
-                <span className="material-icons-round">person_add</span>
-              </button>
-              {friends.map((friend, index) => (
-                <div key={`${friend}-${index}`} className="shrink-0 relative">
-                  <Image
-                    src={friend}
-                    alt="Friend"
-                    width={48}
-                    height={48}
-                    className={`w-12 h-12 rounded-full object-cover ring-2 ring-white dark:ring-card-dark ${index === friends.length - 1 ? 'grayscale opacity-70' : ''}`}
-                  />
-                  {index === 0 && (
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-card-dark rounded-full" />
-                  )}
-                </div>
+          {/* 右側 - 功能區 */}
+          <div className="col-span-7 lg:col-span-8 flex flex-col gap-6 overflow-y-auto pr-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#D8D0C9] [&::-webkit-scrollbar-thumb]:rounded-full">
+            {/* 快速操作 */}
+            <div className="grid grid-cols-2 gap-4">
+              {quickActions.map((action) => (
+                <Link
+                  key={action.title}
+                  href={action.href}
+                  className="bg-white/60 backdrop-blur-xl border border-white/50 p-6 rounded-2xl shadow-sm text-left hover:bg-white/80 transition-colors group relative overflow-hidden"
+                >
+                  <div className={`absolute top-0 right-0 w-20 h-20 ${action.accent} rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110`} />
+                  <span className={`material-symbols-outlined ${action.color} text-4xl mb-3 group-hover:rotate-12 transition-transform duration-300`}>
+                    {action.icon}
+                  </span>
+                  <div className="font-bold text-[#5C5C5C] text-lg">{action.title}</div>
+                  <div className="text-sm text-[#949494] mt-1">{action.subtitle}</div>
+                </Link>
               ))}
             </div>
+
+            {/* 旅費管家 */}
+            <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm p-6 relative overflow-hidden transition-all duration-300">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-sm font-bold text-[#949494] uppercase tracking-wider mb-2 flex items-center gap-1">旅費管家</h3>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-[#5C5C5C]">$12,450</span>
+                    <span className="text-sm text-[#949494] font-medium">/ $20,000 TWD</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex flex-col items-center">
+                    <button
+                      className="group flex items-center justify-center w-12 h-12 rounded-full bg-[#A8BCA1]/10 text-[#A8BCA1] hover:bg-[#A8BCA1] hover:text-white transition-all duration-300 shadow-sm"
+                      title="多人分帳"
+                    >
+                      <span className="material-icons-round text-2xl">call_split</span>
+                    </button>
+                    <span className="text-xs text-[#A8BCA1] font-medium mt-1">分帳</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <button className="w-12 h-12 rounded-full bg-[#94A3B8] text-white shadow-lg shadow-[#94A3B8]/30 flex items-center justify-center hover:scale-110 transition-transform" title="新增消費">
+                      <span className="material-icons-round text-2xl">add</span>
+                    </button>
+                    <span className="text-xs text-[#94A3B8] font-medium mt-1">記帳</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 mb-4">
+                <div className="flex justify-between text-sm text-[#949494] mb-2">
+                  <span>京都自由行</span>
+                  <span>62%</span>
+                </div>
+                <div className="h-3 w-full bg-[#E8E2DD] rounded-full overflow-hidden">
+                  <div className="h-full bg-[#94A3B8] rounded-full w-[62%]" />
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-[#E8E2DD]">
+                <div className="flex justify-between items-center mb-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-[#A8BCA1] rounded-full" />
+                    <span className="text-sm font-bold text-[#5C5C5C]">快速分帳群組</span>
+                  </div>
+                  <button className="text-sm text-[#94A3B8] font-medium flex items-center hover:underline">
+                    選擇好友 <span className="material-icons-round text-sm">arrow_forward_ios</span>
+                  </button>
+                </div>
+
+                <div className="bg-white/40 rounded-xl p-3 flex items-center justify-between border border-white/30">
+                  <div className="flex items-center gap-4">
+                    <div className="flex -space-x-3">
+                      {friends.slice(0, 3).map((friend, i) => (
+                        <Image
+                          key={`desktop-friend-${i}`}
+                          src={friend}
+                          alt="Friend"
+                          width={40}
+                          height={40}
+                          className="w-10 h-10 rounded-full border-2 border-white object-cover"
+                        />
+                      ))}
+                      <div className="w-10 h-10 rounded-full border-2 border-white bg-[#D8D0C9] text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                        +2
+                      </div>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-medium text-[#949494]">當前分配</span>
+                      <span className="text-sm font-bold text-[#5C5C5C]">5 人均分</span>
+                    </div>
+                  </div>
+                  <button className="w-10 h-10 rounded-full bg-[#A8BCA1]/20 text-[#A8BCA1] hover:bg-[#A8BCA1] hover:text-white flex items-center justify-center transition-colors" aria-label="確認分帳群組">
+                    <span className="material-icons-round text-lg">check</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 應用程式設定 */}
+            <button className="w-full bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm p-5 flex items-center justify-between group">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-[#E8E2DD] flex items-center justify-center text-[#949494] group-hover:bg-[#94A3B8] group-hover:text-white transition-colors">
+                  <span className="material-icons-round text-2xl">tune</span>
+                </div>
+                <span className="font-bold text-[#5C5C5C]">應用程式設定</span>
+              </div>
+              <span className="material-icons-round text-[#949494] text-2xl">chevron_right</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ========== 手機版佈局 ========== */}
+      <div className="lg:hidden relative z-10 flex flex-col flex-1">
+        <header className="px-6 pt-12 pb-2 flex items-center justify-between">
+          <div className="flex flex-col">
+            <h1 className="text-2xl font-bold text-[#5C5C5C] tracking-tight">數位旅人</h1>
+            <p className="text-xs text-[#949494] font-medium tracking-wider uppercase">Traveler&apos;s Notebook</p>
+          </div>
+          <button className="w-10 h-10 flex items-center justify-center rounded-full bg-white/60 backdrop-blur-xl border border-white/50 shadow-sm text-[#5C5C5C] hover:text-[#94A3B8] transition-colors" aria-label="設定">
+            <span className="material-icons-outlined text-xl">settings</span>
+          </button>
+        </header>
+
+        <main className="flex-1 w-full h-full overflow-y-auto hide-scrollbar pb-32">
+          <div className="px-6 pt-4 pb-6 flex items-center gap-5">
+            <div className="relative">
+              <div className="w-20 h-20 rounded-full p-1 border-2 border-[#94A3B8]/30">
+                <div className="relative w-full h-full rounded-full overflow-hidden shadow-sm">
+                  <Image
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5_eWkWytRxj_z3ImVOFNOGbw-3gTjLrh0gJUyGKU2a4p-6Qw9h1Xya8DMPdQmIxwaNeXwgbjRF0271JMx8c8VVhLbPt1sXs9O2X6Z0wm3EdnU3D19GIYooQrZr1uqMCA1l0i9tM-EbMy30MIkmPHUSGd_2FWG8X10WUtwAeJ581lKAdLchWnRl1aMuDSwCXQbIe8kYx0vIGYxhlLHY-8_d-wmc_Rpacqcuy3JoV4hOo0GtBeZ1mZT-_1i3OFfeWdrxu3Gxsbnwvjk"
+                    alt="Profile"
+                    fill
+                    sizes="80px"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+              <div className="absolute -bottom-1 -right-1 bg-[#94A3B8] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm border border-white">
+                LV. 12
+              </div>
+            </div>
+            <div className="flex-1">
+              <h2 className="text-xl font-bold text-[#5C5C5C] mb-1">Alex Chen</h2>
+              <p className="text-sm text-[#949494] leading-relaxed line-clamp-2">
+                尋找世界角落的風景，用鏡頭記錄每一個感動瞬間
+              </p>
+              <div className="flex gap-4 mt-3">
+                <div className="flex flex-col">
+                  <span className="text-xs text-[#949494] uppercase font-medium">足跡</span>
+                  <span className="text-sm font-bold text-[#5C5C5C]">12 國</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs text-[#949494] uppercase font-medium">旅程</span>
+                  <span className="text-sm font-bold text-[#5C5C5C]">45 次</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs text-[#949494] uppercase font-medium">收藏</span>
+                  <span className="text-sm font-bold text-[#5C5C5C]">128</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <button className="w-full glass-card dark:glass-dark rounded-2xl shadow-sm p-4 flex items-center justify-between group">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-white/10 flex items-center justify-center text-gray-500 dark:text-gray-300 group-hover:bg-primary group-hover:text-white transition-colors">
-                <span className="material-icons-round">tune</span>
+          <section className="px-5 mb-6">
+            <div className="bg-[#E8E2DD]/60 rounded-3xl p-5 border border-white/40 relative overflow-hidden">
+              <div
+                className="absolute inset-0 opacity-10 pointer-events-none"
+                style={{
+                  backgroundImage:
+                    "url('data:image/svg+xml,%3Csvg width=\\'6\\' height=\\'6\\' viewBox=\\'0 0 6 6\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'%23000000\\' fill-opacity=\\'1\\' fill-rule=\\'evenodd\\'%3E%3Cpath d=\\'M5 0h1L0 6V5zM6 5v1H5z\\'/%3E%3C/g%3E%3C/svg%3E')",
+                }}
+              />
+              <div className="flex justify-between items-center mb-4 relative z-10">
+                <h3 className="font-bold text-[#5C5C5C] flex items-center gap-2">
+                  <span className="material-icons-round text-[#94A3B8] text-lg">military_tech</span>
+                  成就勳章
+                </h3>
+                <button className="text-xs text-[#94A3B8] font-medium flex items-center hover:underline">
+                  查看全部 <span className="material-icons-round text-sm">chevron_right</span>
+                </button>
               </div>
-              <span className="font-bold text-gray-800 dark:text-gray-100 text-sm">應用程式設定</span>
+              <div className="grid grid-cols-4 gap-3 relative z-10">
+                {achievements.map((item) => (
+                  <div key={item.label} className="flex flex-col items-center gap-1 group cursor-pointer">
+                    <div
+                      className={`w-14 h-14 rounded-full ${item.color} shadow-lg flex items-center justify-center transform group-hover:scale-105 transition-transform border-2 border-dashed border-white/30 ${item.rotate}`}
+                    >
+                      <span className="material-icons-round text-white text-2xl drop-shadow-md">{item.icon}</span>
+                    </div>
+                    <span className="text-[10px] font-medium text-[#5C5C5C]">{item.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <span className="material-icons-round text-gray-400 text-xl">chevron_right</span>
-          </button>
-        </div>
-      </main>
+          </section>
 
-      <nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="glass dark:glass-dark rounded-full px-7 py-3.5 flex items-center gap-9 shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-white/20">
-          <Link href="/" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors" aria-label="首頁">
-            <span className="material-icons-round text-2xl">home</span>
-          </Link>
-          <Link href="/explore" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors" aria-label="探索">
-            <span className="material-icons-round text-2xl">explore</span>
-          </Link>
-          <Link href="/wishlist" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors" aria-label="收藏">
-            <span className="material-icons-round text-2xl">favorite_border</span>
-          </Link>
-          <Link href="/my" className="text-primary relative transform scale-110" aria-label="我的">
-            <span className="material-icons-round text-2xl">person</span>
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-morandi-pink rounded-full border border-white dark:border-card-dark" />
-          </Link>
-        </div>
-      </nav>
+          <div className="px-5 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              {quickActions.map((action) => (
+                <Link
+                  key={action.title}
+                  href={action.href}
+                  className="bg-white/60 backdrop-blur-xl border border-white/50 p-4 rounded-2xl shadow-sm text-left hover:bg-white/80 transition-colors group relative overflow-hidden"
+                >
+                  <div className={`absolute top-0 right-0 w-16 h-16 ${action.accent} rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110`} />
+                  <span className={`material-symbols-outlined ${action.color} text-3xl mb-2 group-hover:rotate-12 transition-transform duration-300`}>
+                    {action.icon}
+                  </span>
+                  <div className="font-bold text-[#5C5C5C] text-sm">{action.title}</div>
+                  <div className="text-[10px] text-[#949494] mt-1">{action.subtitle}</div>
+                </Link>
+              ))}
+            </div>
+
+            <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm p-5 relative overflow-hidden transition-all duration-300">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-xs font-bold text-[#949494] uppercase tracking-wider mb-1 flex items-center gap-1">旅費管家</h3>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-bold text-[#5C5C5C]">$12,450</span>
+                    <span className="text-xs text-[#949494] font-medium">/ $20,000 TWD</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col items-center">
+                    <button
+                      className="group flex items-center justify-center w-10 h-10 rounded-full bg-[#A8BCA1]/10 text-[#A8BCA1] hover:bg-[#A8BCA1] hover:text-white transition-all duration-300 shadow-sm"
+                      title="多人分帳"
+                    >
+                      <span className="material-icons-round text-xl">call_split</span>
+                    </button>
+                    <span className="text-[9px] text-[#A8BCA1] font-medium mt-1">分帳</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <button className="w-10 h-10 rounded-full bg-[#94A3B8] text-white shadow-lg shadow-[#94A3B8]/30 flex items-center justify-center hover:scale-110 transition-transform" title="新增消費">
+                      <span className="material-icons-round text-xl">add</span>
+                    </button>
+                    <span className="text-[9px] text-[#94A3B8] font-medium mt-1">記帳</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-2 mb-4">
+                <div className="flex justify-between text-[10px] text-[#949494] mb-1.5">
+                  <span>京都自由行</span>
+                  <span>62%</span>
+                </div>
+                <div className="h-2 w-full bg-[#E8E2DD] rounded-full overflow-hidden">
+                  <div className="h-full bg-[#94A3B8] rounded-full w-[62%]" />
+                </div>
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-[#E8E2DD]">
+                <div className="flex justify-between items-center mb-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-[#A8BCA1] rounded-full" />
+                    <span className="text-xs font-bold text-[#5C5C5C]">快速分帳群組</span>
+                  </div>
+                  <button className="text-[10px] text-[#94A3B8] font-medium flex items-center hover:underline">
+                    選擇好友 <span className="material-icons-round text-[10px]">arrow_forward_ios</span>
+                  </button>
+                </div>
+
+                <div className="bg-white/40 rounded-xl p-2.5 flex items-center justify-between border border-white/30">
+                  <div className="flex items-center gap-3">
+                    <div className="flex -space-x-3">
+                      {friends.slice(0, 2).map((friend, i) => (
+                        <Image
+                          key={`mobile-friend-${i}`}
+                          src={friend}
+                          alt="Friend"
+                          width={32}
+                          height={32}
+                          className="w-8 h-8 rounded-full border-2 border-white object-cover"
+                        />
+                      ))}
+                      <div className="w-8 h-8 rounded-full border-2 border-white bg-[#D8D0C9] text-white flex items-center justify-center text-[9px] font-bold shadow-sm">
+                        +3
+                      </div>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-medium text-[#949494]">當前分配</span>
+                      <span className="text-xs font-bold text-[#5C5C5C]">5 人均分</span>
+                    </div>
+                  </div>
+                  <button className="w-8 h-8 rounded-full bg-[#A8BCA1]/20 text-[#A8BCA1] hover:bg-[#A8BCA1] hover:text-white flex items-center justify-center transition-colors" aria-label="確認分帳群組">
+                    <span className="material-icons-round text-base">check</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-bold text-[#5C5C5C] text-sm flex items-center gap-1.5">
+                  <span className="material-icons-round text-[#C5B6AF] text-base">favorite</span>
+                  我的旅伴
+                </h3>
+                <span className="text-xs text-[#949494]">24 位好友</span>
+              </div>
+              <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar pb-1">
+                <button className="shrink-0 w-12 h-12 rounded-full border border-dashed border-[#D8D0C9] flex items-center justify-center text-[#949494] hover:border-[#94A3B8] hover:text-[#94A3B8] transition-colors" aria-label="新增好友">
+                  <span className="material-icons-round">person_add</span>
+                </button>
+                {friends.map((friend, index) => (
+                  <div key={`mobile-friend-list-${index}`} className="shrink-0 relative">
+                    <Image
+                      src={friend}
+                      alt="Friend"
+                      width={48}
+                      height={48}
+                      className={`w-12 h-12 rounded-full object-cover ring-2 ring-white ${index === friends.length - 1 ? 'grayscale opacity-70' : ''}`}
+                    />
+                    {index === 0 && (
+                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#A8BCA1] border-2 border-white rounded-full" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button className="w-full bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm p-4 flex items-center justify-between group">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#E8E2DD] flex items-center justify-center text-[#949494] group-hover:bg-[#94A3B8] group-hover:text-white transition-colors">
+                  <span className="material-icons-round">tune</span>
+                </div>
+                <span className="font-bold text-[#5C5C5C] text-sm">應用程式設定</span>
+              </div>
+              <span className="material-icons-round text-[#949494] text-xl">chevron_right</span>
+            </button>
+          </div>
+        </main>
+
+        <BottomNav />
+      </div>
+
+      <style jsx>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </div>
   );
 }

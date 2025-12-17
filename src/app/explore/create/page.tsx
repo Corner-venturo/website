@@ -1,6 +1,35 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import Link from 'next/link';
+
+// 桌面版 Header 組件
+function DesktopHeader() {
+  return (
+    <header className="flex-shrink-0 flex items-center justify-between py-4 px-8 bg-white/80 backdrop-blur-2xl rounded-2xl border border-white/50 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.06)] mb-6">
+      <div className="flex items-center gap-6">
+        <Link href="/" className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-[#D6CDC8] text-white font-bold flex items-center justify-center">V</div>
+          <span className="text-xl font-bold text-[#5C5C5C]">VENTURO</span>
+        </Link>
+        <nav className="flex items-center gap-8 ml-12">
+          <Link href="/" className="text-[#949494] hover:text-[#5C5C5C] transition">首頁</Link>
+          <Link href="/explore" className="text-[#94A3B8] font-medium border-b-2 border-[#94A3B8] pb-1">探索</Link>
+          <Link href="/orders" className="text-[#949494] hover:text-[#5C5C5C] transition">訂單</Link>
+          <Link href="/wishlist" className="text-[#949494] hover:text-[#5C5C5C] transition">收藏</Link>
+        </nav>
+      </div>
+      <div className="flex items-center gap-4">
+        <Link href="/my" className="flex items-center gap-3 px-4 py-2 bg-white/60 rounded-full border border-white/40 hover:bg-white/80 transition">
+          <div className="w-8 h-8 rounded-full bg-[#D6CDC8] text-white font-bold text-sm flex items-center justify-center">
+            旅
+          </div>
+          <span className="text-sm font-medium text-[#5C5C5C]">我的</span>
+        </Link>
+      </div>
+    </header>
+  );
+}
 
 const palette = {
   primary: '#Cfb9a5',
@@ -35,7 +64,7 @@ function StepIndicator({ step, onChange }: { step: number; onChange: (value: num
   return (
     <div className="mx-4 mt-6 mb-2">
       <div className="flex items-center justify-between relative">
-        <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-0.5 bg-gray-200 dark:bg-gray-700 -z-10" />
+        <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-0.5 bg-gray-200 -z-10" />
         {steps.map((item) => {
           const isActive = item.id === step;
           const isComplete = item.id < step;
@@ -60,8 +89,8 @@ function StepIndicator({ step, onChange }: { step: number; onChange: (value: num
               } ${isComplete ? 'opacity-100' : ''}`}
             >
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-4 border-[#F0EEE6] dark:border-[#232323] shadow-lg ${isActive ? 'scale-110' : ''} ${
-                  isActive || isComplete ? '' : 'bg-white dark:bg-[var(--card-dark)] border-2 border-gray-200 dark:border-gray-600 text-gray-400'
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-4 border-[#F0EEE6] shadow-lg ${isActive ? 'scale-110' : ''} ${
+                  isActive || isComplete ? '' : 'bg-white border-2 border-gray-200 text-gray-400'
                 }`}
                 style={circleStyle}
               >
@@ -73,7 +102,7 @@ function StepIndicator({ step, onChange }: { step: number; onChange: (value: num
                     ? 'font-bold'
                     : isComplete
                       ? ''
-                      : 'text-gray-500 dark:text-gray-400'
+                      : 'text-gray-500'
                 }`}
                 style={{ color: isActive || isComplete ? palette.primary : undefined }}
               >
@@ -91,11 +120,11 @@ function BasicInfoStep() {
   return (
     <>
       <div className="mb-8">
-        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-200 mb-3 px-1">
+        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3 px-1">
           <span className="material-icons-round text-primary text-base">image</span>
           活動封面
         </label>
-        <div className="w-full h-52 rounded-2xl bg-white dark:bg-[rgba(30,30,30,0.5)] border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center text-gray-400 transition-colors cursor-pointer relative overflow-hidden group shadow-sm"
+        <div className="w-full h-52 rounded-2xl bg-white border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 transition-colors cursor-pointer relative overflow-hidden group shadow-sm"
           style={{ borderColor: 'rgba(207,185,165,0.5)' }}
           onMouseEnter={(e) => {
             (e.currentTarget as HTMLElement).style.borderColor = palette.primary;
@@ -114,22 +143,22 @@ function BasicInfoStep() {
 
       <div className="space-y-5">
         <div className="input-clean">
-          <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 ml-1">活動名稱</label>
+          <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">活動名稱</label>
           <input
             type="text"
             placeholder="例如：週五晚間爵士音樂會"
-            className="w-full rounded-2xl border-none bg-white dark:bg-[var(--card-dark)] py-3.5 px-4 text-sm shadow-sm placeholder-gray-300 dark:placeholder-gray-600 focus:ring-2 focus:ring-[rgba(207,185,165,0.5)] text-gray-800 dark:text-gray-100"
+            className="w-full rounded-2xl border-none bg-white py-3.5 px-4 text-sm shadow-sm placeholder-gray-300 focus:ring-2 focus:ring-[rgba(207,185,165,0.5)] text-gray-800"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 ml-1">活動類別</label>
+          <label className="block text-xs font-bold text-gray-500 mb-2 ml-1">活動類別</label>
           <div className="flex flex-wrap gap-2.5">
             {categories.map((category, index) => (
               <label key={category.id} className="cursor-pointer">
                 <input type="radio" name="category" defaultChecked={index === 0} className="peer sr-only" />
                 <div
-                  className="px-4 py-2 rounded-xl bg-white dark:bg-[var(--card-dark)] text-gray-500 dark:text-gray-400 text-xs font-medium border border-transparent shadow-sm transition-all flex items-center gap-1.5 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-primary-soft"
+                  className="px-4 py-2 rounded-xl bg-white text-gray-500 text-xs font-medium border border-transparent shadow-sm transition-all flex items-center gap-1.5 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-primary-soft"
                 >
                   <span className="material-icons-round text-sm">{category.icon}</span> {category.label}
                 </div>
@@ -139,11 +168,11 @@ function BasicInfoStep() {
         </div>
 
         <div className="input-clean">
-          <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 ml-1">活動描述</label>
+          <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">活動描述</label>
           <textarea
             rows={4}
             placeholder="請簡單介紹活動內容、行程安排與注意事項..."
-            className="w-full rounded-2xl border-none bg-white dark:bg-[var(--card-dark)] py-3.5 px-4 text-sm shadow-sm placeholder-gray-300 dark:placeholder-gray-600 focus:ring-2 focus:ring-[rgba(207,185,165,0.5)] text-gray-800 dark:text-gray-100 resize-none leading-relaxed"
+            className="w-full rounded-2xl border-none bg-white py-3.5 px-4 text-sm shadow-sm placeholder-gray-300 focus:ring-2 focus:ring-[rgba(207,185,165,0.5)] text-gray-800 resize-none leading-relaxed"
           />
         </div>
       </div>
@@ -155,23 +184,23 @@ function TimeLocationStep() {
   return (
     <>
       <div className="mb-8 animate-[fadeIn_0.5s_ease-out]">
-        <h2 className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-4 px-1 flex items-center gap-2">
+        <h2 className="text-sm font-bold text-gray-800 mb-4 px-1 flex items-center gap-2">
           <span className="material-icons-round text-morandi-blue">schedule</span>
           活動時間
         </h2>
-        <div className="bg-white dark:bg-[var(--card-dark)] rounded-3xl p-5 shadow-sm space-y-6 relative overflow-hidden">
-          <div className="absolute left-[29px] top-[45px] bottom-[45px] w-0.5 bg-gray-100 dark:bg-gray-700" />
+        <div className="bg-white rounded-3xl p-5 shadow-sm space-y-6 relative overflow-hidden">
+          <div className="absolute left-[29px] top-[45px] bottom-[45px] w-0.5 bg-gray-100" />
 
           {[{ label: '開始時間', tagColor: 'bg-morandi-green' }, { label: '結束時間', tagColor: 'bg-morandi-pink' }].map((item) => (
             <div className="relative z-10" key={item.label}>
               <label className="text-xs font-medium text-gray-400 mb-1.5 block ml-10">{item.label}</label>
               <div className="flex items-center gap-4">
-                <div className={`w-3 h-3 rounded-full ${item.tagColor} ring-4 ring-white dark:ring-[var(--card-dark)] shadow-sm shrink-0`} />
+                <div className={`w-3 h-3 rounded-full ${item.tagColor} ring-4 ring-white shadow-sm shrink-0`} />
                 <div className="relative flex-1">
                   <input type="datetime-local" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                   <div className="w-full text-left rounded-2xl p-3 flex items-center justify-between group transition-all cursor-pointer" style={{ backgroundColor: '#F7F5F2' }}>
                     <div>
-                      <div className="text-sm font-bold text-gray-800 dark:text-gray-200 tracking-wide">2023年 11月 12日</div>
+                      <div className="text-sm font-bold text-gray-800 tracking-wide">2023年 11月 12日</div>
                       <div className="text-xs text-gray-500 mt-0.5">{item.label === '開始時間' ? '週六上午 10:00' : '週六下午 16:00'}</div>
                     </div>
                     <span className="material-icons-round text-gray-400 group-hover:text-[var(--primary)] transition-colors">edit_calendar</span>
@@ -184,19 +213,19 @@ function TimeLocationStep() {
       </div>
 
       <div className="mb-6 animate-[fadeIn_0.6s_ease-out]">
-        <h2 className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-4 px-1 flex items-center gap-2">
+        <h2 className="text-sm font-bold text-gray-800 mb-4 px-1 flex items-center gap-2">
           <span className="material-icons-round text-morandi-green">place</span>
           活動地點
         </h2>
         <div className="space-y-4">
           <div className="relative group">
-            <div className="absolute inset-0 bg-white dark:bg-[var(--card-dark)] rounded-2xl shadow-sm transition-transform group-focus-within:-translate-y-1 group-focus-within:shadow-md" />
+            <div className="absolute inset-0 bg-white rounded-2xl shadow-sm transition-transform group-focus-within:-translate-y-1 group-focus-within:shadow-md" />
             <div className="relative flex items-center">
               <span className="material-icons-round absolute left-4 text-gray-400">search</span>
               <input
                 type="text"
                 placeholder="輸入地址或搜尋地標"
-                className="w-full pl-11 pr-4 py-4 rounded-2xl border-none bg-transparent text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 focus:ring-0"
+                className="w-full pl-11 pr-4 py-4 rounded-2xl border-none bg-transparent text-sm text-gray-800 placeholder-gray-400 focus:ring-0"
               />
               <button className="absolute right-3 p-1 text-gray-400 hover:text-[var(--primary)] transition-colors">
                 <span className="material-icons-round text-xl">my_location</span>
@@ -204,9 +233,9 @@ function TimeLocationStep() {
             </div>
           </div>
 
-          <div className="w-full aspect-[4/3] rounded-3xl bg-[#E5E0D8] dark:bg-gray-800 bg-map-pattern relative overflow-hidden shadow-sm group cursor-pointer border-2 border-white dark:border-[var(--card-dark)] hover:border-[rgba(207,185,165,0.5)] transition-colors">
+          <div className="w-full aspect-[4/3] rounded-3xl bg-[#E5E0D8] bg-map-pattern relative overflow-hidden shadow-sm group cursor-pointer border-2 border-white hover:border-[rgba(207,185,165,0.5)] transition-colors">
             <div className="absolute top-0 right-0 p-4 z-10">
-              <div className="bg-white/80 dark:bg-[rgba(30,30,30,0.8)] backdrop-blur-sm p-2 rounded-xl shadow-sm text-gray-600 dark:text-gray-300">
+              <div className="bg-white/80 backdrop-blur-sm p-2 rounded-xl shadow-sm text-gray-600">
                 <span className="material-icons-round text-xl block">layers</span>
               </div>
             </div>
@@ -217,14 +246,14 @@ function TimeLocationStep() {
                 <span className="material-icons-round text-5xl drop-shadow-xl filter" style={{ color: palette.primary }}>location_on</span>
               </div>
               <div className="w-4 h-2 bg-black/20 rounded-[50%] blur-[2px] mt-[-10px] group-hover:scale-75 group-hover:opacity-50 transition-all duration-300" />
-              <div className="mt-2 bg-white dark:bg-[var(--card-dark)] px-4 py-2 rounded-xl shadow-lg flex flex-col items-center">
-                <span className="text-xs font-bold text-gray-700 dark:text-gray-200">台北 101</span>
+              <div className="mt-2 bg-white px-4 py-2 rounded-xl shadow-lg flex flex-col items-center">
+                <span className="text-xs font-bold text-gray-700">台北 101</span>
                 <span className="text-[10px] text-gray-400">點擊地圖以更改</span>
               </div>
             </div>
 
             <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/10 to-transparent">
-              <button className="w-full bg-white/95 dark:bg-[rgba(30,30,30,0.95)] backdrop-blur text-primary font-bold py-3.5 rounded-2xl shadow-lg flex items-center justify-center gap-2 hover:bg-[var(--primary)] hover:text-white transition-all active:scale-95">
+              <button className="w-full bg-white/95 backdrop-blur text-primary font-bold py-3.5 rounded-2xl shadow-lg flex items-center justify-center gap-2 hover:bg-[var(--primary)] hover:text-white transition-all active:scale-95">
                 <span className="material-icons-round">map</span>
                 開啟全螢幕地圖
               </button>
@@ -240,37 +269,37 @@ function AdvancedSettingsStep() {
   return (
     <>
       <div className="mb-6 animate-[fadeIn_0.5s_ease-out]">
-        <h2 className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-4 px-1 flex items-center gap-2">
+        <h2 className="text-sm font-bold text-gray-800 mb-4 px-1 flex items-center gap-2">
           <span className="material-icons-round text-morandi-blue">group</span>
           參加設定
         </h2>
-        <div className="bg-white dark:bg-[var(--card-dark)] rounded-3xl p-5 shadow-sm space-y-6">
+        <div className="bg-white rounded-3xl p-5 shadow-sm space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <label className="text-sm font-bold text-gray-800 dark:text-gray-200">活動人數</label>
+              <label className="text-sm font-bold text-gray-800">活動人數</label>
               <p className="text-xs text-gray-400 mt-1">包含主辦人</p>
             </div>
-            <div className="flex items-center gap-4 bg-[#F7F5F2] dark:bg-[rgba(18,18,18,0.5)] p-1.5 rounded-xl">
-              <button className="w-8 h-8 rounded-lg bg-white dark:bg-[var(--card-dark)] shadow-sm text-gray-600 dark:text-gray-300 flex items-center justify-center hover:text-[var(--primary)] active:scale-95 transition-all">
+            <div className="flex items-center gap-4 bg-[#F7F5F2] p-1.5 rounded-xl">
+              <button className="w-8 h-8 rounded-lg bg-white shadow-sm text-gray-600 flex items-center justify-center hover:text-[var(--primary)] active:scale-95 transition-all">
                 <span className="material-icons-round text-sm">remove</span>
               </button>
-              <span className="text-base font-bold text-gray-800 dark:text-gray-100 w-6 text-center">4</span>
-              <button className="w-8 h-8 rounded-lg bg-white dark:bg-[var(--card-dark)] shadow-sm text-gray-600 dark:text-gray-300 flex items-center justify-center hover:text-[var(--primary)] active:scale-95 transition-all">
+              <span className="text-base font-bold text-gray-800 w-6 text-center">4</span>
+              <button className="w-8 h-8 rounded-lg bg-white shadow-sm text-gray-600 flex items-center justify-center hover:text-[var(--primary)] active:scale-95 transition-all">
                 <span className="material-icons-round text-sm">add</span>
               </button>
             </div>
           </div>
-          <div className="h-px bg-gray-100 dark:bg-gray-700/50 w-full" />
+          <div className="h-px bg-gray-100 w-full" />
           <div className="flex flex-col gap-3">
-            <label className="text-sm font-bold text-gray-800 dark:text-gray-200">性別限制</label>
-            <div className="flex bg-[#F7F5F2] dark:bg-[rgba(18,18,18,0.5)] p-1 rounded-xl">
+            <label className="text-sm font-bold text-gray-800">性別限制</label>
+            <div className="flex bg-[#F7F5F2] p-1 rounded-xl">
               {genderOptions.map((option) => (
                 <button
                   key={option.id}
                   className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
                     option.default
-                      ? 'bg-white dark:bg-[var(--card-dark)] shadow-sm text-primary'
-                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                      ? 'bg-white shadow-sm text-primary'
+                      : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   {option.label}
@@ -282,35 +311,35 @@ function AdvancedSettingsStep() {
       </div>
 
       <div className="mb-6 animate-[fadeIn_0.6s_ease-out]">
-        <h2 className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-4 px-1 flex items-center gap-2">
+        <h2 className="text-sm font-bold text-gray-800 mb-4 px-1 flex items-center gap-2">
           <span className="material-icons-round text-morandi-pink">verified_user</span>
           權限管理
         </h2>
-        <div className="bg-white dark:bg-[var(--card-dark)] rounded-3xl p-5 shadow-sm space-y-6">
+        <div className="bg-white rounded-3xl p-5 shadow-sm space-y-6">
           {[{ label: '加入審核', desc: '需經主辦人同意才可加入', defaultChecked: true }, { label: '私密活動', desc: '活動將不會顯示在雷達地圖上' }].map((item) => (
             <div key={item.label}>
               <div className="flex items-center justify-between">
                 <div className="pr-4">
-                  <label className="text-sm font-bold text-gray-800 dark:text-gray-200">{item.label}</label>
+                  <label className="text-sm font-bold text-gray-800">{item.label}</label>
                   <p className="text-xs text-gray-400 mt-1">{item.desc}</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer shrink-0">
                   <input type="checkbox" defaultChecked={item.defaultChecked} className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--primary)]" />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--primary)]" />
                 </label>
               </div>
-              {item.label === '加入審核' ? <div className="h-px bg-gray-100 dark:bg-gray-700/50 w-full mt-6" /> : null}
+              {item.label === '加入審核' ? <div className="h-px bg-gray-100 w-full mt-6" /> : null}
             </div>
           ))}
         </div>
       </div>
 
       <div className="mb-6 animate-[fadeIn_0.7s_ease-out]">
-        <h2 className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-4 px-1 flex items-center gap-2">
+        <h2 className="text-sm font-bold text-gray-800 mb-4 px-1 flex items-center gap-2">
           <span className="material-icons-round text-morandi-yellow">payments</span>
           費用與標籤
         </h2>
-        <div className="bg-white dark:bg-[var(--card-dark)] rounded-3xl p-5 shadow-sm space-y-5">
+        <div className="bg-white rounded-3xl p-5 shadow-sm space-y-5">
           <div>
             <label className="text-xs font-medium text-gray-400 mb-2 block ml-1">預估每人費用</label>
             <div className="relative group">
@@ -318,7 +347,7 @@ function AdvancedSettingsStep() {
               <input
                 type="number"
                 placeholder="0"
-                className="w-full bg-[#F7F5F2] dark:bg-[rgba(18,18,18,0.5)] rounded-2xl py-3 pl-8 pr-12 text-sm font-bold text-gray-800 dark:text-gray-100 border-none focus:ring-2 focus:ring-[rgba(207,185,165,0.5)] transition-all placeholder-gray-300"
+                className="w-full bg-[#F7F5F2] rounded-2xl py-3 pl-8 pr-12 text-sm font-bold text-gray-800 border-none focus:ring-2 focus:ring-[rgba(207,185,165,0.5)] transition-all placeholder-gray-300"
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-medium">TWD</span>
             </div>
@@ -333,13 +362,13 @@ function AdvancedSettingsStep() {
                   className={`px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-colors ${
                     index === 0
                       ? 'bg-[rgba(207,185,165,0.1)] text-[var(--primary)] border border-[rgba(207,185,165,0.2)]'
-                      : 'bg-[#F7F5F2] dark:bg-[rgba(18,18,18,0.5)] text-gray-500 dark:text-gray-400 border border-transparent hover:border-gray-200 dark:hover:border-gray-700'
+                      : 'bg-[#F7F5F2] text-gray-500 border border-transparent hover:border-gray-200'
                   }`}
                 >
                   {tag}
                 </span>
               ))}
-              <button className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-400 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+              <button className="w-7 h-7 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center hover:bg-gray-200 transition-colors">
                 <span className="material-icons-round text-sm">add</span>
               </button>
             </div>
@@ -352,12 +381,6 @@ function AdvancedSettingsStep() {
 
 export default function CreateExplorePage() {
   const [step, setStep] = useState(1);
-
-  useEffect(() => {
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      document.documentElement.classList.add('dark');
-    }
-  }, []);
 
   const isFirstStep = step === 1;
   const nextLabel = useMemo(() => {
@@ -373,129 +396,231 @@ export default function CreateExplorePage() {
   }, [step]);
 
   return (
-    <div className="bg-[#F0EEE6] dark:bg-[#1a1a1a] font-sans antialiased text-gray-900 dark:text-white transition-colors duration-300 h-screen overflow-hidden flex flex-col relative">
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-[#EFEFE8] dark:bg-[#232323]" />
-        <div className="absolute top-[-10%] left-[20%] w-40 h-[120%] bg-white dark:bg-[#2c2c2c] -rotate-12 opacity-60" />
+    <div className="bg-[#F0EEE6] font-sans antialiased text-gray-900 transition-colors duration-300 min-h-screen relative">
+      {/* 背景光暈 */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-[#EFEFE8]" />
+        <div className="absolute top-[-10%] left-[20%] w-40 h-[120%] bg-white -rotate-12 opacity-60" />
         <div className="absolute top-[10%] left-[5%] w-64 h-64 rounded-full blur-3xl" style={{ backgroundColor: 'rgba(168,191,166,0.2)' }} />
         <div className="absolute bottom-[20%] right-[10%] w-80 h-80 rounded-full blur-3xl" style={{ backgroundColor: 'rgba(165,188,207,0.2)' }} />
         <div className="absolute top-[40%] left-[-10%] w-56 h-56 rounded-full blur-3xl" style={{ backgroundColor: 'rgba(224,214,168,0.2)' }} />
       </div>
 
-      <header className="relative z-50 px-5 pt-12 pb-2">
-        <div className="flex items-center justify-between mb-4">
-          <button className="w-10 h-10 rounded-full glass dark:glass-dark flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-[var(--primary)] transition-colors shadow-sm">
-            <span className="material-icons-round">arrow_back_ios_new</span>
-          </button>
-          <h1 className="text-lg font-bold text-gray-800 dark:text-white tracking-wide">創立活動</h1>
-          <button className="px-4 py-1.5 rounded-full bg-transparent border border-[rgba(207,185,165,0.3)] text-primary text-sm font-medium transition-colors" style={{ backgroundColor: 'transparent' }}>
-            存草稿
+      {/* ========== 電腦版佈局 ========== */}
+      <div className="hidden xl:flex relative z-10 min-h-screen flex-col p-6">
+        <DesktopHeader />
+
+        <div className="flex-1 grid grid-cols-12 gap-6">
+          {/* 左側 - 步驟指示 + 預覽 */}
+          <div className="col-span-4 space-y-5">
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-lg border border-white/50 sticky top-6">
+              <div className="flex items-center gap-3 mb-6">
+                <Link
+                  href="/explore"
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:text-primary transition-colors"
+                >
+                  <span className="material-icons-round text-xl">arrow_back</span>
+                </Link>
+                <h1 className="text-2xl font-bold text-gray-800">創立活動</h1>
+              </div>
+
+              {/* 步驟指示器 - 垂直版 */}
+              <div className="space-y-4 mb-6">
+                {[
+                  { id: 1, label: '基本資訊', desc: '活動名稱與描述' },
+                  { id: 2, label: '時間地點', desc: '設定活動時間與地點' },
+                  { id: 3, label: '進階設定', desc: '人數限制與其他設定' },
+                ].map((item) => {
+                  const isActive = item.id === step;
+                  const isComplete = item.id < step;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setStep(item.id)}
+                      className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-left ${
+                        isActive
+                          ? 'bg-primary/10 border-2 border-primary/30'
+                          : isComplete
+                            ? 'bg-green-50 border border-green-200'
+                            : 'bg-gray-50 border border-transparent hover:border-gray-200'
+                      }`}
+                    >
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
+                          isActive
+                            ? 'bg-primary text-white'
+                            : isComplete
+                              ? 'bg-green-500 text-white'
+                              : 'bg-gray-200 text-gray-500'
+                        }`}
+                      >
+                        {isComplete ? <span className="material-icons-round text-lg">check</span> : item.id}
+                      </div>
+                      <div>
+                        <div className={`font-bold ${isActive ? 'text-primary' : isComplete ? 'text-green-700' : 'text-gray-600'}`}>
+                          {item.label}
+                        </div>
+                        <div className="text-xs text-gray-400">{item.desc}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button className="w-full py-3 rounded-xl bg-white border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition flex items-center justify-center gap-2">
+                <span className="material-icons-round text-lg">save</span>
+                儲存草稿
+              </button>
+            </div>
+          </div>
+
+          {/* 右側 - 表單內容 */}
+          <div className="col-span-8">
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-lg border border-white/50 min-h-[calc(100vh-180px)]">
+              <div className="max-w-2xl mx-auto">
+                {stepContent}
+              </div>
+
+              {/* 底部按鈕 */}
+              <div className="max-w-2xl mx-auto mt-8 pt-6 border-t border-gray-100 flex justify-between items-center">
+                <button
+                  onClick={() => setStep((prev) => Math.max(prev - 1, 1))}
+                  className={`px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition flex items-center gap-2 ${step === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={step === 1}
+                >
+                  <span className="material-icons-round text-lg">arrow_back</span>
+                  上一步
+                </button>
+                <button
+                  onClick={() => setStep((prev) => Math.min(prev + 1, 3))}
+                  className="px-8 py-3 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/30 flex items-center gap-2 hover:bg-[var(--primary-dark)] transition"
+                >
+                  {nextLabel}
+                  <span className="material-icons-round text-lg">{step === 3 ? 'check_circle' : 'arrow_forward'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ========== 手機版佈局 ========== */}
+      <div className="xl:hidden h-screen overflow-hidden flex flex-col relative z-10">
+        <header className="relative z-50 px-5 pt-12 pb-2">
+          <div className="flex items-center justify-between mb-4">
+            <Link href="/explore" className="w-10 h-10 rounded-full glass flex items-center justify-center text-gray-600 hover:text-[var(--primary)] transition-colors shadow-sm">
+              <span className="material-icons-round">arrow_back_ios_new</span>
+            </Link>
+            <h1 className="text-lg font-bold text-gray-800 tracking-wide">創立活動</h1>
+            <button className="px-4 py-1.5 rounded-full bg-transparent border border-[rgba(207,185,165,0.3)] text-primary text-sm font-medium transition-colors" style={{ backgroundColor: 'transparent' }}>
+              存草稿
+            </button>
+          </div>
+          <StepIndicator step={step} onChange={setStep} />
+        </header>
+
+        <main className="relative z-10 flex-1 overflow-y-auto hide-scrollbar pb-32 px-5 pt-2">
+          {stepContent}
+          {isFirstStep ? (
+            <>
+              <div className="relative py-8 flex items-center justify-center">
+                <div className="w-full h-px bg-gray-200" />
+                <span className="absolute bg-[#F0EEE6] px-3 text-xs text-gray-400 font-medium">接下來</span>
+              </div>
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-2 ml-1">時間設定</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button className="flex items-center gap-3 bg-white p-3 rounded-2xl shadow-sm text-left hover:ring-2 hover:ring-[rgba(207,185,165,0.3)] transition-all">
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center text-morandi-yellow shrink-0"
+                        style={{ backgroundColor: 'rgba(224,214,168,0.2)' }}
+                      >
+                        <span className="material-icons-round">calendar_today</span>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-gray-400">日期</div>
+                        <div className="text-sm font-bold text-gray-700">2023/10/28</div>
+                      </div>
+                    </button>
+                    <button className="flex items-center gap-3 bg-white p-3 rounded-2xl shadow-sm text-left hover:ring-2 hover:ring-[rgba(207,185,165,0.3)] transition-all">
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center text-morandi-blue shrink-0"
+                        style={{ backgroundColor: 'rgba(165,188,207,0.2)' }}
+                      >
+                        <span className="material-icons-round">schedule</span>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-gray-400">時間</div>
+                        <div className="text-sm font-bold text-gray-700">14:30</div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2 px-1">
+                    <label className="text-xs font-bold text-gray-500">集合地點</label>
+                    <button className="text-xs text-primary font-bold flex items-center">
+                      <span className="material-icons-round text-sm mr-0.5">my_location</span> 使用目前位置
+                    </button>
+                  </div>
+                  <div className="w-full h-36 rounded-2xl bg-[#E5E0D8] bg-map-pattern relative overflow-hidden shadow-inner group cursor-pointer border-2 border-transparent hover:border-[rgba(207,185,165,0.5)] transition-colors">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+                      <div className="w-12 h-12 rounded-full animate-ping absolute" style={{ backgroundColor: 'rgba(207,185,165,0.2)' }} />
+                      <span className="material-icons-round text-4xl drop-shadow-md relative z-10" style={{ color: palette.primary }}>location_on</span>
+                      <div className="w-3 h-1.5 bg-black/20 rounded-[50%] blur-[1px] mt-[-4px]" />
+                    </div>
+                    <button className="absolute bottom-3 right-3 bg-white text-gray-700 text-xs font-bold px-4 py-2 rounded-xl shadow-lg flex items-center gap-1">
+                      開啟地圖選擇
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">每人費用</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-serif italic text-lg">$</span>
+                      <input
+                        type="number"
+                        placeholder="0"
+                        className="w-full rounded-2xl border-none bg-white py-3 pl-8 pr-4 text-sm font-bold shadow-sm focus:ring-2 focus:ring-[rgba(207,185,165,0.5)] text-gray-800"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">預計人數</label>
+                    <div className="flex items-center bg-white rounded-2xl p-1 shadow-sm h-[46px]">
+                      <button className="w-10 h-full flex items-center justify-center text-primary hover:bg-gray-100 rounded-xl transition-colors">
+                        <span className="material-icons-round">remove</span>
+                      </button>
+                      <input
+                        type="text"
+                        defaultValue="4"
+                        className="flex-1 w-full bg-transparent border-none text-center p-0 text-gray-700 font-bold focus:ring-0 text-sm"
+                      />
+                      <button className="w-10 h-full flex items-center justify-center text-primary hover:bg-gray-100 rounded-xl transition-colors">
+                        <span className="material-icons-round">add</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : null}
+        </main>
+
+        <div className="fixed bottom-0 inset-x-0 p-5 bg-gradient-to-t from-[#F0EEE6] via-[#F0EEE6] to-transparent z-50 pt-10">
+          <button
+            onClick={() => setStep((prev) => Math.min(prev + 1, 3))}
+            className="w-full bg-primary text-white font-bold py-4 rounded-3xl shadow-[0_12px_30px_rgba(207,185,165,0.3)] flex items-center justify-center gap-2 active:scale-95 transition-transform hover:bg-[var(--primary-dark)]"
+          >
+            {nextLabel}
+            <span className="material-icons-round text-sm">{step === 3 ? 'check_circle' : 'arrow_forward'}</span>
           </button>
         </div>
-        <StepIndicator step={step} onChange={setStep} />
-      </header>
-
-      <main className="relative z-10 flex-1 overflow-y-auto hide-scrollbar pb-32 px-5 pt-2">
-        {stepContent}
-        {isFirstStep ? (
-          <>
-            <div className="relative py-8 flex items-center justify-center">
-              <div className="w-full h-px bg-gray-200 dark:bg-gray-700" />
-              <span className="absolute bg-[#F0EEE6] dark:bg-[#232323] px-3 text-xs text-gray-400 font-medium">接下來</span>
-            </div>
-            <div className="space-y-5">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 ml-1">時間設定</label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button className="flex items-center gap-3 bg-white dark:bg-[var(--card-dark)] p-3 rounded-2xl shadow-sm text-left hover:ring-2 hover:ring-[rgba(207,185,165,0.3)] transition-all">
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-morandi-yellow shrink-0"
-                      style={{ backgroundColor: 'rgba(224,214,168,0.2)' }}
-                    >
-                      <span className="material-icons-round">calendar_today</span>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-gray-400">日期</div>
-                      <div className="text-sm font-bold text-gray-700 dark:text-gray-200">2023/10/28</div>
-                    </div>
-                  </button>
-                  <button className="flex items-center gap-3 bg-white dark:bg-[var(--card-dark)] p-3 rounded-2xl shadow-sm text-left hover:ring-2 hover:ring-[rgba(207,185,165,0.3)] transition-all">
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-morandi-blue shrink-0"
-                      style={{ backgroundColor: 'rgba(165,188,207,0.2)' }}
-                    >
-                      <span className="material-icons-round">schedule</span>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-gray-400">時間</div>
-                      <div className="text-sm font-bold text-gray-700 dark:text-gray-200">14:30</div>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2 px-1">
-                  <label className="text-xs font-bold text-gray-500 dark:text-gray-400">集合地點</label>
-                  <button className="text-xs text-primary font-bold flex items-center">
-                    <span className="material-icons-round text-sm mr-0.5">my_location</span> 使用目前位置
-                  </button>
-                </div>
-                <div className="w-full h-36 rounded-2xl bg-[#E5E0D8] dark:bg-gray-800 bg-map-pattern relative overflow-hidden shadow-inner group cursor-pointer border-2 border-transparent hover:border-[rgba(207,185,165,0.5)] transition-colors">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-                    <div className="w-12 h-12 rounded-full animate-ping absolute" style={{ backgroundColor: 'rgba(207,185,165,0.2)' }} />
-                    <span className="material-icons-round text-4xl drop-shadow-md relative z-10" style={{ color: palette.primary }}>location_on</span>
-                    <div className="w-3 h-1.5 bg-black/20 rounded-[50%] blur-[1px] mt-[-4px]" />
-                  </div>
-                  <button className="absolute bottom-3 right-3 bg-white dark:bg-[var(--card-dark)] text-gray-700 dark:text-gray-200 text-xs font-bold px-4 py-2 rounded-xl shadow-lg flex items-center gap-1">
-                    開啟地圖選擇
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 ml-1">每人費用</label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-serif italic text-lg">$</span>
-                    <input
-                      type="number"
-                      placeholder="0"
-                      className="w-full rounded-2xl border-none bg-white dark:bg-[var(--card-dark)] py-3 pl-8 pr-4 text-sm font-bold shadow-sm focus:ring-2 focus:ring-[rgba(207,185,165,0.5)] text-gray-800 dark:text-gray-100"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 ml-1">預計人數</label>
-                  <div className="flex items-center bg-white dark:bg-[var(--card-dark)] rounded-2xl p-1 shadow-sm h-[46px]">
-                    <button className="w-10 h-full flex items-center justify-center text-primary hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-colors">
-                      <span className="material-icons-round">remove</span>
-                    </button>
-                    <input
-                      type="text"
-                      defaultValue="4"
-                      className="flex-1 w-full bg-transparent border-none text-center p-0 text-gray-700 dark:text-gray-200 font-bold focus:ring-0 text-sm"
-                    />
-                    <button className="w-10 h-full flex items-center justify-center text-primary hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-colors">
-                      <span className="material-icons-round">add</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
-        ) : null}
-      </main>
-
-      <div className="fixed bottom-0 inset-x-0 p-5 bg-gradient-to-t from-[#F0EEE6] via-[#F0EEE6] to-transparent dark:from-[#1a1a1a] dark:via-[#1a1a1a] z-50 pt-10">
-        <button
-          onClick={() => setStep((prev) => Math.min(prev + 1, 3))}
-          className="w-full bg-primary text-white font-bold py-4 rounded-3xl shadow-[0_12px_30px_rgba(207,185,165,0.3)] flex items-center justify-center gap-2 active:scale-95 transition-transform hover:bg-[var(--primary-dark)]"
-        >
-          {nextLabel}
-          <span className="material-icons-round text-sm">{step === 3 ? 'check_circle' : 'arrow_forward'}</span>
-        </button>
       </div>
     </div>
   );

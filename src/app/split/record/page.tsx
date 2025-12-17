@@ -2,17 +2,38 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect } from 'react';
+
+// 桌面版 Header 組件
+function DesktopHeader() {
+  return (
+    <header className="flex-shrink-0 flex items-center justify-between py-4 px-8 bg-white/80 backdrop-blur-2xl rounded-2xl border border-white/50 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.06)] mb-6">
+      <div className="flex items-center gap-6">
+        <Link href="/" className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-[#D6CDC8] text-white font-bold flex items-center justify-center">V</div>
+          <span className="text-xl font-bold text-[#5C5C5C]">VENTURO</span>
+        </Link>
+        <nav className="flex items-center gap-8 ml-12">
+          <Link href="/" className="text-[#949494] hover:text-[#5C5C5C] transition">首頁</Link>
+          <Link href="/explore" className="text-[#949494] hover:text-[#5C5C5C] transition">探索</Link>
+          <Link href="/orders" className="text-[#949494] hover:text-[#5C5C5C] transition">訂單</Link>
+          <Link href="/wishlist" className="text-[#949494] hover:text-[#5C5C5C] transition">收藏</Link>
+        </nav>
+      </div>
+      <div className="flex items-center gap-4">
+        <Link href="/my" className="flex items-center gap-3 px-4 py-2 bg-white/60 rounded-full border border-white/40 hover:bg-white/80 transition">
+          <div className="w-8 h-8 rounded-full bg-[#D6CDC8] text-white font-bold text-sm flex items-center justify-center">
+            旅
+          </div>
+          <span className="text-sm font-medium text-[#5C5C5C]">我的</span>
+        </Link>
+      </div>
+    </header>
+  );
+}
 
 const contributors = ['我', 'Alice', 'Ben', 'Coco'];
 
 export default function SplitRecordPage() {
-  useEffect(() => {
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      document.documentElement.classList.add('dark');
-    }
-  }, []);
-
   return (
     <main className="bg-[#F0EEE6] dark:bg-[#1a1a1a] text-gray-900 dark:text-white min-h-screen font-sans relative overflow-hidden">
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
@@ -22,7 +43,160 @@ export default function SplitRecordPage() {
         <div className="absolute top-[30%] left-[40%] w-64 h-64 bg-primary/15 dark:bg-primary/5 rounded-full blur-[60px]" />
       </div>
 
-      <div className="relative z-10 max-w-xl mx-auto flex flex-col min-h-screen">
+      {/* ========== 電腦版佈局 ========== */}
+      <div className="hidden xl:flex relative z-10 min-h-screen flex-col p-6">
+        <DesktopHeader />
+
+        <div className="flex-1 grid grid-cols-12 gap-6">
+          {/* 左側 - 付款人選擇 */}
+          <div className="col-span-4 space-y-5">
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-lg border border-white/50">
+              <div className="flex items-center gap-3 mb-6">
+                <Link
+                  href="/split"
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:text-primary transition-colors"
+                >
+                  <span className="material-icons-round text-xl">close</span>
+                </Link>
+                <h1 className="text-2xl font-bold text-gray-800">新增費用記錄</h1>
+              </div>
+
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-base font-bold text-gray-700 flex items-center gap-2">
+                    <span className="w-1 h-5 rounded-full bg-primary block" />
+                    誰付的錢?
+                  </h2>
+                </div>
+                <div className="flex gap-4 flex-wrap">
+                  {contributors.map((person, index) => {
+                    const isPayer = index === 0;
+                    return (
+                      <div
+                        key={person}
+                        className={`flex flex-col items-center gap-2 cursor-pointer group ${isPayer ? '' : 'opacity-60 hover:opacity-100'}`}
+                      >
+                        <div
+                          className={`relative w-16 h-16 rounded-full p-1 border-2 transition-all ${
+                            isPayer
+                              ? 'border-primary shadow-lg shadow-primary/20 bg-white'
+                              : 'border-transparent group-hover:border-morandi-blue/50'
+                          }`}
+                        >
+                          <Image
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBqTUmBLXZhqnZPcQe1nIwGuRohyZdFc47OG_sWdrh-8saBlb34Y3uBw_YSd3Ydp2nV6EPktexnXTw9wPF6eb36Rn8uQRi2rpc1GaDxQWmwktHbyyAER_xn5iJHi57wdMmjPJMAPOHV6gWVqxjjPN6x3WoQ896n7YFsHWPU3QML6BZE7hdafcgPI1Fec6SXhNEWVo_t1Q8zw0I0CXTZmbO0cZY5vS3xQ7FdyX36K86T9W5NsNVF5QEMEo3e6tavseKbCcuFdaXTaUQ"
+                            alt={person}
+                            fill
+                            className={`rounded-full object-cover ${isPayer ? '' : 'grayscale opacity-60 group-hover:opacity-100 group-hover:grayscale-0'}`}
+                          />
+                          {isPayer && (
+                            <div className="absolute -top-1 -right-1 bg-primary text-white rounded-full p-1 border-2 border-white shadow-sm">
+                              <span className="material-symbols-outlined text-[12px] font-bold block">credit_card</span>
+                            </div>
+                          )}
+                        </div>
+                        <span className={isPayer ? 'text-sm font-bold text-gray-800' : 'text-sm font-medium text-gray-500 group-hover:text-gray-700'}>
+                          {person}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  <div className="flex flex-col items-center gap-2 cursor-pointer group">
+                    <div className="relative w-16 h-16 rounded-full flex items-center justify-center bg-gray-100 border border-dashed border-gray-300 hover:border-primary transition-colors">
+                      <span className="material-symbols-outlined text-gray-400 group-hover:text-primary">person_add</span>
+                    </div>
+                    <span className="text-sm font-medium text-gray-400">邀請</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-gray-100">
+                <div className="flex items-center gap-2 bg-white/50 rounded-xl p-3 border border-white/40">
+                  <span className="material-symbols-outlined text-sm text-gray-400">group</span>
+                  <span className="text-sm text-gray-500">
+                    分帳成員: <span className="text-gray-800 font-medium">所有人 (4)</span>
+                  </span>
+                  <button className="ml-auto text-primary hover:text-primary-dark text-sm font-medium">修改</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 右側 - 費用表單 */}
+          <div className="col-span-8">
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-lg border border-white/50">
+              {/* 金額輸入 */}
+              <section className="glass-card rounded-[2rem] p-6 flex flex-col items-center justify-center space-y-4 relative overflow-hidden shadow-lg mb-6">
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-morandi-blue/40 via-primary/60 to-morandi-pink/40" />
+                <div className="flex flex-col items-center w-full">
+                  <label className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">金額 Amount</label>
+                  <div className="flex items-baseline gap-2 text-gray-800 relative">
+                    <span className="text-3xl font-medium text-gray-400 absolute -left-8 top-2">$</span>
+                    <input
+                      className="bg-transparent border-none p-0 text-6xl font-bold text-center w-64 focus:ring-0 placeholder-gray-200 text-gray-800 tracking-tight"
+                      placeholder="0"
+                      type="number"
+                    />
+                  </div>
+                </div>
+                <div className="w-full relative">
+                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                    <span className="material-symbols-outlined text-gray-400 text-xl">edit_note</span>
+                  </div>
+                  <input
+                    className="w-full bg-background-light/50 border-none rounded-2xl py-4 pl-12 pr-4 text-left text-base font-medium placeholder-gray-400 focus:ring-2 focus:ring-primary/30 transition-all shadow-inner"
+                    placeholder="輸入項目名稱 (例如: 晚餐)"
+                    type="text"
+                  />
+                </div>
+              </section>
+
+              {/* 備註與收據 */}
+              <div className="grid grid-cols-2 gap-6">
+                <div className="glass-card rounded-2xl p-4">
+                  <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">notes</span> 備註 Remarks
+                  </label>
+                  <textarea
+                    className="w-full bg-background-light/50 border-none rounded-xl p-3 text-sm text-gray-700 placeholder-gray-400 focus:ring-1 focus:ring-primary/50 resize-none"
+                    placeholder="添加關於這筆費用的詳細說明..."
+                    rows={4}
+                  />
+                </div>
+
+                <div className="glass-card rounded-2xl p-4">
+                  <label className="block text-xs font-semibold text-gray-500 mb-3 uppercase tracking-wide flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">receipt_long</span> 收據照片 Receipt
+                  </label>
+                  <div className="border-2 border-dashed border-morandi-blue/30 rounded-xl bg-morandi-blue/5 p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-morandi-blue/10 transition-colors group h-[120px]">
+                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm mb-2 group-hover:scale-110 transition-transform">
+                      <span className="material-symbols-outlined text-morandi-blue text-xl">add_a_photo</span>
+                    </div>
+                    <p className="text-sm font-medium text-gray-600">上傳收據或照片</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 儲存按鈕 */}
+              <div className="mt-8 flex justify-end gap-3">
+                <Link
+                  href="/split"
+                  className="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition"
+                >
+                  取消
+                </Link>
+                <button className="bg-primary hover:bg-primary-dark text-white px-10 py-3 rounded-xl shadow-lg shadow-primary/30 flex items-center gap-2 font-bold transition-colors">
+                  <span className="material-symbols-outlined">save</span>
+                  儲存記錄
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ========== 手機版佈局 ========== */}
+      <div className="xl:hidden relative z-10 max-w-xl mx-auto flex flex-col min-h-screen">
         <header className="px-6 pt-14 pb-4 flex items-center justify-between">
           <Link
             href="/split"
