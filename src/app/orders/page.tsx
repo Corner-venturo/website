@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import Link from "next/link";
+import MobileNav from "@/components/MobileNav";
 
 const accentStyles = {
   blue: {
@@ -66,35 +67,29 @@ const orders = [
 ];
 
 export default function OrdersPage() {
-  useEffect(() => {
-    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      document.documentElement.classList.add("dark");
-    }
-  }, []);
-
   return (
-    <div className="bg-[#F0EEE6] dark:bg-[#1a1a1a] font-sans antialiased text-gray-900 dark:text-white transition-colors duration-300 min-h-[884px] min-h-screen flex flex-col overflow-hidden">
+    <div className="bg-[#F0EEE6] font-sans antialiased text-gray-900 transition-colors duration-300 min-h-[884px] min-h-screen flex flex-col overflow-hidden">
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-[#EFEFE8] dark:bg-[#232323] texture-bg" />
-        <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-morandi-blue/20 dark:bg-morandi-blue/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-[20%] left-[-10%] w-80 h-80 bg-primary/20 dark:bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute top-[40%] right-[20%] w-64 h-64 bg-morandi-pink/15 dark:bg-morandi-pink/5 rounded-full blur-3xl" />
+        <div className="absolute inset-0 bg-[#EFEFE8] texture-bg" />
+        <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-morandi-blue/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-[20%] left-[-10%] w-80 h-80 bg-primary/20 rounded-full blur-3xl" />
+        <div className="absolute top-[40%] right-[20%] w-64 h-64 bg-morandi-pink/15 rounded-full blur-3xl" />
       </div>
 
       <header className="relative z-50 px-6 pt-12 pb-2 flex items-center justify-between">
-        <button className="glass dark:glass-dark w-10 h-10 flex items-center justify-center rounded-full shadow-sm text-gray-600 dark:text-gray-300 hover:text-primary transition-colors">
+        <button className="glass w-10 h-10 flex items-center justify-center rounded-full shadow-sm text-gray-600 hover:text-primary transition-colors">
           <span className="material-icons-round text-xl">arrow_back</span>
         </button>
-        <h1 className="text-lg font-bold text-gray-800 dark:text-gray-100 tracking-tight">進行中的訂單</h1>
+        <h1 className="text-lg font-bold text-gray-800 tracking-tight">進行中的訂單</h1>
         <div className="w-10" />
       </header>
 
       <main className="relative z-10 flex-1 w-full h-full overflow-y-auto hide-scrollbar pb-32">
         <div className="px-6 py-4 flex items-center gap-3 overflow-x-auto hide-scrollbar">
           <button className="px-4 py-2 rounded-full bg-primary text-white text-xs font-bold shadow-md shadow-primary/30 whitespace-nowrap">全部</button>
-          <button className="px-4 py-2 rounded-full bg-white/60 dark:bg-white/5 border border-white/40 dark:border-white/10 text-gray-500 dark:text-gray-400 text-xs font-medium whitespace-nowrap">即將出發</button>
-          <button className="px-4 py-2 rounded-full bg-white/60 dark:bg-white/5 border border-white/40 dark:border-white/10 text-gray-500 dark:text-gray-400 text-xs font-medium whitespace-nowrap">待確認</button>
-          <button className="px-4 py-2 rounded-full bg-white/60 dark:bg-white/5 border border-white/40 dark:border-white/10 text-gray-500 dark:text-gray-400 text-xs font-medium whitespace-nowrap">規劃中</button>
+          <button className="px-4 py-2 rounded-full bg-white/60 border border-white/40 text-gray-500 text-xs font-medium whitespace-nowrap">即將出發</button>
+          <button className="px-4 py-2 rounded-full bg-white/60 border border-white/40 text-gray-500 text-xs font-medium whitespace-nowrap">待確認</button>
+          <button className="px-4 py-2 rounded-full bg-white/60 border border-white/40 text-gray-500 text-xs font-medium whitespace-nowrap">規劃中</button>
         </div>
 
         <div className="px-6 space-y-6 timeline-line relative">
@@ -104,7 +99,7 @@ export default function OrdersPage() {
             return (
               <div key={order.id} className="relative z-10 pl-12">
                 <div
-                  className={`absolute left-0 top-6 w-10 h-10 rounded-full ${accent.bubbleBg} border-4 border-[#F0EEE6] dark:border-[#232323] flex flex-col items-center justify-center shadow-lg z-20`}
+                  className={`absolute left-0 top-6 w-10 h-10 rounded-full ${accent.bubbleBg} border-4 border-[#F0EEE6] flex flex-col items-center justify-center shadow-lg z-20`}
                 >
                   <span className="text-[9px] font-bold text-white uppercase leading-none mt-0.5">{order.month}</span>
                   <span className={`text-sm font-bold text-white leading-none ${order.id === "hokkaido-ski" ? "text-[10px]" : ""}`}>
@@ -112,13 +107,13 @@ export default function OrdersPage() {
                   </span>
                 </div>
 
-                <div className="glass-card dark:glass-dark rounded-2xl shadow-soft p-5 relative group overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                <div className="glass-card rounded-2xl shadow-soft p-5 relative group overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
                   <div className={`absolute top-0 right-0 px-3 py-1 ${accent.chipBg} rounded-bl-xl`}>
                     <span className={`text-[10px] font-bold ${accent.chipText}`}>{order.chipText}</span>
                   </div>
 
                   <div className="flex gap-4 mb-4">
-                    <div className="w-20 h-20 rounded-xl overflow-hidden shadow-sm shrink-0 bg-gray-100 dark:bg-white/5 flex items-center justify-center">
+                    <div className="w-20 h-20 rounded-xl overflow-hidden shadow-sm shrink-0 bg-gray-100 flex items-center justify-center">
                       {order.image ? (
                         <img src={order.image} alt={order.title} className="w-full h-full object-cover" />
                       ) : (
@@ -126,12 +121,12 @@ export default function OrdersPage() {
                       )}
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-800 dark:text-gray-100 text-lg mb-1">{order.title}</h3>
-                      <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-xs mb-1">
+                      <h3 className="font-bold text-gray-800 text-lg mb-1">{order.title}</h3>
+                      <div className="flex items-center gap-1 text-gray-500 text-xs mb-1">
                         <span className="material-icons-round text-sm">calendar_today</span>
                         <span>{order.dateRange}</span>
                       </div>
-                      <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-xs">
+                      <div className="flex items-center gap-1 text-gray-500 text-xs">
                         <span className="material-icons-round text-sm">{order.id === "tokyo-disney" ? "timer" : "group"}</span>
                         <span className={order.id === "tokyo-disney" ? "text-morandi-pink font-medium" : ""}>{order.travelers}</span>
                       </div>
@@ -141,10 +136,10 @@ export default function OrdersPage() {
                   {order.id === "kyoto-autumn" && (
                     <div className="space-y-3">
                       <div className="flex justify-between items-center text-xs">
-                        <span className="font-medium text-gray-600 dark:text-gray-300">行程準備進度</span>
+                        <span className="font-medium text-gray-600">行程準備進度</span>
                         <span className="font-bold text-morandi-blue">{order.progress}%</span>
                       </div>
-                      <div className="h-1.5 w-full bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
+                      <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                         <div className="h-full bg-morandi-blue rounded-full" style={{ width: `${order.progress}%` }} />
                       </div>
                       <div className="flex gap-2 pt-2 overflow-x-auto hide-scrollbar">
@@ -153,8 +148,8 @@ export default function OrdersPage() {
                             key={tag.label}
                             className={`px-2 py-1 rounded text-[10px] border flex items-center gap-1 ${
                               tag.tone === "green"
-                                ? "bg-green-100/50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800/30"
-                                : "bg-morandi-yellow/20 text-yellow-700 dark:text-yellow-400 border-morandi-yellow/30"
+                                ? "bg-green-100/50 text-green-600 border-green-200"
+                                : "bg-morandi-yellow/20 text-yellow-700 border-morandi-yellow/30"
                             }`}
                           >
                             <span className="material-icons-round text-[10px]">
@@ -168,10 +163,10 @@ export default function OrdersPage() {
                   )}
 
                   {order.id === "tokyo-disney" && (
-                    <div className="flex justify-between items-center border-t border-gray-100 dark:border-white/5 pt-3 mt-3">
+                    <div className="flex justify-between items-center border-t border-gray-100 pt-3 mt-3">
                       <div className="flex flex-col">
                         <span className="text-[10px] text-gray-400">總金額</span>
-                        <span className="font-bold text-gray-800 dark:text-white">{order.total}</span>
+                        <span className="font-bold text-gray-800">{order.total}</span>
                       </div>
                       <button className="px-4 py-2 bg-morandi-pink text-white text-xs font-bold rounded-full shadow-md shadow-morandi-pink/30 hover:bg-morandi-pink/90 transition-colors">
                         {order.actionLabel}
@@ -201,23 +196,7 @@ export default function OrdersPage() {
         </div>
       </main>
 
-      <nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="glass dark:glass-dark rounded-full px-7 py-3.5 flex items-center gap-9 shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-white/20">
-          <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-            <span className="material-icons-round text-2xl">home</span>
-          </button>
-          <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-            <span className="material-icons-round text-2xl">explore</span>
-          </button>
-          <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-            <span className="material-icons-round text-2xl">favorite_border</span>
-          </button>
-          <button className="text-primary relative transform scale-110">
-            <span className="material-icons-round text-2xl">person</span>
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-morandi-pink rounded-full border border-white dark:border-card-dark" />
-          </button>
-        </div>
-      </nav>
+      <MobileNav />
 
       <style jsx>{`
         .hide-scrollbar::-webkit-scrollbar {
