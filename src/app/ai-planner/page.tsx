@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import MobileNav from "@/components/MobileNav";
 
 // 推薦行程資料
 const recommendedTrips = [
@@ -297,23 +298,7 @@ export default function AIPlannerPage() {
       </main>
 
       {/* 底部導航 */}
-      <nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="bg-white/85 backdrop-blur-xl rounded-full px-7 py-3.5 flex items-center gap-9 shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-white/40">
-          <Link href="/" className="text-gray-400 hover:text-gray-600 transition-colors">
-            <span className="material-icons-round text-[26px]">home</span>
-          </Link>
-          <Link href="/explore" className="text-gray-400 hover:text-gray-600 transition-colors">
-            <span className="material-icons-round text-[26px]">explore</span>
-          </Link>
-          <button className="text-[#Cfb9a5] relative transform scale-110 hover:text-[#b09b88] transition-colors">
-            <span className="material-icons-round text-[26px]">favorite</span>
-            <span className="absolute top-0 right-0 w-2 h-2 bg-[#CFA5A5] rounded-full border border-white"></span>
-          </button>
-          <Link href="/my" className="text-gray-400 hover:text-gray-600 transition-colors">
-            <span className="material-icons-round text-[26px]">person_outline</span>
-          </Link>
-        </div>
-      </nav>
+      <MobileNav />
 
       <style jsx>{`
         .hide-scrollbar::-webkit-scrollbar {
