@@ -7,14 +7,15 @@ import MobileNav from '@/components/MobileNav';
 import { useAuthStore } from '@/stores/auth-store';
 import { useProfileStore, getDisplayAvatar } from '@/stores/profile-store';
 
-const achievements = [
+// 假資料 - 未登入時展示用
+const demoAchievements = [
   { icon: 'hiking', label: '百岳挑戰', color: 'bg-[#A8BCA1]', rotate: 'rotate-3' },
   { icon: 'photo_camera', label: '攝影師', color: 'bg-[#94A3B8]', rotate: '-rotate-2' },
   { icon: 'restaurant', label: '美食家', color: 'bg-[#C5B6AF]', rotate: 'rotate-6' },
   { icon: 'flight_takeoff', label: '飛行常客', color: 'bg-[#D4C4A8]', rotate: '-rotate-3' },
 ];
 
-const quickActions = [
+const demoQuickActions = [
   {
     title: '進行中訂單',
     subtitle: '2 個即將出發',
@@ -33,11 +34,31 @@ const quickActions = [
   },
 ];
 
-const friends = [
+const demoFriends = [
   'https://lh3.googleusercontent.com/aida-public/AB6AXuBvF2J-hlJIbdIC1Zhk3h66lPKdCASqxoUNDT5DR9he5w1MfhJDXI1O_frJyo2uYhLobQ0_u1nLH0eQeEifXxnEQb0cz5wn2MJRTHFXe0Pkfa3JepHynrlVFLiyd66xSfjKz5z8Jxk2DzcoYdfFA2cCeba_l5jqRdopIxaedRspIjNrtHf3-Nyhhetfd2kO4xkzRwcxejVimNu5QbVu4NZz99d1uv1N4LpbDeXDMwpo0GHzix50XR4ZAGUWfcon0Ci41_X8fWT8xn16',
   'https://lh3.googleusercontent.com/aida-public/AB6AXuCBqTUmBLXZhqnZPcQe1nIwGuRohyZdFc47OG_sWdrh-8saBlb34Y3uBw_YSd3Ydp2nV6EPktexnXTw9wPF6eb36Rn8uQRi2rpc1GaDxQWmwktHbyyAER_xn5iJHi57wdMmjPJMAPOHV6gWVqxjjPN6x3WoQ896n7YFsHWPU3QML6BZE7hdafcgPI1Fec6SXhNEWVo_t1Q8zw0I0CXTZmbO0cZY5vS3xQ7FdyX36K86T9W5NsNVF5QEMEo3e6tavseKbCcuFdaXTaUQ',
   'https://lh3.googleusercontent.com/aida-public/AB6AXuBvF2J-hlJIbdIC1Zhk3h66lPKdCASqxoUNDT5DR9he5w1MfhJDXI1O_frJyo2uYhLobQ0_u1nLH0eQeEifXxnEQb0cz5wn2MJRTHFXe0Pkfa3JepHynrlVFLiyd66xSfjKz5z8Jxk2DzcoYdfFA2cCeba_l5jqRdopIxaedRspIjNrtHf3-Nyhhetfd2kO4xkzRwcxejVimNu5QbVu4NZz99d1uv1N4LpbDeXDMwpo0GHzix50XR4ZAGUWfcon0Ci41_X8fWT8xn16',
   'https://lh3.googleusercontent.com/aida-public/AB6AXuD5_eWkWytRxj_z3ImVOFNOGbw-3gTjLrh0gJUyGKU2a4p-6Qw9h1Xya8DMPdQmIxwaNeXwgbjRF0271JMx8c8VVhLbPt1sXs9O2X6Z0wm3EdnU3D19GIYooQrZr1uqMCA1l0i9tM-EbMy30MIkmPHUSGd_2FWG8X10WUtwAeJ581lKAdLchWnRl1aMuDSwCXQbIe8kYx0vIGYxhlLHY-8_d-wmc_Rpacqcuy3JoV4hOo0GtBeZ1mZT-_1i3OFfeWdrxu3Gxsbnwvjk',
+];
+
+// 登入後真實資料用的快速操作
+const realQuickActions = [
+  {
+    title: '進行中訂單',
+    subtitle: '暫無訂單',
+    icon: 'confirmation_number',
+    color: 'text-[#94A3B8]',
+    accent: 'bg-[#94A3B8]/10',
+    href: '/orders',
+  },
+  {
+    title: '歷史訂單',
+    subtitle: '查看過往回憶',
+    icon: 'history_edu',
+    color: 'text-[#949494]',
+    accent: 'bg-[#E8E2DD]',
+    href: '/orders',
+  },
 ];
 
 // 桌面版導覽組件
@@ -94,9 +115,19 @@ export default function ProfilePage() {
   }, [user?.id, fetchProfile]);
 
   // 取得用戶資料
-  const userName = profile?.display_name || profile?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || '訪客';
-  const avatarUrl = getDisplayAvatar(profile, user?.user_metadata);
-  const bio = profile?.bio || '尚未設定個人簡介';
+  const isLoggedIn = !!user;
+  const userName = isLoggedIn
+    ? (profile?.display_name || profile?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || '訪客')
+    : '旅人（展示）';
+  const avatarUrl = isLoggedIn ? getDisplayAvatar(profile, user?.user_metadata) : null;
+  const bio = isLoggedIn ? (profile?.bio || '尚未設定個人簡介') : '這是展示用的個人頁面，登入後可以看到你的真實資料';
+
+  // 根據登入狀態選擇資料
+  const quickActions = isLoggedIn ? realQuickActions : demoQuickActions;
+  const friends = isLoggedIn ? [] : demoFriends; // 登入後暫無旅伴資料
+  const achievements = isLoggedIn
+    ? (profile?.is_founding_member ? [{ icon: 'workspace_premium', label: '創始會員', color: 'bg-gradient-to-r from-[#FFD700] to-[#FFA500]', rotate: 'rotate-0', isFounder: true }] : [])
+    : demoAchievements;
 
   return (
     <div className="bg-[#F5F4F0] font-sans antialiased text-[#5C5C5C] transition-colors duration-300 min-h-screen flex flex-col overflow-hidden">
@@ -179,18 +210,24 @@ export default function ProfilePage() {
                   查看全部 <span className="material-icons-round text-sm">chevron_right</span>
                 </Link>
               </div>
-              <div className="grid grid-cols-4 gap-3 relative z-10">
-                {achievements.map((item) => (
-                  <div key={item.label} className="flex flex-col items-center gap-1 group cursor-pointer">
-                    <div
-                      className={`w-14 h-14 rounded-full ${item.color} shadow-lg flex items-center justify-center transform group-hover:scale-105 transition-transform border-2 border-dashed border-white/30 ${item.rotate}`}
-                    >
-                      <span className="material-icons-round text-white text-2xl drop-shadow-md">{item.icon}</span>
+              {achievements.length > 0 ? (
+                <div className="grid grid-cols-4 gap-3 relative z-10">
+                  {achievements.map((item) => (
+                    <div key={item.label} className="flex flex-col items-center gap-1 group cursor-pointer">
+                      <div
+                        className={`w-14 h-14 rounded-full ${item.color} shadow-lg flex items-center justify-center transform group-hover:scale-105 transition-transform border-2 border-dashed border-white/30 ${item.rotate}`}
+                      >
+                        <span className="material-icons-round text-white text-2xl drop-shadow-md">{item.icon}</span>
+                      </div>
+                      <span className="text-[10px] font-medium text-[#5C5C5C]">{item.label}</span>
                     </div>
-                    <span className="text-[10px] font-medium text-[#5C5C5C]">{item.label}</span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-[#949494] text-sm relative z-10">
+                  尚未獲得任何徽章
+                </div>
+              )}
             </div>
 
             {/* 我的旅伴 */}
@@ -200,13 +237,13 @@ export default function ProfilePage() {
                   <span className="material-icons-round text-[#C5B6AF] text-base">favorite</span>
                   我的旅伴
                 </h3>
-                <span className="text-xs text-[#949494]">24 位好友</span>
+                <span className="text-xs text-[#949494]">{isLoggedIn ? '0 位好友' : '24 位好友'}</span>
               </div>
               <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar pb-1">
                 <button className="shrink-0 w-12 h-12 rounded-full border border-dashed border-[#D8D0C9] flex items-center justify-center text-[#949494] hover:border-[#94A3B8] hover:text-[#94A3B8] transition-colors" aria-label="新增好友">
                   <span className="material-icons-round">person_add</span>
                 </button>
-                {friends.map((friend, index) => (
+                {friends.length > 0 ? friends.map((friend, index) => (
                   <div key={`${friend}-${index}`} className="shrink-0 relative">
                     <Image
                       src={friend}
@@ -219,7 +256,9 @@ export default function ProfilePage() {
                       <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#A8BCA1] border-2 border-white rounded-full" />
                     )}
                   </div>
-                ))}
+                )) : (
+                  <span className="text-sm text-[#949494]">還沒有旅伴，快來邀請好友吧！</span>
+                )}
               </div>
             </div>
           </div>
@@ -249,10 +288,14 @@ export default function ProfilePage() {
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="text-sm font-bold text-[#949494] uppercase tracking-wider mb-2 flex items-center gap-1">旅費管家</h3>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-[#5C5C5C]">$12,450</span>
-                    <span className="text-sm text-[#949494] font-medium">/ $20,000 TWD</span>
-                  </div>
+                  {isLoggedIn ? (
+                    <div className="text-sm text-[#949494]">尚未設定旅程預算</div>
+                  ) : (
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-bold text-[#5C5C5C]">$12,450</span>
+                      <span className="text-sm text-[#949494] font-medium">/ $20,000 TWD</span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex flex-col items-center">
@@ -273,54 +316,58 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="mt-4 mb-4">
-                <div className="flex justify-between text-sm text-[#949494] mb-2">
-                  <span>京都自由行</span>
-                  <span>62%</span>
-                </div>
-                <div className="h-3 w-full bg-[#E8E2DD] rounded-full overflow-hidden">
-                  <div className="h-full bg-[#94A3B8] rounded-full w-[62%]" />
-                </div>
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-[#E8E2DD]">
-                <div className="flex justify-between items-center mb-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 bg-[#A8BCA1] rounded-full" />
-                    <span className="text-sm font-bold text-[#5C5C5C]">快速分帳群組</span>
+              {!isLoggedIn && (
+                <>
+                  <div className="mt-4 mb-4">
+                    <div className="flex justify-between text-sm text-[#949494] mb-2">
+                      <span>京都自由行</span>
+                      <span>62%</span>
+                    </div>
+                    <div className="h-3 w-full bg-[#E8E2DD] rounded-full overflow-hidden">
+                      <div className="h-full bg-[#94A3B8] rounded-full w-[62%]" />
+                    </div>
                   </div>
-                  <button className="text-sm text-[#94A3B8] font-medium flex items-center hover:underline">
-                    選擇好友 <span className="material-icons-round text-sm">arrow_forward_ios</span>
-                  </button>
-                </div>
 
-                <div className="bg-white/40 rounded-xl p-3 flex items-center justify-between border border-white/30">
-                  <div className="flex items-center gap-4">
-                    <div className="flex -space-x-3">
-                      {friends.slice(0, 3).map((friend, i) => (
-                        <Image
-                          key={`desktop-friend-${i}`}
-                          src={friend}
-                          alt="Friend"
-                          width={40}
-                          height={40}
-                          className="w-10 h-10 rounded-full border-2 border-white object-cover"
-                        />
-                      ))}
-                      <div className="w-10 h-10 rounded-full border-2 border-white bg-[#D8D0C9] text-white flex items-center justify-center text-xs font-bold shadow-sm">
-                        +2
+                  <div className="mt-4 pt-4 border-t border-[#E8E2DD]">
+                    <div className="flex justify-between items-center mb-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 bg-[#A8BCA1] rounded-full" />
+                        <span className="text-sm font-bold text-[#5C5C5C]">快速分帳群組</span>
                       </div>
+                      <button className="text-sm text-[#94A3B8] font-medium flex items-center hover:underline">
+                        選擇好友 <span className="material-icons-round text-sm">arrow_forward_ios</span>
+                      </button>
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-medium text-[#949494]">當前分配</span>
-                      <span className="text-sm font-bold text-[#5C5C5C]">5 人均分</span>
+
+                    <div className="bg-white/40 rounded-xl p-3 flex items-center justify-between border border-white/30">
+                      <div className="flex items-center gap-4">
+                        <div className="flex -space-x-3">
+                          {friends.slice(0, 3).map((friend, i) => (
+                            <Image
+                              key={`desktop-friend-${i}`}
+                              src={friend}
+                              alt="Friend"
+                              width={40}
+                              height={40}
+                              className="w-10 h-10 rounded-full border-2 border-white object-cover"
+                            />
+                          ))}
+                          <div className="w-10 h-10 rounded-full border-2 border-white bg-[#D8D0C9] text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                            +2
+                          </div>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-medium text-[#949494]">當前分配</span>
+                          <span className="text-sm font-bold text-[#5C5C5C]">5 人均分</span>
+                        </div>
+                      </div>
+                      <button className="w-10 h-10 rounded-full bg-[#A8BCA1]/20 text-[#A8BCA1] hover:bg-[#A8BCA1] hover:text-white flex items-center justify-center transition-colors" aria-label="確認分帳群組">
+                        <span className="material-icons-round text-lg">check</span>
+                      </button>
                     </div>
                   </div>
-                  <button className="w-10 h-10 rounded-full bg-[#A8BCA1]/20 text-[#A8BCA1] hover:bg-[#A8BCA1] hover:text-white flex items-center justify-center transition-colors" aria-label="確認分帳群組">
-                    <span className="material-icons-round text-lg">check</span>
-                  </button>
-                </div>
-              </div>
+                </>
+              )}
             </div>
 
             {/* 應用程式設定 */}
@@ -409,18 +456,24 @@ export default function ProfilePage() {
                   查看全部 <span className="material-icons-round text-sm">chevron_right</span>
                 </Link>
               </div>
-              <div className="grid grid-cols-4 gap-3 relative z-10">
-                {achievements.map((item) => (
-                  <div key={item.label} className="flex flex-col items-center gap-1 group cursor-pointer">
-                    <div
-                      className={`w-14 h-14 rounded-full ${item.color} shadow-lg flex items-center justify-center transform group-hover:scale-105 transition-transform border-2 border-dashed border-white/30 ${item.rotate}`}
-                    >
-                      <span className="material-icons-round text-white text-2xl drop-shadow-md">{item.icon}</span>
+              {achievements.length > 0 ? (
+                <div className="grid grid-cols-4 gap-3 relative z-10">
+                  {achievements.map((item) => (
+                    <div key={item.label} className="flex flex-col items-center gap-1 group cursor-pointer">
+                      <div
+                        className={`w-14 h-14 rounded-full ${item.color} shadow-lg flex items-center justify-center transform group-hover:scale-105 transition-transform border-2 border-dashed border-white/30 ${item.rotate}`}
+                      >
+                        <span className="material-icons-round text-white text-2xl drop-shadow-md">{item.icon}</span>
+                      </div>
+                      <span className="text-[10px] font-medium text-[#5C5C5C]">{item.label}</span>
                     </div>
-                    <span className="text-[10px] font-medium text-[#5C5C5C]">{item.label}</span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-[#949494] text-sm relative z-10">
+                  尚未獲得任何徽章
+                </div>
+              )}
             </div>
           </section>
 
@@ -432,13 +485,13 @@ export default function ProfilePage() {
                   <span className="material-icons-round text-[#C5B6AF] text-base">favorite</span>
                   我的旅伴
                 </h3>
-                <span className="text-xs text-[#949494]">24 位好友</span>
+                <span className="text-xs text-[#949494]">{isLoggedIn ? '0 位好友' : '24 位好友'}</span>
               </div>
               <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar pb-1">
                 <button className="shrink-0 w-12 h-12 rounded-full border border-dashed border-[#D8D0C9] flex items-center justify-center text-[#949494] hover:border-[#94A3B8] hover:text-[#94A3B8] transition-colors" aria-label="新增好友">
                   <span className="material-icons-round">person_add</span>
                 </button>
-                {friends.map((friend, index) => (
+                {friends.length > 0 ? friends.map((friend, index) => (
                   <div key={`mobile-friend-list-${index}`} className="shrink-0 relative">
                     <Image
                       src={friend}
@@ -451,7 +504,9 @@ export default function ProfilePage() {
                       <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#A8BCA1] border-2 border-white rounded-full" />
                     )}
                   </div>
-                ))}
+                )) : (
+                  <span className="text-sm text-[#949494]">還沒有旅伴，快來邀請好友吧！</span>
+                )}
               </div>
             </div>
 
@@ -478,10 +533,14 @@ export default function ProfilePage() {
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="text-xs font-bold text-[#949494] uppercase tracking-wider mb-1 flex items-center gap-1">旅費管家</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold text-[#5C5C5C]">$12,450</span>
-                    <span className="text-xs text-[#949494] font-medium">/ $20,000 TWD</span>
-                  </div>
+                  {isLoggedIn ? (
+                    <div className="text-sm text-[#949494]">尚未設定旅程預算</div>
+                  ) : (
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold text-[#5C5C5C]">$12,450</span>
+                      <span className="text-xs text-[#949494] font-medium">/ $20,000 TWD</span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex flex-col items-center">
@@ -502,54 +561,58 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="mt-2 mb-4">
-                <div className="flex justify-between text-[10px] text-[#949494] mb-1.5">
-                  <span>京都自由行</span>
-                  <span>62%</span>
-                </div>
-                <div className="h-2 w-full bg-[#E8E2DD] rounded-full overflow-hidden">
-                  <div className="h-full bg-[#94A3B8] rounded-full w-[62%]" />
-                </div>
-              </div>
-
-              <div className="mt-3 pt-3 border-t border-[#E8E2DD]">
-                <div className="flex justify-between items-center mb-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 bg-[#A8BCA1] rounded-full" />
-                    <span className="text-xs font-bold text-[#5C5C5C]">快速分帳群組</span>
+              {!isLoggedIn && (
+                <>
+                  <div className="mt-2 mb-4">
+                    <div className="flex justify-between text-[10px] text-[#949494] mb-1.5">
+                      <span>京都自由行</span>
+                      <span>62%</span>
+                    </div>
+                    <div className="h-2 w-full bg-[#E8E2DD] rounded-full overflow-hidden">
+                      <div className="h-full bg-[#94A3B8] rounded-full w-[62%]" />
+                    </div>
                   </div>
-                  <button className="text-[10px] text-[#94A3B8] font-medium flex items-center hover:underline">
-                    選擇好友 <span className="material-icons-round text-[10px]">arrow_forward_ios</span>
-                  </button>
-                </div>
 
-                <div className="bg-white/40 rounded-xl p-2.5 flex items-center justify-between border border-white/30">
-                  <div className="flex items-center gap-3">
-                    <div className="flex -space-x-3">
-                      {friends.slice(0, 2).map((friend, i) => (
-                        <Image
-                          key={`mobile-friend-${i}`}
-                          src={friend}
-                          alt="Friend"
-                          width={32}
-                          height={32}
-                          className="w-8 h-8 rounded-full border-2 border-white object-cover"
-                        />
-                      ))}
-                      <div className="w-8 h-8 rounded-full border-2 border-white bg-[#D8D0C9] text-white flex items-center justify-center text-[9px] font-bold shadow-sm">
-                        +3
+                  <div className="mt-3 pt-3 border-t border-[#E8E2DD]">
+                    <div className="flex justify-between items-center mb-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 bg-[#A8BCA1] rounded-full" />
+                        <span className="text-xs font-bold text-[#5C5C5C]">快速分帳群組</span>
                       </div>
+                      <button className="text-[10px] text-[#94A3B8] font-medium flex items-center hover:underline">
+                        選擇好友 <span className="material-icons-round text-[10px]">arrow_forward_ios</span>
+                      </button>
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-[9px] font-medium text-[#949494]">當前分配</span>
-                      <span className="text-xs font-bold text-[#5C5C5C]">5 人均分</span>
+
+                    <div className="bg-white/40 rounded-xl p-2.5 flex items-center justify-between border border-white/30">
+                      <div className="flex items-center gap-3">
+                        <div className="flex -space-x-3">
+                          {friends.slice(0, 2).map((friend, i) => (
+                            <Image
+                              key={`mobile-friend-${i}`}
+                              src={friend}
+                              alt="Friend"
+                              width={32}
+                              height={32}
+                              className="w-8 h-8 rounded-full border-2 border-white object-cover"
+                            />
+                          ))}
+                          <div className="w-8 h-8 rounded-full border-2 border-white bg-[#D8D0C9] text-white flex items-center justify-center text-[9px] font-bold shadow-sm">
+                            +3
+                          </div>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[9px] font-medium text-[#949494]">當前分配</span>
+                          <span className="text-xs font-bold text-[#5C5C5C]">5 人均分</span>
+                        </div>
+                      </div>
+                      <button className="w-8 h-8 rounded-full bg-[#A8BCA1]/20 text-[#A8BCA1] hover:bg-[#A8BCA1] hover:text-white flex items-center justify-center transition-colors" aria-label="確認分帳群組">
+                        <span className="material-icons-round text-base">check</span>
+                      </button>
                     </div>
                   </div>
-                  <button className="w-8 h-8 rounded-full bg-[#A8BCA1]/20 text-[#A8BCA1] hover:bg-[#A8BCA1] hover:text-white flex items-center justify-center transition-colors" aria-label="確認分帳群組">
-                    <span className="material-icons-round text-base">check</span>
-                  </button>
-                </div>
-              </div>
+                </>
+              )}
             </div>
 
             <Link href="/my/settings" className="w-full bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm p-4 flex items-center justify-between group">
