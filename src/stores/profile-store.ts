@@ -1,5 +1,10 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { getSupabaseClient } from '@/lib/supabase'
+
+// 快取設定
+const CACHE_DURATION = 5 * 60 * 1000 // 5 分鐘後背景更新
+const FORCE_REFRESH_DURATION = 30 * 60 * 1000 // 30 分鐘後強制更新
 
 export interface Profile {
   id: string
@@ -33,9 +38,11 @@ interface ProfileState {
   profile: Profile | null
   isLoading: boolean
   error: string | null
+  lastFetchedAt: number | null // 上次讀取時間
+  cachedUserId: string | null  // 快取的用戶 ID
 
   // Actions
-  fetchProfile: (userId: string) => Promise<void>
+  fetchProfile: (userId: string, forceRefresh?: boolean) => Promise<void>
   updateProfile: (userId: string, data: Partial<Profile>) => Promise<{ success: boolean; error?: string }>
   uploadAvatar: (userId: string, file: File) => Promise<{ success: boolean; url?: string; error?: string }>
   completeProfile: (userId: string, data: {
@@ -47,27 +54,65 @@ interface ProfileState {
     avatar_url?: string
   }) => Promise<{ success: boolean; error?: string }>
   clearProfile: () => void
+  invalidateCache: () => void // 強制清除快取
 }
 
-export const useProfileStore = create<ProfileState>((set, get) => ({
+export const useProfileStore = create<ProfileState>()(
+  persist(
+    (set, get) => ({
   profile: null,
   isLoading: false,
   error: null,
+  lastFetchedAt: null,
+  cachedUserId: null,
 
-  fetchProfile: async (userId: string) => {
+  fetchProfile: async (userId: string, forceRefresh = false) => {
+    const state = get()
+    const now = Date.now()
+
+    // 檢查是否需要更新
+    const isSameUser = state.cachedUserId === userId
+    const hasCache = state.profile !== null && isSameUser
+    const timeSinceLastFetch = state.lastFetchedAt ? now - state.lastFetchedAt : Infinity
+
+    // 快取邏輯：
+    // 1. 不同用戶 → 強制更新
+    // 2. 強制刷新 → 更新
+    // 3. 超過 30 分鐘 → 強制更新
+    // 4. 超過 5 分鐘 → 背景更新（不顯示 loading）
+    // 5. 5 分鐘內且有快取 → 直接用快取
+
+    const needsForceRefresh = !isSameUser || forceRefresh || timeSinceLastFetch > FORCE_REFRESH_DURATION
+    const needsBackgroundRefresh = timeSinceLastFetch > CACHE_DURATION
+
+    // 5 分鐘內有快取，直接返回
+    if (hasCache && !needsForceRefresh && !needsBackgroundRefresh) {
+      return
+    }
+
+    // 背景更新：有快取時不顯示 loading
+    const showLoading = !hasCache || needsForceRefresh
+
     const supabase = getSupabaseClient()
-    set({ isLoading: true, error: null })
+    if (showLoading) {
+      set({ isLoading: true, error: null })
+    }
 
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .maybeSingle() // 使用 maybeSingle，不存在時返回 null 而不是報錯
+        .maybeSingle()
 
       if (error) throw error
 
-      set({ profile: data, isLoading: false })
+      set({
+        profile: data,
+        isLoading: false,
+        lastFetchedAt: now,
+        cachedUserId: userId,
+      })
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '載入個人資料失敗'
       set({ isLoading: false, error: message })
@@ -88,7 +133,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
       if (error) throw error
 
-      set({ profile: updated, isLoading: false })
+      set({ profile: updated, isLoading: false, lastFetchedAt: Date.now() })
       return { success: true }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '更新個人資料失敗'
@@ -145,7 +190,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
       if (error) throw error
 
-      set({ profile: updated, isLoading: false })
+      set({ profile: updated, isLoading: false, lastFetchedAt: Date.now() })
       return { success: true }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '完成個人資料失敗'
@@ -154,5 +199,18 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     }
   },
 
-  clearProfile: () => set({ profile: null, error: null }),
-}))
+  clearProfile: () => set({ profile: null, error: null, lastFetchedAt: null, cachedUserId: null }),
+
+  invalidateCache: () => set({ lastFetchedAt: null }),
+}),
+    {
+      name: 'venturo-profile', // localStorage 的 key
+      partialize: (state) => ({
+        // 只持久化這些欄位（不存 isLoading, error）
+        profile: state.profile,
+        lastFetchedAt: state.lastFetchedAt,
+        cachedUserId: state.cachedUserId,
+      }),
+    }
+  )
+)
