@@ -35,27 +35,7 @@ export default function LoginPage() {
     initialize();
   }, [initialize]);
 
-  // 如果已登入，檢查 profile 狀態
-  useEffect(() => {
-    const checkAndRedirect = async () => {
-      if (!user) return;
-
-      const supabase = getSupabaseClient();
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('is_profile_complete')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (!profile?.is_profile_complete) {
-        router.push('/onboarding');
-      } else {
-        router.push('/');
-      }
-    };
-
-    checkAndRedirect();
-  }, [user, router]);
+  // 不自動跳轉 - 讓用戶看到已登入狀態
 
   // 切換模式時清除錯誤
   useEffect(() => {

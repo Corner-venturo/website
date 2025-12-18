@@ -10,6 +10,8 @@ export interface Profile {
   location: string | null
   bio: string | null
   is_profile_complete: boolean
+  is_founding_member: boolean      // 創始會員 (前100名用戶)
+  member_number: number | null     // 創始會員編號 (1-100)
   created_at: string
   updated_at: string
 }

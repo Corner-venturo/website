@@ -13,8 +13,9 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: '/', icon: 'home', activeIcon: 'home', label: '首頁' },
   { href: '/explore', icon: 'explore', activeIcon: 'explore', label: '探索' },
+  { href: '/ai-planner', icon: 'auto_awesome', activeIcon: 'auto_awesome', label: 'AI' },
+  { href: '/split', icon: 'account_balance_wallet', activeIcon: 'account_balance_wallet', label: '記帳' },
   { href: '/orders', icon: 'confirmation_number', activeIcon: 'confirmation_number', label: '訂單' },
-  { href: '/ai-planner', icon: 'map', activeIcon: 'map', label: '規劃' },
   { href: '/my', icon: 'person_outline', activeIcon: 'person', label: '我的' },
 ];
 

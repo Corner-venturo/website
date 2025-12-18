@@ -18,7 +18,7 @@ const MapComponent = dynamic(() => import('./MapComponent'), {
 
 // 類別定義
 const categories = [
-  { id: 'all', label: '全部', icon: 'M4 6h16M4 12h16M4 18h16' },
+  { id: 'all', label: '全部', icon: 'M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z' },
   { id: 'food', label: '美食', icon: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z' },
   { id: 'photo', label: '攝影', icon: 'M12 9a3 3 0 100 6 3 3 0 000-6zM17 6h-2l-1.5-2h-3L9 6H7c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z' },
   { id: 'outdoor', label: '戶外', icon: 'M14 6l-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22L14 6z' },
@@ -459,7 +459,7 @@ export default function ExplorePage() {
 
         {/* 底部揪團卡片列表 - 浮在地圖上 */}
         <div className="absolute bottom-20 left-0 right-0 z-20">
-          <div className="flex overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] gap-4 px-5 py-2">
+          <div className={`flex overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] gap-4 px-5 py-2 ${filteredTrips.length === 0 ? 'justify-center' : ''}`}>
             {filteredTrips.length === 0 ? (
               <div className="snap-center shrink-0 w-[280px] p-4 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/50 flex items-center justify-center">
                 <div className="text-center">

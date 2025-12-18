@@ -307,25 +307,10 @@ export default function ProfilePage() {
 
       {/* ========== 手機版佈局 ========== */}
       <div className="lg:hidden relative z-10 flex flex-col flex-1">
-        <header className="px-5 pt-4 pb-3">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-[#5C5C5C]">我的</h1>
-            <div className="flex items-center gap-2">
-              <button className="w-10 h-10 bg-white/60 backdrop-blur-xl rounded-full border border-white/50 shadow-sm flex items-center justify-center text-[#949494] hover:text-[#5C5C5C] transition relative">
-                <div className="absolute top-2 right-2 w-2 h-2 bg-[#E8C4C4] rounded-full" />
-                <span className="material-icons-round text-xl">notifications</span>
-              </button>
-              <Link href="/my/settings" className="w-10 h-10 bg-white/60 backdrop-blur-xl rounded-full border border-white/50 shadow-sm flex items-center justify-center text-[#949494] hover:text-[#5C5C5C] transition">
-                <span className="material-icons-outlined text-xl">settings</span>
-              </Link>
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 w-full h-full overflow-y-auto hide-scrollbar pb-32">
-          <div className="px-6 pt-4 pb-6 flex items-center gap-5">
-            <div className="relative">
-              <div className="w-20 h-20 rounded-full p-1 border-2 border-[#94A3B8]/30">
+        <main className="flex-1 w-full h-full overflow-y-auto hide-scrollbar pb-32 pt-5">
+          <div className="px-6 pb-5 flex items-center gap-4">
+            <Link href="/my/settings" className="relative shrink-0 group">
+              <div className="w-20 h-20 rounded-full p-1 border-2 border-[#94A3B8]/30 group-hover:border-[#94A3B8]/50 transition">
                 <div className="relative w-full h-full rounded-full overflow-hidden shadow-sm">
                   <Image
                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5_eWkWytRxj_z3ImVOFNOGbw-3gTjLrh0gJUyGKU2a4p-6Qw9h1Xya8DMPdQmIxwaNeXwgbjRF0271JMx8c8VVhLbPt1sXs9O2X6Z0wm3EdnU3D19GIYooQrZr1uqMCA1l0i9tM-EbMy30MIkmPHUSGd_2FWG8X10WUtwAeJ581lKAdLchWnRl1aMuDSwCXQbIe8kYx0vIGYxhlLHY-8_d-wmc_Rpacqcuy3JoV4hOo0GtBeZ1mZT-_1i3OFfeWdrxu3Gxsbnwvjk"
@@ -336,27 +321,28 @@ export default function ProfilePage() {
                   />
                 </div>
               </div>
-              <div className="absolute -bottom-1 -right-1 bg-[#94A3B8] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm border border-white">
-                LV. 12
+              <div className="absolute -bottom-1 -left-1 w-7 h-7 bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-white/50 flex items-center justify-center text-[#949494] group-hover:text-[#5C5C5C] transition">
+                <span className="material-icons-outlined text-base">settings</span>
               </div>
-            </div>
+            </Link>
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-[#5C5C5C] mb-1">Alex Chen</h2>
-              <p className="text-sm text-[#949494] leading-relaxed line-clamp-2">
-                尋找世界角落的風景，用鏡頭記錄每一個感動瞬間
-              </p>
-              <div className="flex gap-4 mt-3">
-                <div className="flex flex-col">
-                  <span className="text-xs text-[#949494] uppercase font-medium">足跡</span>
-                  <span className="text-sm font-bold text-[#5C5C5C]">12 國</span>
+              <h2 className="text-xl font-bold text-[#5C5C5C] mb-2">Alex Chen</h2>
+              <div className="grid grid-cols-4 gap-2">
+                <div className="bg-white/60 backdrop-blur-sm rounded-xl p-2 text-center border border-white/50">
+                  <span className="text-base font-bold text-[#5C5C5C]">12</span>
+                  <span className="block text-[9px] text-[#949494] font-medium">國家</span>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-xs text-[#949494] uppercase font-medium">旅程</span>
-                  <span className="text-sm font-bold text-[#5C5C5C]">45 次</span>
+                <div className="bg-white/60 backdrop-blur-sm rounded-xl p-2 text-center border border-white/50">
+                  <span className="text-base font-bold text-[#5C5C5C]">45</span>
+                  <span className="block text-[9px] text-[#949494] font-medium">旅程</span>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-xs text-[#949494] uppercase font-medium">收藏</span>
-                  <span className="text-sm font-bold text-[#5C5C5C]">128</span>
+                <div className="bg-white/60 backdrop-blur-sm rounded-xl p-2 text-center border border-white/50">
+                  <span className="text-base font-bold text-[#5C5C5C]">128</span>
+                  <span className="block text-[9px] text-[#949494] font-medium">收藏</span>
+                </div>
+                <div className="bg-gradient-to-r from-[#94A3B8] to-[#A8BCA1] rounded-xl p-2 text-center shadow-md">
+                  <span className="text-base font-bold text-white">12</span>
+                  <span className="block text-[9px] text-white/80 font-medium">等級</span>
                 </div>
               </div>
             </div>
@@ -396,6 +382,37 @@ export default function ProfilePage() {
           </section>
 
           <div className="px-5 space-y-4">
+            {/* 我的旅伴 */}
+            <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-bold text-[#5C5C5C] text-sm flex items-center gap-1.5">
+                  <span className="material-icons-round text-[#C5B6AF] text-base">favorite</span>
+                  我的旅伴
+                </h3>
+                <span className="text-xs text-[#949494]">24 位好友</span>
+              </div>
+              <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar pb-1">
+                <button className="shrink-0 w-12 h-12 rounded-full border border-dashed border-[#D8D0C9] flex items-center justify-center text-[#949494] hover:border-[#94A3B8] hover:text-[#94A3B8] transition-colors" aria-label="新增好友">
+                  <span className="material-icons-round">person_add</span>
+                </button>
+                {friends.map((friend, index) => (
+                  <div key={`mobile-friend-list-${index}`} className="shrink-0 relative">
+                    <Image
+                      src={friend}
+                      alt="Friend"
+                      width={48}
+                      height={48}
+                      className={`w-12 h-12 rounded-full object-cover ring-2 ring-white ${index === friends.length - 1 ? 'grayscale opacity-70' : ''}`}
+                    />
+                    {index === 0 && (
+                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#A8BCA1] border-2 border-white rounded-full" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 訂單快捷 */}
             <div className="grid grid-cols-2 gap-3">
               {quickActions.map((action) => (
                 <Link
@@ -413,6 +430,7 @@ export default function ProfilePage() {
               ))}
             </div>
 
+            {/* 旅費管家 */}
             <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm p-5 relative overflow-hidden transition-all duration-300">
               <div className="flex justify-between items-start">
                 <div>
@@ -488,35 +506,6 @@ export default function ProfilePage() {
                     <span className="material-icons-round text-base">check</span>
                   </button>
                 </div>
-              </div>
-            </div>
-
-            <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm p-4">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="font-bold text-[#5C5C5C] text-sm flex items-center gap-1.5">
-                  <span className="material-icons-round text-[#C5B6AF] text-base">favorite</span>
-                  我的旅伴
-                </h3>
-                <span className="text-xs text-[#949494]">24 位好友</span>
-              </div>
-              <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar pb-1">
-                <button className="shrink-0 w-12 h-12 rounded-full border border-dashed border-[#D8D0C9] flex items-center justify-center text-[#949494] hover:border-[#94A3B8] hover:text-[#94A3B8] transition-colors" aria-label="新增好友">
-                  <span className="material-icons-round">person_add</span>
-                </button>
-                {friends.map((friend, index) => (
-                  <div key={`mobile-friend-list-${index}`} className="shrink-0 relative">
-                    <Image
-                      src={friend}
-                      alt="Friend"
-                      width={48}
-                      height={48}
-                      className={`w-12 h-12 rounded-full object-cover ring-2 ring-white ${index === friends.length - 1 ? 'grayscale opacity-70' : ''}`}
-                    />
-                    {index === 0 && (
-                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#A8BCA1] border-2 border-white rounded-full" />
-                    )}
-                  </div>
-                ))}
               </div>
             </div>
 

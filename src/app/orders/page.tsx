@@ -215,10 +215,10 @@ export default function OrdersPage() {
           <aside className="w-full lg:w-64 xl:w-80 shrink-0">
             {/* 手機/平板：篩選按鈕 */}
             <div className="lg:hidden mb-4">
-              <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
+              <div className="flex gap-2">
                 <button
                   onClick={() => setActiveFilter("all")}
-                  className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap flex items-center gap-1.5 transition-all ${
+                  className={`flex-1 py-2 rounded-full text-xs font-medium flex items-center justify-center gap-1 transition-all ${
                     activeFilter === "all"
                       ? "bg-[#94A3B8] text-white shadow-lg shadow-[#94A3B8]/30"
                       : "bg-white/60 backdrop-blur-xl border border-white/50 text-[#5C5C5C] hover:bg-white/80"
@@ -229,18 +229,18 @@ export default function OrdersPage() {
                 </button>
                 <button
                   onClick={() => setActiveFilter("upcoming")}
-                  className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap flex items-center gap-1.5 transition-all ${
+                  className={`flex-1 py-2 rounded-full text-xs font-medium flex items-center justify-center gap-1 transition-all ${
                     activeFilter === "upcoming"
                       ? "bg-[#94A3B8] text-white shadow-lg shadow-[#94A3B8]/30"
                       : "bg-white/60 backdrop-blur-xl border border-white/50 text-[#5C5C5C] hover:bg-white/80"
                   }`}
                 >
                   <span className="material-icons-round text-sm">flight_takeoff</span>
-                  即將出發
+                  <span className="hidden sm:inline">即將</span>出發
                 </button>
                 <button
                   onClick={() => setActiveFilter("pending")}
-                  className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap flex items-center gap-1.5 transition-all ${
+                  className={`flex-1 py-2 rounded-full text-xs font-medium flex items-center justify-center gap-1 transition-all ${
                     activeFilter === "pending"
                       ? "bg-[#C5B6AF] text-white shadow-lg shadow-[#C5B6AF]/30"
                       : "bg-white/60 backdrop-blur-xl border border-white/50 text-[#5C5C5C] hover:bg-white/80"
@@ -251,7 +251,7 @@ export default function OrdersPage() {
                 </button>
                 <button
                   onClick={() => setActiveFilter("planning")}
-                  className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap flex items-center gap-1.5 transition-all ${
+                  className={`flex-1 py-2 rounded-full text-xs font-medium flex items-center justify-center gap-1 transition-all ${
                     activeFilter === "planning"
                       ? "bg-[#A8BCA1] text-white shadow-lg shadow-[#A8BCA1]/30"
                       : "bg-white/60 backdrop-blur-xl border border-white/50 text-[#5C5C5C] hover:bg-white/80"
