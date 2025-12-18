@@ -202,7 +202,7 @@ export default function OrderDetailPage() {
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 px-4 sm:px-6 pt-12 pb-4 flex items-center gap-3 bg-[#F5F4F0]/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 px-4 sm:px-6 pt-6 pb-4 flex items-center gap-3">
         <Link
           href="/orders"
           className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-xl border border-white/50 shadow-sm text-[#5C5C5C] hover:text-[#94A3B8] transition-colors"
