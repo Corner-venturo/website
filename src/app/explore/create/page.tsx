@@ -263,11 +263,16 @@ function TimeLocationStep() {
 }
 
 function AdvancedSettingsStep() {
+  const [memberCount, setMemberCount] = useState(4);
+  const [selectedGender, setSelectedGender] = useState('all');
+  const [requireApproval, setRequireApproval] = useState(true);
+  const [isPrivate, setIsPrivate] = useState(false);
+
   return (
     <>
       <div className="mb-6 animate-[fadeIn_0.5s_ease-out]">
         <h2 className="text-sm font-bold text-gray-800 mb-4 px-1 flex items-center gap-2">
-          <span className="material-icons-round text-morandi-blue">group</span>
+          <span className="material-icons-round text-[#A5BCCD]">group</span>
           參加設定
         </h2>
         <div className="bg-white rounded-3xl p-5 shadow-sm space-y-6">
@@ -277,11 +282,19 @@ function AdvancedSettingsStep() {
               <p className="text-xs text-gray-400 mt-1">包含主辦人</p>
             </div>
             <div className="flex items-center gap-4 bg-[#F7F5F2] p-1.5 rounded-xl">
-              <button className="w-8 h-8 rounded-lg bg-white shadow-sm text-gray-600 flex items-center justify-center hover:text-[var(--primary)] active:scale-95 transition-all">
+              <button
+                type="button"
+                onClick={() => setMemberCount(Math.max(2, memberCount - 1))}
+                className="w-8 h-8 rounded-lg bg-white shadow-sm text-gray-600 flex items-center justify-center hover:text-[#Cfb9a5] active:scale-95 transition-all"
+              >
                 <span className="material-icons-round text-sm">remove</span>
               </button>
-              <span className="text-base font-bold text-gray-800 w-6 text-center">4</span>
-              <button className="w-8 h-8 rounded-lg bg-white shadow-sm text-gray-600 flex items-center justify-center hover:text-[var(--primary)] active:scale-95 transition-all">
+              <span className="text-base font-bold text-gray-800 w-6 text-center">{memberCount}</span>
+              <button
+                type="button"
+                onClick={() => setMemberCount(Math.min(50, memberCount + 1))}
+                className="w-8 h-8 rounded-lg bg-white shadow-sm text-gray-600 flex items-center justify-center hover:text-[#Cfb9a5] active:scale-95 transition-all"
+              >
                 <span className="material-icons-round text-sm">add</span>
               </button>
             </div>
@@ -293,9 +306,11 @@ function AdvancedSettingsStep() {
               {genderOptions.map((option) => (
                 <button
                   key={option.id}
+                  type="button"
+                  onClick={() => setSelectedGender(option.id)}
                   className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-                    option.default
-                      ? 'bg-white shadow-sm text-primary'
+                    selectedGender === option.id
+                      ? 'bg-white shadow-sm text-[#Cfb9a5]'
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
@@ -309,31 +324,62 @@ function AdvancedSettingsStep() {
 
       <div className="mb-6 animate-[fadeIn_0.6s_ease-out]">
         <h2 className="text-sm font-bold text-gray-800 mb-4 px-1 flex items-center gap-2">
-          <span className="material-icons-round text-morandi-pink">verified_user</span>
+          <span className="material-icons-round text-[#CFA5A5]">verified_user</span>
           權限管理
         </h2>
         <div className="bg-white rounded-3xl p-5 shadow-sm space-y-6">
-          {[{ label: '加入審核', desc: '需經主辦人同意才可加入', defaultChecked: true }, { label: '私密活動', desc: '活動將不會顯示在雷達地圖上' }].map((item) => (
-            <div key={item.label}>
-              <div className="flex items-center justify-between">
-                <div className="pr-4">
-                  <label className="text-sm font-bold text-gray-800">{item.label}</label>
-                  <p className="text-xs text-gray-400 mt-1">{item.desc}</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                  <input type="checkbox" defaultChecked={item.defaultChecked} className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--primary)]" />
-                </label>
+          {/* 加入審核 */}
+          <div>
+            <div className="flex items-center justify-between">
+              <div className="pr-4">
+                <label className="text-sm font-bold text-gray-800">加入審核</label>
+                <p className="text-xs text-gray-400 mt-1">需經主辦人同意才可加入</p>
               </div>
-              {item.label === '加入審核' ? <div className="h-px bg-gray-100 w-full mt-6" /> : null}
+              <button
+                type="button"
+                onClick={() => setRequireApproval(!requireApproval)}
+                className={`relative w-11 h-6 rounded-full transition-colors ${
+                  requireApproval ? 'bg-[#Cfb9a5]' : 'bg-gray-200'
+                }`}
+              >
+                <div
+                  className={`absolute top-[2px] left-[2px] w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                    requireApproval ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
             </div>
-          ))}
+            <div className="h-px bg-gray-100 w-full mt-6" />
+          </div>
+
+          {/* 私密活動 */}
+          <div>
+            <div className="flex items-center justify-between">
+              <div className="pr-4">
+                <label className="text-sm font-bold text-gray-800">私密活動</label>
+                <p className="text-xs text-gray-400 mt-1">活動將不會顯示在雷達地圖上</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPrivate(!isPrivate)}
+                className={`relative w-11 h-6 rounded-full transition-colors ${
+                  isPrivate ? 'bg-[#Cfb9a5]' : 'bg-gray-200'
+                }`}
+              >
+                <div
+                  className={`absolute top-[2px] left-[2px] w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                    isPrivate ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="mb-6 animate-[fadeIn_0.7s_ease-out]">
         <h2 className="text-sm font-bold text-gray-800 mb-4 px-1 flex items-center gap-2">
-          <span className="material-icons-round text-morandi-yellow">payments</span>
+          <span className="material-icons-round text-[#E0D6A8]">payments</span>
           費用與標籤
         </h2>
         <div className="bg-white rounded-3xl p-5 shadow-sm space-y-5">
@@ -379,7 +425,9 @@ function AdvancedSettingsStep() {
 export default function CreateExplorePage() {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [showBadge, setShowBadge] = useState(false);
+  const [draftSaved, setDraftSaved] = useState(false);
 
   const isFirstStep = step === 1;
   const isLastStep = step === 3;
@@ -389,6 +437,16 @@ export default function CreateExplorePage() {
     if (step === 2) return '下一步：進階設定';
     return '確認發布';
   }, [step]);
+
+  const handleSaveDraft = () => {
+    setIsSavingDraft(true);
+    // TODO: 實際的 API 呼叫儲存草稿
+    setTimeout(() => {
+      setIsSavingDraft(false);
+      setDraftSaved(true);
+      setTimeout(() => setDraftSaved(false), 2000);
+    }, 800);
+  };
 
   const handleNext = () => {
     if (isLastStep) {
@@ -489,9 +547,13 @@ export default function CreateExplorePage() {
                 })}
               </div>
 
-              <button className="w-full py-3 rounded-xl bg-white border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition flex items-center justify-center gap-2">
-                <span className="material-icons-round text-lg">save</span>
-                儲存草稿
+              <button
+                onClick={handleSaveDraft}
+                disabled={isSavingDraft}
+                className="w-full py-3 rounded-xl bg-white border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <span className="material-icons-round text-lg">{draftSaved ? 'check' : 'save'}</span>
+                {isSavingDraft ? '儲存中...' : draftSaved ? '已儲存！' : '儲存草稿'}
               </button>
             </div>
           </div>
@@ -535,8 +597,12 @@ export default function CreateExplorePage() {
               <span className="material-icons-round">arrow_back_ios_new</span>
             </Link>
             <h1 className="text-lg font-bold text-gray-800 tracking-wide">創立活動</h1>
-            <button className="px-4 py-1.5 rounded-full bg-transparent border border-[rgba(207,185,165,0.3)] text-primary text-sm font-medium transition-colors" style={{ backgroundColor: 'transparent' }}>
-              存草稿
+            <button
+              onClick={handleSaveDraft}
+              disabled={isSavingDraft}
+              className="px-4 py-1.5 rounded-full border border-[rgba(207,185,165,0.3)] text-[#Cfb9a5] text-sm font-medium transition-colors disabled:opacity-50"
+            >
+              {isSavingDraft ? '儲存中...' : draftSaved ? '已儲存 ✓' : '存草稿'}
             </button>
           </div>
           <StepIndicator step={step} onChange={setStep} />
