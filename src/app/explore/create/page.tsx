@@ -117,23 +117,53 @@ function StepIndicator({ step, onChange }: { step: number; onChange: (value: num
 }
 
 function BasicInfoStep() {
+  const [selectedCategory, setSelectedCategory] = useState<string>('food');
+
   return (
-    <>
-      <div className="mb-8">
+    <div className="space-y-6">
+      {/* 1. 活動名稱 - 最上面 */}
+      <div>
+        <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">活動名稱</label>
+        <input
+          type="text"
+          placeholder="例如：週五晚間爵士音樂會"
+          className="w-full rounded-2xl border-none bg-white py-3.5 px-4 text-sm shadow-sm placeholder-gray-300 focus:ring-2 focus:ring-[rgba(207,185,165,0.5)] text-gray-800"
+        />
+      </div>
+
+      {/* 2. 活動類別 */}
+      <div>
+        <label className="block text-xs font-bold text-gray-500 mb-2 ml-1">活動類別</label>
+        <div className="flex flex-wrap gap-2.5">
+          {categories.map((category) => {
+            const isSelected = selectedCategory === category.id;
+            return (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => setSelectedCategory(category.id)}
+                className={`px-4 py-2 rounded-xl text-xs font-medium border shadow-sm transition-all flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-[#Cfb9a5] text-white border-[#Cfb9a5] shadow-[0_4px_12px_rgba(207,185,165,0.3)]'
+                    : 'bg-white text-gray-600 border-gray-100 hover:border-[#Cfb9a5]/50'
+                }`}
+              >
+                <span className="material-icons-round text-sm">{category.icon}</span>
+                {category.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3. 活動封面 */}
+      <div>
         <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3 px-1">
-          <span className="material-icons-round text-primary text-base">image</span>
+          <span className="material-icons-round text-[#Cfb9a5] text-base">image</span>
           活動封面
         </label>
-        <div className="w-full h-52 rounded-2xl bg-white border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 transition-colors cursor-pointer relative overflow-hidden group shadow-sm"
+        <div className="w-full h-52 rounded-2xl bg-white border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 transition-colors cursor-pointer relative overflow-hidden group shadow-sm hover:border-[#Cfb9a5] hover:text-[#Cfb9a5]"
           style={{ borderColor: 'rgba(207,185,165,0.5)' }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = palette.primary;
-            (e.currentTarget as HTMLElement).style.color = palette.primary;
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(207,185,165,0.5)';
-            (e.currentTarget as HTMLElement).style.color = 'inherit';
-          }}
         >
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: 'rgba(207,185,165,0.05)' }} />
           <span className="material-icons-round text-4xl mb-2 group-hover:scale-110 transition-transform">add_photo_alternate</span>
@@ -141,42 +171,16 @@ function BasicInfoStep() {
         </div>
       </div>
 
-      <div className="space-y-5">
-        <div className="input-clean">
-          <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">活動名稱</label>
-          <input
-            type="text"
-            placeholder="例如：週五晚間爵士音樂會"
-            className="w-full rounded-2xl border-none bg-white py-3.5 px-4 text-sm shadow-sm placeholder-gray-300 focus:ring-2 focus:ring-[rgba(207,185,165,0.5)] text-gray-800"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-gray-500 mb-2 ml-1">活動類別</label>
-          <div className="flex flex-wrap gap-2.5">
-            {categories.map((category, index) => (
-              <label key={category.id} className="cursor-pointer">
-                <input type="radio" name="category" defaultChecked={index === 0} className="peer sr-only" />
-                <div
-                  className="px-4 py-2 rounded-xl bg-white text-gray-500 text-xs font-medium border border-transparent shadow-sm transition-all flex items-center gap-1.5 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-primary-soft"
-                >
-                  <span className="material-icons-round text-sm">{category.icon}</span> {category.label}
-                </div>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="input-clean">
-          <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">活動描述</label>
-          <textarea
-            rows={4}
-            placeholder="請簡單介紹活動內容、行程安排與注意事項..."
-            className="w-full rounded-2xl border-none bg-white py-3.5 px-4 text-sm shadow-sm placeholder-gray-300 focus:ring-2 focus:ring-[rgba(207,185,165,0.5)] text-gray-800 resize-none leading-relaxed"
-          />
-        </div>
+      {/* 4. 活動描述 */}
+      <div>
+        <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">活動描述</label>
+        <textarea
+          rows={4}
+          placeholder="請簡單介紹活動內容、行程安排與注意事項..."
+          className="w-full rounded-2xl border-none bg-white py-3.5 px-4 text-sm shadow-sm placeholder-gray-300 focus:ring-2 focus:ring-[rgba(207,185,165,0.5)] text-gray-800 resize-none leading-relaxed"
+        />
       </div>
-    </>
+    </div>
   );
 }
 
@@ -381,13 +385,31 @@ function AdvancedSettingsStep() {
 
 export default function CreateExplorePage() {
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isFirstStep = step === 1;
+  const isLastStep = step === 3;
+
   const nextLabel = useMemo(() => {
     if (step === 1) return '下一步：時間地點';
     if (step === 2) return '下一步：進階設定';
     return '確認發布';
   }, [step]);
+
+  const handleNext = () => {
+    if (isLastStep) {
+      // 發布活動
+      setIsSubmitting(true);
+      // TODO: 實際的 API 呼叫
+      setTimeout(() => {
+        setIsSubmitting(false);
+        alert('活動發布成功！（功能開發中）');
+        // 之後可以 redirect 到活動頁面
+      }, 1000);
+    } else {
+      setStep((prev) => Math.min(prev + 1, 3));
+    }
+  };
 
   const stepContent = useMemo(() => {
     if (step === 1) return <BasicInfoStep />;
@@ -492,11 +514,12 @@ export default function CreateExplorePage() {
                   上一步
                 </button>
                 <button
-                  onClick={() => setStep((prev) => Math.min(prev + 1, 3))}
-                  className="px-8 py-3 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/30 flex items-center gap-2 hover:bg-[var(--primary-dark)] transition"
+                  onClick={handleNext}
+                  disabled={isSubmitting}
+                  className="px-8 py-3 bg-[#Cfb9a5] text-white font-bold rounded-xl shadow-lg shadow-[#Cfb9a5]/30 flex items-center gap-2 hover:bg-[#b09b88] transition disabled:opacity-50"
                 >
-                  {nextLabel}
-                  <span className="material-icons-round text-lg">{step === 3 ? 'check_circle' : 'arrow_forward'}</span>
+                  {isSubmitting ? '發布中...' : nextLabel}
+                  <span className="material-icons-round text-lg">{isLastStep ? 'check_circle' : 'arrow_forward'}</span>
                 </button>
               </div>
             </div>
@@ -614,11 +637,12 @@ export default function CreateExplorePage() {
 
         <div className="fixed bottom-0 inset-x-0 p-5 bg-gradient-to-t from-[#F0EEE6] via-[#F0EEE6] to-transparent z-50 pt-10">
           <button
-            onClick={() => setStep((prev) => Math.min(prev + 1, 3))}
-            className="w-full bg-primary text-white font-bold py-4 rounded-3xl shadow-[0_12px_30px_rgba(207,185,165,0.3)] flex items-center justify-center gap-2 active:scale-95 transition-transform hover:bg-[var(--primary-dark)]"
+            onClick={handleNext}
+            disabled={isSubmitting}
+            className="w-full bg-[#Cfb9a5] text-white font-bold py-4 rounded-3xl shadow-[0_12px_30px_rgba(207,185,165,0.3)] flex items-center justify-center gap-2 active:scale-95 transition-transform hover:bg-[#b09b88] disabled:opacity-50"
           >
-            {nextLabel}
-            <span className="material-icons-round text-sm">{step === 3 ? 'check_circle' : 'arrow_forward'}</span>
+            {isSubmitting ? '發布中...' : nextLabel}
+            <span className="material-icons-round text-sm">{isLastStep ? 'check_circle' : 'arrow_forward'}</span>
           </button>
         </div>
       </div>
