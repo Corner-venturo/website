@@ -1,14 +1,83 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useAuthStore } from '@/stores/auth-store';
+import { useProfileStore, getDisplayAvatar } from '@/stores/profile-store';
 
 export default function ProfileEditPage() {
-  const [name, setName] = useState('Alex Chen');
-  const [bio, setBio] = useState('尋找世界角落的風景，用鏡頭記錄每一個感動瞬間');
-  const [email, setEmail] = useState('alex.chen@email.com');
-  const [phone, setPhone] = useState('0912-345-678');
+  const { user, initialize, isInitialized } = useAuthStore();
+  const { profile, fetchProfile, updateProfile, uploadAvatar, isLoading } = useProfileStore();
+
+  const [name, setName] = useState('');
+  const [bio, setBio] = useState('');
+  const [phone, setPhone] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (!isInitialized) {
+      initialize();
+    }
+  }, [initialize, isInitialized]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchProfile(user.id);
+    }
+  }, [user?.id, fetchProfile]);
+
+  // 載入 profile 資料到表單
+  useEffect(() => {
+    if (profile) {
+      setName(profile.display_name || profile.full_name || '');
+      setBio(profile.bio || '');
+      setPhone(profile.phone || '');
+    }
+  }, [profile]);
+
+  const avatarUrl = getDisplayAvatar(profile, user?.user_metadata);
+  const email = user?.email || '';
+  const displayName = name || user?.user_metadata?.name || '訪客';
+
+  const handleSave = async () => {
+    if (!user?.id) return;
+
+    setIsSaving(true);
+    setMessage('');
+
+    const result = await updateProfile(user.id, {
+      display_name: name,
+      bio,
+      phone,
+    });
+
+    setIsSaving(false);
+
+    if (result.success) {
+      setMessage('儲存成功！');
+      setTimeout(() => setMessage(''), 2000);
+    } else {
+      setMessage(result.error || '儲存失敗');
+    }
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+
+    const result = await uploadAvatar(user.id, file);
+
+    if (result.success && result.url) {
+      // 更新 profile 的 avatar_url
+      await updateProfile(user.id, { avatar_url: result.url });
+      // 重新載入 profile
+      fetchProfile(user.id);
+    } else {
+      setMessage(result.error || '上傳失敗');
+    }
+  };
 
   return (
     <div className="bg-[#F5F4F0] font-sans antialiased text-[#5C5C5C] min-h-screen flex flex-col">
@@ -29,10 +98,21 @@ export default function ProfileEditPage() {
           </Link>
           <h1 className="text-xl font-bold text-[#5C5C5C]">個人資料</h1>
         </div>
-        <button className="px-4 py-2 rounded-full bg-[#94A3B8] text-white text-sm font-bold shadow-lg shadow-[#94A3B8]/30 hover:shadow-xl transition-shadow">
-          儲存
+        <button
+          onClick={handleSave}
+          disabled={isSaving || isLoading}
+          className="px-4 py-2 rounded-full bg-[#94A3B8] text-white text-sm font-bold shadow-lg shadow-[#94A3B8]/30 hover:shadow-xl transition-shadow disabled:opacity-50"
+        >
+          {isSaving ? '儲存中...' : '儲存'}
         </button>
       </header>
+
+      {/* Message */}
+      {message && (
+        <div className={`mx-6 mb-4 p-3 rounded-xl text-sm text-center ${message.includes('成功') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+          {message}
+        </div>
+      )}
 
       {/* Profile Form */}
       <main className="flex-1 px-6 pb-8 overflow-y-auto">
@@ -40,23 +120,39 @@ export default function ProfileEditPage() {
         <div className="flex flex-col items-center py-6">
           <div className="relative">
             <div className="w-24 h-24 rounded-full p-1 border-2 border-[#94A3B8]/30">
-              <div className="relative w-full h-full rounded-full overflow-hidden shadow-sm">
-                <Image
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5_eWkWytRxj_z3ImVOFNOGbw-3gTjLrh0gJUyGKU2a4p-6Qw9h1Xya8DMPdQmIxwaNeXwgbjRF0271JMx8c8VVhLbPt1sXs9O2X6Z0wm3EdnU3D19GIYooQrZr1uqMCA1l0i9tM-EbMy30MIkmPHUSGd_2FWG8X10WUtwAeJ581lKAdLchWnRl1aMuDSwCXQbIe8kYx0vIGYxhlLHY-8_d-wmc_Rpacqcuy3JoV4hOo0GtBeZ1mZT-_1i3OFfeWdrxu3Gxsbnwvjk"
-                  alt="Profile"
-                  fill
-                  sizes="96px"
-                  className="object-cover"
-                />
+              <div className="relative w-full h-full rounded-full overflow-hidden shadow-sm bg-[#D6CDC8] flex items-center justify-center">
+                {avatarUrl ? (
+                  <Image
+                    src={avatarUrl}
+                    alt="Profile"
+                    fill
+                    sizes="96px"
+                    className="object-cover"
+                  />
+                ) : (
+                  <span className="text-3xl font-bold text-white">{displayName.charAt(0).toUpperCase()}</span>
+                )}
               </div>
             </div>
-            <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#94A3B8] text-white shadow-lg flex items-center justify-center">
+            <label className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#94A3B8] text-white shadow-lg flex items-center justify-center cursor-pointer hover:bg-[#8291A6] transition">
               <span className="material-icons-round text-sm">edit</span>
-            </button>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="hidden"
+              />
+            </label>
           </div>
-          <button className="mt-3 text-sm text-[#94A3B8] font-medium">
+          <label className="mt-3 text-sm text-[#94A3B8] font-medium cursor-pointer hover:text-[#7A8A9E] transition">
             更換頭像
-          </button>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
+          </label>
         </div>
 
         {/* Form Fields */}
@@ -82,7 +178,7 @@ export default function ProfileEditPage() {
             </label>
             <textarea
               value={bio}
-              onChange={(e) => setBio(e.target.value)}
+              onChange={(e) => setBio(e.target.value.slice(0, 100))}
               rows={3}
               className="w-full bg-transparent text-[#5C5C5C] text-sm leading-relaxed focus:outline-none placeholder:text-[#C5B6AF] resize-none"
               placeholder="介紹一下你自己..."
@@ -100,10 +196,10 @@ export default function ProfileEditPage() {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-transparent text-[#5C5C5C] font-medium focus:outline-none placeholder:text-[#C5B6AF]"
-              placeholder="請輸入電子郵件"
+              disabled
+              className="w-full bg-transparent text-[#949494] font-medium focus:outline-none cursor-not-allowed"
             />
+            <p className="text-xs text-[#B0B0B0] mt-1">電子郵件無法修改</p>
           </div>
 
           {/* Phone */}
