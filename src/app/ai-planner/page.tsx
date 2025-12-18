@@ -56,6 +56,7 @@ const itineraryItems = [
 
 export default function AIPlannerPage() {
   const [inputValue, setInputValue] = useState("");
+  const [isChatExpanded, setIsChatExpanded] = useState(true);
 
   const typeConfig: Record<string, { label: string; color: string; bgColor: string }> = {
     attraction: { label: "景點", color: "text-[#A5BCCF]", bgColor: "bg-[#A5BCCF]/10" },
@@ -86,15 +87,20 @@ export default function AIPlannerPage() {
           <h1 className="text-base font-bold text-gray-800 tracking-wide">威廉AI</h1>
           <span className="text-[10px] text-gray-500 font-medium">您的旅行規劃師</span>
         </div>
-        <button className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm hover:shadow-md transition-all active:scale-95">
-          <span className="material-icons-round text-gray-800 text-[22px]">keyboard_arrow_down</span>
+        <button
+          onClick={() => setIsChatExpanded(!isChatExpanded)}
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm hover:shadow-md transition-all active:scale-95"
+        >
+          <span className={`material-icons-round text-gray-800 text-[22px] transition-transform duration-300 ${isChatExpanded ? '' : 'rotate-180'}`}>
+            keyboard_arrow_down
+          </span>
         </button>
       </header>
 
       {/* 主要內容 */}
       <main className="relative z-10 w-full max-w-md mx-auto flex-1 flex flex-col pb-28 overflow-hidden">
-        {/* 對話區域 */}
-        <section className="px-5 pt-2 pb-2 flex flex-col gap-4 max-h-[45vh] overflow-y-auto hide-scrollbar">
+        {/* 對話區域 - 可展開/收起 */}
+        <section className={`px-5 pt-2 pb-2 flex flex-col gap-4 overflow-y-auto hide-scrollbar transition-all duration-300 ${isChatExpanded ? 'max-h-[45vh] opacity-100' : 'max-h-0 opacity-0 overflow-hidden py-0'}`}>
           {/* AI 訊息 1 */}
           <div className="flex gap-3 animate-fade-in">
             <div className="w-8 h-8 rounded-full bg-[#Cfb9a5] flex items-center justify-center shrink-0 shadow-sm ring-2 ring-white">
@@ -175,6 +181,18 @@ export default function AIPlannerPage() {
             </div>
           </div>
         </section>
+
+        {/* 收起時的提示條 */}
+        {!isChatExpanded && (
+          <button
+            onClick={() => setIsChatExpanded(true)}
+            className="mx-5 mb-2 py-2 px-4 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center gap-2 text-xs text-gray-500 shadow-sm border border-gray-100 hover:bg-white transition-all"
+          >
+            <span className="material-icons-round text-[16px] text-[#Cfb9a5]">smart_toy</span>
+            點擊展開對話記錄
+            <span className="material-icons-round text-[14px]">expand_more</span>
+          </button>
+        )}
 
         {/* 輸入框 */}
         <div className="px-5 py-2 z-20 sticky top-0">
