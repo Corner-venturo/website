@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import MobileNav from "@/components/MobileNav";
 import DesktopHeader from "@/components/DesktopHeader";
 
@@ -20,9 +21,8 @@ const orders = [
     progress: 85,
     filter: "upcoming" as FilterType,
     statusTags: [
-      { label: "機票已開", tone: "green", href: "/flight" },
-      { label: "住宿確認", tone: "green", href: "/stay" },
-      { label: "行前說明會", tone: "yellow" },
+      { label: "航班資訊", tone: "green", href: "/flight" },
+      { label: "住宿資訊", tone: "green", href: "/stay" },
     ],
     image:
       "https://lh3.googleusercontent.com/aida-public/AB6AXuAeCbTrGygE4_uzH0tj_DTbI3KKdnoQ-66HvcsNlfYVxQPtIEx94CzY2pXOnEqdq6FuX7wN-DhOHQPde4bxA4F3BCP7FN5iIfmUJNn7PT9aQFYAf9SvhzNGXL8ziV6L53mb9MeTbWDT1WJg4zcMfSvp1Mv21IiatJBbRZrilIDpDHA1o8leWHUifwEN2S4aN9duWIv9AzqngFYHlaRSfm83EjpSie_ZKPMSnOQBzWGJl5eeYSL-ryZMDgEmgNzTolv5VpqE1PnA4Ydl",
@@ -57,8 +57,19 @@ const orders = [
 
 // 訂單卡片組件
 function OrderCard({ order }: { order: (typeof orders)[0] }) {
+  const router = useRouter();
+
+  const handleTagClick = (e: React.MouseEvent, href: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    router.push(href);
+  };
+
   return (
-    <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] p-4 sm:p-5 relative group overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+    <Link
+      href={`/orders/${order.id}`}
+      className="block bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] p-4 sm:p-5 relative group overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+    >
       <div className={`absolute top-0 right-0 px-3 py-1 ${order.chipColor}/20 rounded-bl-xl`}>
         <span className={`text-[10px] font-bold`} style={{ color: order.chipColor === "bg-[#94A3B8]" ? "#94A3B8" : order.chipColor === "bg-[#C5B6AF]" ? "#C5B6AF" : "#A8BCA1" }}>
           {order.chipText}
@@ -96,31 +107,26 @@ function OrderCard({ order }: { order: (typeof orders)[0] }) {
             <div className="h-full bg-[#94A3B8] rounded-full" style={{ width: `${order.progress}%` }} />
           </div>
           <div className="flex gap-2 pt-2 overflow-x-auto hide-scrollbar">
-            {order.statusTags?.map((tag) => {
-              const tagContent = (
-                <>
-                  <span className="material-icons-round text-[10px]">
-                    {tag.tone === "green" ? "check_circle" : "pending"}
-                  </span>
-                  {tag.label}
-                </>
-              );
-              const tagClassName = `px-2 py-1 rounded text-[10px] border flex items-center gap-1 whitespace-nowrap ${
-                tag.tone === "green"
-                  ? "bg-[#E8F5E9]/50 text-[#6B8E6B] border-[#C8E6C9]"
-                  : "bg-[#FFF8E1]/50 text-[#B8A065] border-[#FFE082]/40"
-              } ${tag.href ? "hover:opacity-80 transition-opacity cursor-pointer" : ""}`;
-
-              return tag.href ? (
-                <Link key={tag.label} href={tag.href} className={tagClassName}>
-                  {tagContent}
-                </Link>
-              ) : (
-                <span key={tag.label} className={tagClassName}>
-                  {tagContent}
+            {order.statusTags?.map((tag) => (
+              <button
+                key={tag.label}
+                onClick={(e) => tag.href && handleTagClick(e, tag.href)}
+                className={`px-3 py-2 rounded-full text-xs font-medium border flex items-center gap-1.5 whitespace-nowrap transition-all ${
+                  tag.tone === "green"
+                    ? "bg-white/80 border-[#C8E6C9] hover:bg-[#E8F5E9]"
+                    : "bg-white/60 border-[#E8E2DD] hover:bg-white/80"
+                } ${tag.href ? "cursor-pointer active:scale-95" : ""}`}
+              >
+                <span className={`material-icons-round text-sm ${
+                  tag.tone === "green" ? "text-[#6B8E6B]" : "text-[#B8A065]"
+                }`}>
+                  {tag.tone === "green" ? "check_circle" : "more_horiz"}
                 </span>
-              );
-            })}
+                <span className={tag.tone === "green" ? "text-[#6B8E6B]" : "text-[#949494]"}>
+                  {tag.label}
+                </span>
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -131,23 +137,23 @@ function OrderCard({ order }: { order: (typeof orders)[0] }) {
             <span className="text-[10px] text-[#949494]">總金額</span>
             <span className="font-bold text-[#5C5C5C]">{order.total}</span>
           </div>
-          <button className="px-4 py-2 bg-[#C5B6AF] text-white text-xs font-bold rounded-full shadow-md shadow-[#C5B6AF]/30 hover:bg-[#B5A69F] transition-colors">
+          <span className="px-4 py-2 bg-[#C5B6AF] text-white text-xs font-bold rounded-full shadow-md shadow-[#C5B6AF]/30">
             {order.actionLabel}
-          </button>
+          </span>
         </div>
       )}
 
       {order.id === "hokkaido-ski" && (
         <div className="flex items-center gap-2 mt-2">
-          <button className="flex-1 py-2 rounded-lg border border-[#94A3B8]/30 text-[#94A3B8] text-xs font-medium hover:bg-[#94A3B8]/5 transition-colors">
+          <span className="flex-1 py-2 rounded-lg border border-[#94A3B8]/30 text-[#94A3B8] text-xs font-medium text-center">
             編輯行程
-          </button>
-          <button className="flex-1 py-2 rounded-lg bg-[#94A3B8]/10 text-[#94A3B8] text-xs font-medium hover:bg-[#94A3B8]/20 transition-colors">
+          </span>
+          <span className="flex-1 py-2 rounded-lg bg-[#94A3B8]/10 text-[#94A3B8] text-xs font-medium text-center">
             繼續預訂
-          </button>
+          </span>
         </div>
       )}
-    </div>
+    </Link>
   );
 }
 
@@ -167,8 +173,8 @@ export default function OrdersPage() {
         <div className="absolute top-[40%] left-[20%] w-[200px] sm:w-[300px] h-[200px] sm:h-[300px] bg-[#E6DFDA] opacity-30 blur-[70px] rounded-full" />
       </div>
 
-      {/* ========== Header 區域（響應式） ========== */}
-      <header className="sticky top-0 z-50 px-4 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-6">
+      {/* ========== Header 區域（只在桌面顯示） ========== */}
+      <header className="hidden lg:block sticky top-0 z-50 px-4 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-6">
         <div className="flex items-center justify-between py-3 sm:py-4 px-4 sm:px-6 lg:px-8 bg-white/60 backdrop-blur-2xl rounded-xl sm:rounded-2xl border border-white/50 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.06)]">
           {/* Logo + Nav */}
           <div className="flex items-center gap-4 sm:gap-6">
@@ -202,74 +208,58 @@ export default function OrdersPage() {
       </header>
 
       {/* ========== 主要內容區域（左側資訊 + 右側內容） ========== */}
-      <main className="flex-1 px-4 sm:px-6 lg:px-8 pb-24 md:pb-8">
-        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 xl:gap-8 min-h-[calc(100vh-140px)]">
+      <main className="flex-1 px-4 sm:px-6 lg:px-8 pt-6 lg:pt-0 pb-24 lg:pb-8">
+        <div className="flex flex-col lg:flex-row gap-0 lg:gap-6 xl:gap-8 min-h-[calc(100vh-140px)]">
 
           {/* ========== 左側資訊欄（響應式） ========== */}
           <aside className="w-full lg:w-64 xl:w-80 shrink-0">
-            {/* 手機/平板：水平滾動篩選 */}
+            {/* 手機/平板：篩選按鈕 */}
             <div className="lg:hidden mb-4">
-              <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
+              <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
                 <button
                   onClick={() => setActiveFilter("all")}
-                  className={`px-4 py-2.5 rounded-full text-xs font-bold whitespace-nowrap flex items-center gap-2 transition-all ${
+                  className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap flex items-center gap-1.5 transition-all ${
                     activeFilter === "all"
-                      ? "bg-[#94A3B8] text-white shadow-md shadow-[#94A3B8]/30"
-                      : "bg-white/60 border border-white/40 text-[#5C5C5C] font-medium"
+                      ? "bg-[#94A3B8] text-white shadow-lg shadow-[#94A3B8]/30"
+                      : "bg-white/60 backdrop-blur-xl border border-white/50 text-[#5C5C5C] hover:bg-white/80"
                   }`}
                 >
                   <span className="material-icons-round text-sm">list</span>
-                  全部訂單
+                  全部
                 </button>
                 <button
                   onClick={() => setActiveFilter("upcoming")}
-                  className={`px-4 py-2.5 rounded-full text-xs whitespace-nowrap flex items-center gap-2 transition-all ${
+                  className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap flex items-center gap-1.5 transition-all ${
                     activeFilter === "upcoming"
-                      ? "bg-[#94A3B8] text-white shadow-md shadow-[#94A3B8]/30 font-bold"
-                      : "bg-white/60 border border-white/40 text-[#5C5C5C] font-medium"
+                      ? "bg-[#94A3B8] text-white shadow-lg shadow-[#94A3B8]/30"
+                      : "bg-white/60 backdrop-blur-xl border border-white/50 text-[#5C5C5C] hover:bg-white/80"
                   }`}
                 >
-                  <span className={`material-icons-round text-sm ${activeFilter === "upcoming" ? "" : "text-[#94A3B8]"}`}>flight_takeoff</span>
+                  <span className="material-icons-round text-sm">flight_takeoff</span>
                   即將出發
                 </button>
                 <button
                   onClick={() => setActiveFilter("pending")}
-                  className={`px-4 py-2.5 rounded-full text-xs whitespace-nowrap flex items-center gap-2 transition-all ${
+                  className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap flex items-center gap-1.5 transition-all ${
                     activeFilter === "pending"
-                      ? "bg-[#C5B6AF] text-white shadow-md shadow-[#C5B6AF]/30 font-bold"
-                      : "bg-white/60 border border-white/40 text-[#5C5C5C] font-medium"
+                      ? "bg-[#C5B6AF] text-white shadow-lg shadow-[#C5B6AF]/30"
+                      : "bg-white/60 backdrop-blur-xl border border-white/50 text-[#5C5C5C] hover:bg-white/80"
                   }`}
                 >
-                  <span className={`material-icons-round text-sm ${activeFilter === "pending" ? "" : "text-[#C5B6AF]"}`}>pending</span>
+                  <span className="material-icons-round text-sm">pending</span>
                   待確認
                 </button>
                 <button
                   onClick={() => setActiveFilter("planning")}
-                  className={`px-4 py-2.5 rounded-full text-xs whitespace-nowrap flex items-center gap-2 transition-all ${
+                  className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap flex items-center gap-1.5 transition-all ${
                     activeFilter === "planning"
-                      ? "bg-[#A8BCA1] text-white shadow-md shadow-[#A8BCA1]/30 font-bold"
-                      : "bg-white/60 border border-white/40 text-[#5C5C5C] font-medium"
+                      ? "bg-[#A8BCA1] text-white shadow-lg shadow-[#A8BCA1]/30"
+                      : "bg-white/60 backdrop-blur-xl border border-white/50 text-[#5C5C5C] hover:bg-white/80"
                   }`}
                 >
-                  <span className={`material-icons-round text-sm ${activeFilter === "planning" ? "" : "text-[#A8BCA1]"}`}>edit_note</span>
+                  <span className="material-icons-round text-sm">edit_note</span>
                   規劃中
                 </button>
-              </div>
-
-              {/* 手機/平板：統計摘要（橫向） */}
-              <div className="flex gap-3 mt-3">
-                <div className="flex-1 bg-white/60 backdrop-blur-xl rounded-xl border border-white/50 p-3 text-center">
-                  <span className="text-lg sm:text-xl font-bold text-[#5C5C5C]">3</span>
-                  <p className="text-[10px] text-[#949494]">進行中</p>
-                </div>
-                <div className="flex-1 bg-white/60 backdrop-blur-xl rounded-xl border border-white/50 p-3 text-center">
-                  <span className="text-lg sm:text-xl font-bold text-[#C5B6AF]">1</span>
-                  <p className="text-[10px] text-[#949494]">待付款</p>
-                </div>
-                <div className="flex-1 bg-white/60 backdrop-blur-xl rounded-xl border border-white/50 p-3 text-center">
-                  <span className="text-lg sm:text-xl font-bold text-[#5C5C5C]">12</span>
-                  <p className="text-[10px] text-[#949494]">已完成</p>
-                </div>
               </div>
             </div>
 
@@ -330,24 +320,6 @@ export default function OrdersPage() {
                   </button>
                 </div>
 
-                {/* 快速統計 - 放在篩選下方，用 mt-auto 推到底部 */}
-                <div className="mt-auto pt-6 border-t border-white/40">
-                  <h3 className="text-xs xl:text-sm font-bold text-[#5C5C5C] mb-3">快速統計</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-[#949494]">進行中</span>
-                      <span className="text-sm font-bold text-[#5C5C5C]">3 個</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-[#949494]">待付款</span>
-                      <span className="text-sm font-bold text-[#C5B6AF]">1 個</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-[#949494]">已完成</span>
-                      <span className="text-sm font-bold text-[#5C5C5C]">12 個</span>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </aside>

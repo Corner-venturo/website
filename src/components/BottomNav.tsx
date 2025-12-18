@@ -4,17 +4,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const navItems = [
-  { href: '/', icon: 'home', label: '首頁' },
-  { href: '/explore', icon: 'explore', label: '探索' },
-  { href: '/wishlist', icon: 'favorite_border', label: '收藏' },
-  { href: '/my', icon: 'person', label: '我的' },
+  { href: '/', icon: 'home', activeIcon: 'home', label: '首頁' },
+  { href: '/explore', icon: 'explore', activeIcon: 'explore', label: '探索' },
+  { href: '/orders', icon: 'confirmation_number', activeIcon: 'confirmation_number', label: '訂單' },
+  { href: '/wishlist', icon: 'auto_fix_high', activeIcon: 'auto_fix_high', label: '許願池' },
+  { href: '/my', icon: 'person_outline', activeIcon: 'person', label: '我的' },
 ];
 
-interface BottomNavProps {
-  onPersonClick?: () => void;
-}
-
-export default function BottomNav({ onPersonClick }: BottomNavProps) {
+export default function BottomNav() {
   const pathname = usePathname();
 
   const isActive = (href: string) => {
@@ -25,29 +22,10 @@ export default function BottomNav({ onPersonClick }: BottomNavProps) {
   };
 
   return (
-    <nav className="fixed bottom-4 left-4 right-4 z-50">
-      <div className="bg-white/80 backdrop-blur-xl rounded-full px-2 py-2 flex justify-around shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-white/60">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="max-w-3xl mx-auto bg-white/80 backdrop-blur-xl rounded-full px-4 py-2 flex justify-around shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-white/60">
         {navItems.map((item) => {
           const active = isActive(item.href);
-
-          // 如果是「我的」且有 onPersonClick，用 button
-          if (item.href === '/my' && onPersonClick) {
-            return (
-              <button
-                key={item.href}
-                type="button"
-                onClick={onPersonClick}
-                className={`flex-1 flex justify-center py-2 transition-colors ${
-                  active
-                    ? 'text-[#94A3B8]'
-                    : 'text-[#B0B0B0] hover:text-[#8C8C8C]'
-                }`}
-                aria-label={item.label}
-              >
-                <span className="material-icons-round text-2xl">{item.icon}</span>
-              </button>
-            );
-          }
 
           return (
             <Link
@@ -60,7 +38,9 @@ export default function BottomNav({ onPersonClick }: BottomNavProps) {
               }`}
               aria-label={item.label}
             >
-              <span className="material-icons-round text-2xl">{item.icon}</span>
+              <span className="material-icons-round text-2xl">
+                {active ? item.activeIcon : item.icon}
+              </span>
             </Link>
           );
         })}

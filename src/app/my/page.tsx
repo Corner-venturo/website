@@ -62,9 +62,9 @@ function DesktopHeader() {
           </div>
           <span className="text-sm font-medium text-[#5C5C5C]">Alex Chen</span>
         </div>
-        <button className="p-2.5 rounded-full bg-white/60 border border-white/40 text-[#949494] hover:text-[#94A3B8] transition">
+        <Link href="/my/settings" className="p-2.5 rounded-full bg-white/60 border border-white/40 text-[#949494] hover:text-[#94A3B8] transition">
           <span className="material-icons-outlined text-xl">settings</span>
-        </button>
+        </Link>
       </div>
     </header>
   );
@@ -292,7 +292,7 @@ export default function ProfilePage() {
             </div>
 
             {/* 應用程式設定 */}
-            <button className="w-full bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm p-5 flex items-center justify-between group">
+            <Link href="/my/settings" className="w-full bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm p-5 flex items-center justify-between group">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-[#E8E2DD] flex items-center justify-center text-[#949494] group-hover:bg-[#94A3B8] group-hover:text-white transition-colors">
                   <span className="material-icons-round text-2xl">tune</span>
@@ -300,21 +300,26 @@ export default function ProfilePage() {
                 <span className="font-bold text-[#5C5C5C]">應用程式設定</span>
               </div>
               <span className="material-icons-round text-[#949494] text-2xl">chevron_right</span>
-            </button>
+            </Link>
           </div>
         </div>
       </div>
 
       {/* ========== 手機版佈局 ========== */}
       <div className="lg:hidden relative z-10 flex flex-col flex-1">
-        <header className="px-6 pt-12 pb-2 flex items-center justify-between">
-          <div className="flex flex-col">
-            <h1 className="text-2xl font-bold text-[#5C5C5C] tracking-tight">數位旅人</h1>
-            <p className="text-xs text-[#949494] font-medium tracking-wider uppercase">Traveler&apos;s Notebook</p>
+        <header className="px-5 pt-4 pb-3">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold text-[#5C5C5C]">我的</h1>
+            <div className="flex items-center gap-2">
+              <button className="w-10 h-10 bg-white/60 backdrop-blur-xl rounded-full border border-white/50 shadow-sm flex items-center justify-center text-[#949494] hover:text-[#5C5C5C] transition relative">
+                <div className="absolute top-2 right-2 w-2 h-2 bg-[#E8C4C4] rounded-full" />
+                <span className="material-icons-round text-xl">notifications</span>
+              </button>
+              <Link href="/my/settings" className="w-10 h-10 bg-white/60 backdrop-blur-xl rounded-full border border-white/50 shadow-sm flex items-center justify-center text-[#949494] hover:text-[#5C5C5C] transition">
+                <span className="material-icons-outlined text-xl">settings</span>
+              </Link>
+            </div>
           </div>
-          <button className="w-10 h-10 flex items-center justify-center rounded-full bg-white/60 backdrop-blur-xl border border-white/50 shadow-sm text-[#5C5C5C] hover:text-[#94A3B8] transition-colors" aria-label="設定">
-            <span className="material-icons-outlined text-xl">settings</span>
-          </button>
         </header>
 
         <main className="flex-1 w-full h-full overflow-y-auto hide-scrollbar pb-32">
@@ -515,7 +520,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <button className="w-full bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm p-4 flex items-center justify-between group">
+            <Link href="/my/settings" className="w-full bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm p-4 flex items-center justify-between group">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[#E8E2DD] flex items-center justify-center text-[#949494] group-hover:bg-[#94A3B8] group-hover:text-white transition-colors">
                   <span className="material-icons-round">tune</span>
@@ -523,7 +528,7 @@ export default function ProfilePage() {
                 <span className="font-bold text-[#5C5C5C] text-sm">應用程式設定</span>
               </div>
               <span className="material-icons-round text-[#949494] text-xl">chevron_right</span>
-            </button>
+            </Link>
           </div>
         </main>
 

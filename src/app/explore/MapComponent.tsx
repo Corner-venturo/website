@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback, memo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -128,7 +128,7 @@ function deg2rad(deg: number) {
   return deg * (Math.PI / 180);
 }
 
-// 地圖控制器 - 處理視角和拖曳事件
+// 地圖控制器 - 處理視角和拖曳事件（優化：加入 debounce）
 function MapController({
   center,
   onCenterChange
@@ -139,6 +139,7 @@ function MapController({
   const map = useMap();
   const isUserDragging = useRef(false);
   const prevCenter = useRef<[number, number]>(center);
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   // 只有在 center 從外部真正改變時（例如點擊「回到目前位置」按鈕）才飛過去
   useEffect(() => {
@@ -162,14 +163,23 @@ function MapController({
 
   useEffect(() => {
     const handleMoveEnd = () => {
-      const newCenter = map.getCenter();
-      isUserDragging.current = true;
-      onCenterChange([newCenter.lat, newCenter.lng]);
+      // Debounce: 等待 300ms 後才更新，避免頻繁觸發
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+      debounceTimer.current = setTimeout(() => {
+        const newCenter = map.getCenter();
+        isUserDragging.current = true;
+        onCenterChange([newCenter.lat, newCenter.lng]);
+      }, 300);
     };
 
     map.on('moveend', handleMoveEnd);
     return () => {
       map.off('moveend', handleMoveEnd);
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
     };
   }, [map, onCenterChange]);
 
@@ -233,41 +243,31 @@ export default function MapComponent({
         <Popup>搜尋中心</Popup>
       </Marker>
 
-      {/* 揪團標記 - 只顯示 2 公里內的 */}
-      {trips
-        .filter((trip) => {
-          const distance = getDistanceFromLatLonInKm(
-            searchCenter[0],
-            searchCenter[1],
-            trip.latitude,
-            trip.longitude
-          );
-          return distance <= 2; // 2 公里內
-        })
-        .map((trip) => (
-          <Marker
-            key={trip.id}
-            position={[trip.latitude, trip.longitude]}
-            icon={createTripIcon(trip, selectedTrip?.id === trip.id)}
-            eventHandlers={{
-              click: () => onTripSelect(trip),
-            }}
-          >
-            <Popup>
-              <div style={{ minWidth: '150px', fontFamily: 'inherit' }}>
-                <strong style={{ fontSize: '14px', color: '#5C5C5C' }}>
-                  {trip.title}
-                </strong>
-                <div style={{ fontSize: '12px', color: '#949494', marginTop: '4px' }}>
-                  {trip.member_count}/{trip.max_members} 人參加
-                </div>
-                <div style={{ fontSize: '12px', color: '#949494', marginTop: '2px' }}>
-                  主辦人: {trip.organizer_name}
-                </div>
+      {/* 揪團標記 - 已在父組件過濾 */}
+      {trips.map((trip) => (
+        <Marker
+          key={trip.id}
+          position={[trip.latitude, trip.longitude]}
+          icon={createTripIcon(trip, selectedTrip?.id === trip.id)}
+          eventHandlers={{
+            click: () => onTripSelect(trip),
+          }}
+        >
+          <Popup>
+            <div style={{ minWidth: '150px', fontFamily: 'inherit' }}>
+              <strong style={{ fontSize: '14px', color: '#5C5C5C' }}>
+                {trip.title}
+              </strong>
+              <div style={{ fontSize: '12px', color: '#949494', marginTop: '4px' }}>
+                {trip.member_count}/{trip.max_members} 人參加
               </div>
-            </Popup>
-          </Marker>
-        ))}
+              <div style={{ fontSize: '12px', color: '#949494', marginTop: '2px' }}>
+                主辦人: {trip.organizer_name}
+              </div>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
     </MapContainer>
   );
 }

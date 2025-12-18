@@ -323,7 +323,7 @@ export default function StayDetailsPage() {
 
       {/* Mobile Layout */}
       <div className="xl:hidden relative z-10 flex-1 flex flex-col">
-        <header className="relative z-50 px-6 pt-12 pb-4 flex items-center justify-between">
+        <header className="relative z-50 px-6 pt-6 pb-4 flex items-center justify-between">
           <Link
             href="/orders"
             className="glass w-10 h-10 flex items-center justify-center rounded-full shadow-sm text-gray-600 hover:text-primary transition-colors"

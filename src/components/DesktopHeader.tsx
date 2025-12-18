@@ -23,14 +23,17 @@ function getGreeting() {
 
 interface NavItem {
   href: string;
+  icon: string;
+  activeIcon: string;
   label: string;
 }
 
 const navItems: NavItem[] = [
-  { href: '/', label: '首頁' },
-  { href: '/explore', label: '探索' },
-  { href: '/destinations', label: '目的地' },
-  { href: '/articles', label: '旅遊靈感' },
+  { href: '/', icon: 'home', activeIcon: 'home', label: '首頁' },
+  { href: '/explore', icon: 'explore', activeIcon: 'explore', label: '探索' },
+  { href: '/orders', icon: 'confirmation_number', activeIcon: 'confirmation_number', label: '訂單' },
+  { href: '/wishlist', icon: 'auto_fix_high', activeIcon: 'auto_fix_high', label: '許願池' },
+  { href: '/my', icon: 'person_outline', activeIcon: 'person', label: '我的' },
 ];
 
 export default function DesktopHeader() {
@@ -65,20 +68,24 @@ export default function DesktopHeader() {
           </div>
           <span className="text-xl font-bold text-[#5C5C5C]">VENTURO</span>
         </Link>
-        <nav className="flex items-center gap-8 ml-12">
+        <nav className="flex items-center gap-2 ml-8">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href ||
+              (item.href !== '/' && pathname.startsWith(item.href));
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={
+                className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
                   isActive
-                    ? 'text-[#94A3B8] font-medium border-b-2 border-[#94A3B8] pb-1'
-                    : 'text-[#949494] hover:text-[#5C5C5C] transition'
-                }
+                    ? 'bg-[#94A3B8]/15 text-[#94A3B8] font-medium'
+                    : 'text-[#949494] hover:bg-white/60 hover:text-[#5C5C5C]'
+                }`}
               >
-                {item.label}
+                <span className="material-icons-round text-xl">
+                  {isActive ? item.activeIcon : item.icon}
+                </span>
+                <span className="text-sm">{item.label}</span>
               </Link>
             );
           })}

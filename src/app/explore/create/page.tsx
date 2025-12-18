@@ -505,7 +505,7 @@ export default function CreateExplorePage() {
       </div>
 
       {/* ========== 手機版佈局 ========== */}
-      <div className="xl:hidden h-screen overflow-hidden flex flex-col relative z-10">
+      <div className="xl:hidden h-[100dvh] overflow-hidden flex flex-col relative z-10">
         <header className="relative z-50 px-5 pt-12 pb-2">
           <div className="flex items-center justify-between mb-4">
             <Link href="/explore" className="w-10 h-10 rounded-full glass flex items-center justify-center text-gray-600 hover:text-[var(--primary)] transition-colors shadow-sm">

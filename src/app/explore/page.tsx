@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
@@ -158,22 +158,29 @@ export default function ExplorePage() {
   }, []);
 
   // 回到目前位置
-  const handleBackToMyLocation = () => {
+  const handleBackToMyLocation = useCallback(() => {
     setSearchCenter(userLocation);
-  };
+  }, [userLocation]);
 
-  // 篩選揪團 - 2公里內 + 類別
-  const filteredTrips = mockTrips
-    .filter((trip) => {
-      const distance = getDistanceFromLatLonInKm(
-        searchCenter[0],
-        searchCenter[1],
-        trip.latitude,
-        trip.longitude
-      );
-      return distance <= 2; // 2 公里內
-    })
-    .filter((trip) => activeCategory === 'all' || trip.category === activeCategory);
+  // 處理地圖中心變化（用 useCallback 防止不必要的重渲染）
+  const handleCenterChange = useCallback((center: [number, number]) => {
+    setSearchCenter(center);
+  }, []);
+
+  // 篩選揪團 - 2公里內 + 類別（用 useMemo 優化）
+  const filteredTrips = useMemo(() => {
+    return mockTrips
+      .filter((trip) => {
+        const distance = getDistanceFromLatLonInKm(
+          searchCenter[0],
+          searchCenter[1],
+          trip.latitude,
+          trip.longitude
+        );
+        return distance <= 2; // 2 公里內
+      })
+      .filter((trip) => activeCategory === 'all' || trip.category === activeCategory);
+  }, [searchCenter, activeCategory]);
 
   // 格式化日期
   const formatDate = (dateStr: string) => {
@@ -248,7 +255,7 @@ export default function ExplorePage() {
   );
 
   return (
-    <div className="h-screen max-h-screen overflow-hidden relative">
+    <div className="h-[100dvh] max-h-[100dvh] overflow-hidden relative">
       {/* 地圖 - 全螢幕背景 */}
       <div className="absolute inset-0 z-0">
         <MapComponent
@@ -256,7 +263,7 @@ export default function ExplorePage() {
           selectedTrip={selectedTrip}
           onTripSelect={setSelectedTrip}
           searchCenter={searchCenter}
-          onCenterChange={setSearchCenter}
+          onCenterChange={handleCenterChange}
         />
       </div>
 

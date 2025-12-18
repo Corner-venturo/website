@@ -116,10 +116,10 @@ export default function HomePage() {
         <div className="hidden lg:block absolute top-[20%] right-[15%] w-[400px] h-[400px] bg-[#D4C4B5] opacity-25 blur-[100px] rounded-full" />
       </div>
 
-      {/* 手機版 + 平板版佈局 - 固定視窗不滾動 */}
-      <div className="xl:hidden max-w-3xl mx-auto h-screen max-h-screen overflow-hidden flex flex-col">
+      {/* 手機版 + 平板版佈局 - 使用 dvh 適應手機瀏覽器 */}
+      <div className="xl:hidden max-w-3xl mx-auto h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col">
         {/* Header */}
-        <header className="flex-shrink-0 pt-3 pb-3 px-4 sm:px-6">
+        <header className="flex-shrink-0 pt-3 px-4 sm:px-6">
           <div className="flex items-center justify-between px-5 py-3 bg-white/50 backdrop-blur-2xl rounded-full border border-white/50 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)]">
             {/* 左邊：頭像 + 日期問候 */}
             <div className="flex items-center gap-3">
@@ -139,7 +139,7 @@ export default function HomePage() {
         </header>
 
         {/* 本週推薦標題 */}
-        <div className="flex-shrink-0 px-[30px] mt-4 mb-4 flex items-end justify-between">
+        <div className="flex-shrink-0 px-[30px] my-4 flex items-end justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#E8E2DD] text-[#A6988D] flex items-center justify-center">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -163,9 +163,9 @@ export default function HomePage() {
         </div>
 
         {/* 卡片輪播 - 手機版 + 平板版，填滿剩餘空間 */}
-        <div className="flex-1 flex items-center overflow-x-auto px-4 sm:px-6 gap-5 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] min-h-0">
+        <div className="flex-1 flex items-start overflow-x-auto px-4 sm:px-6 gap-5 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] min-h-0">
           {recommendations.map((item) => (
-            <div key={item.id} className="snap-center shrink-0 w-[280px] sm:w-[320px] md:w-[360px] h-[85%] max-h-[520px] rounded-[2rem] overflow-hidden relative shadow-xl cursor-pointer hover:scale-[1.02] transition-transform">
+            <div key={item.id} className="snap-center shrink-0 w-[280px] sm:w-[320px] md:w-[360px] h-[85%] max-h-[620px] rounded-[2rem] overflow-hidden relative shadow-xl cursor-pointer hover:scale-[1.02] transition-transform">
               <Image src={item.image} alt={item.title} fill className="object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[rgba(65,60,55,0.8)] via-[rgba(65,60,55,0.3)] to-transparent" />
               <div className="absolute top-6 right-6 px-4 py-3 rounded-2xl bg-white/20 backdrop-blur-xl border border-white/30 text-center">
@@ -200,6 +200,9 @@ export default function HomePage() {
             </div>
           ))}
         </div>
+
+        {/* 底部導覽佔位空間 */}
+        <div className="flex-shrink-0 h-4" />
 
         {/* 底部導覽 - 手機版 */}
         <BottomNav onPersonClick={() => setShowPersonalMenu((prev) => !prev)} />
@@ -255,7 +258,7 @@ export default function HomePage() {
       </div>
 
       {/* 電腦版佈局 - 固定視窗不滾動 (1280px 以上) */}
-      <div className="hidden xl:flex flex-col h-screen max-h-screen overflow-hidden px-8 py-6">
+      <div className="hidden xl:flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden px-8 py-6">
         {/* 電腦版 Header */}
         <header className="flex-shrink-0 flex items-center justify-between py-4 px-8 bg-white/40 backdrop-blur-2xl rounded-2xl border border-white/50 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.06)] mb-6">
           <div className="flex items-center gap-6">
