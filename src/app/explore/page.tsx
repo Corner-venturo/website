@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import MobileNav from '@/components/MobileNav';
+import { useAuthStore } from '@/stores/auth-store';
 
 // 動態載入地圖（避免 SSR 問題）
 const MapComponent = dynamic(() => import('./MapComponent'), {
@@ -137,10 +138,21 @@ function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon
 }
 
 export default function ExplorePage() {
+  const { user, initialize, isInitialized } = useAuthStore();
   const [activeCategory, setActiveCategory] = useState('all');
   const [selectedTrip, setSelectedTrip] = useState<typeof mockTrips[0] | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number]>([25.033, 121.5654]); // 預設台北
   const [searchCenter, setSearchCenter] = useState<[number, number]>([25.033, 121.5654]); // 搜尋中心
+
+  // 登入狀態
+  const isLoggedIn = !!user;
+
+  // 初始化 auth
+  useEffect(() => {
+    if (!isInitialized) {
+      initialize();
+    }
+  }, [initialize, isInitialized]);
 
   // 取得用戶位置
   useEffect(() => {
@@ -168,7 +180,14 @@ export default function ExplorePage() {
   }, []);
 
   // 篩選揪團 - 2公里內 + 類別（用 useMemo 優化）
+  // 登入後顯示空陣列（真實資料），未登入顯示假資料
   const filteredTrips = useMemo(() => {
+    // 登入後：顯示真實資料（目前為空）
+    if (isLoggedIn) {
+      return [];
+    }
+
+    // 未登入：顯示假資料作為展示
     return mockTrips
       .filter((trip) => {
         const distance = getDistanceFromLatLonInKm(
@@ -180,7 +199,7 @@ export default function ExplorePage() {
         return distance <= 2; // 2 公里內
       })
       .filter((trip) => activeCategory === 'all' || trip.category === activeCategory);
-  }, [searchCenter, activeCategory]);
+  }, [searchCenter, activeCategory, isLoggedIn]);
 
   // 格式化日期
   const formatDate = (dateStr: string) => {
