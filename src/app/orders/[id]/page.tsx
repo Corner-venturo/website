@@ -202,50 +202,51 @@ export default function OrderDetailPage() {
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 px-4 sm:px-6 pt-12 pb-2 flex items-center justify-between">
+      <header className="sticky top-0 z-50 px-4 sm:px-6 pt-12 pb-4 flex items-center gap-3">
         <Link
           href="/orders"
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-xl border border-white/50 shadow-sm text-[#5C5C5C] hover:text-[#94A3B8] transition-colors"
+          className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-xl border border-white/50 shadow-sm text-[#5C5C5C] hover:text-[#94A3B8] transition-colors"
         >
           <span className="material-icons-round text-xl">arrow_back</span>
         </Link>
-        <div className="w-10" />
-        <button className="w-10 h-10 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-xl border border-white/50 shadow-sm text-[#5C5C5C] hover:text-[#94A3B8] transition-colors">
+
+        {/* 切換標籤放在中間 */}
+        {order.hasBriefing ? (
+          <div className="flex-1 flex gap-2 p-1 bg-white/60 backdrop-blur-xl rounded-full border border-white/50">
+            <button
+              onClick={() => setActiveTab("itinerary")}
+              className={`flex-1 py-2.5 rounded-full text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                activeTab === "itinerary"
+                  ? "bg-[#94A3B8] text-white shadow-lg shadow-[#94A3B8]/30"
+                  : "text-[#949494] hover:text-[#5C5C5C]"
+              }`}
+            >
+              <span className="material-icons-round text-lg">map</span>
+              行程資訊
+            </button>
+            <button
+              onClick={() => setActiveTab("briefing")}
+              className={`flex-1 py-2.5 rounded-full text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                activeTab === "briefing"
+                  ? "bg-[#E0D6A8] text-white shadow-lg shadow-[#E0D6A8]/30"
+                  : "text-[#949494] hover:text-[#5C5C5C]"
+              }`}
+            >
+              <span className="material-icons-round text-lg">groups</span>
+              說明會
+            </button>
+          </div>
+        ) : (
+          <div className="flex-1" />
+        )}
+
+        <button className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-xl border border-white/50 shadow-sm text-[#5C5C5C] hover:text-[#94A3B8] transition-colors">
           <span className="material-icons-round text-xl">more_vert</span>
         </button>
       </header>
 
       {/* 主要內容 */}
       <main className="flex-1 w-full overflow-y-auto pb-32">
-        {/* 切換標籤（如果有說明會）- 放在最上方 */}
-        {order.hasBriefing && (
-          <div className="px-4 sm:px-6 mb-4">
-            <div className="flex gap-2 p-1 bg-white/60 backdrop-blur-xl rounded-full border border-white/50">
-              <button
-                onClick={() => setActiveTab("itinerary")}
-                className={`flex-1 py-2.5 rounded-full text-sm font-medium transition-all flex items-center justify-center gap-2 ${
-                  activeTab === "itinerary"
-                    ? "bg-[#94A3B8] text-white shadow-lg shadow-[#94A3B8]/30"
-                    : "text-[#949494] hover:text-[#5C5C5C]"
-                }`}
-              >
-                <span className="material-icons-round text-lg">map</span>
-                行程資訊
-              </button>
-              <button
-                onClick={() => setActiveTab("briefing")}
-                className={`flex-1 py-2.5 rounded-full text-sm font-medium transition-all flex items-center justify-center gap-2 ${
-                  activeTab === "briefing"
-                    ? "bg-[#E0D6A8] text-white shadow-lg shadow-[#E0D6A8]/30"
-                    : "text-[#949494] hover:text-[#5C5C5C]"
-                }`}
-              >
-                <span className="material-icons-round text-lg">groups</span>
-                說明會
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* 行程封面圖 */}
         <div className="px-4 sm:px-6 mb-4">
