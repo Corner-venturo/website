@@ -160,7 +160,7 @@ export const useTripStore = create<TripState>((set, get) => ({
 
       if (memberError) throw memberError
 
-      const tripIds = memberTrips?.map(m => m.trip_id) || []
+      const tripIds = memberTrips?.map((m: { trip_id: string }) => m.trip_id) || []
 
       // Also get trips created by user
       const { data: createdTrips, error: createdError } = await supabase
@@ -171,7 +171,7 @@ export const useTripStore = create<TripState>((set, get) => ({
       if (createdError) throw createdError
 
       // Merge and dedupe
-      const allTripIds = [...new Set([...tripIds, ...(createdTrips?.map(t => t.id) || [])])]
+      const allTripIds = [...new Set([...tripIds, ...(createdTrips?.map((t: { id: string }) => t.id) || [])])]
 
       if (allTripIds.length === 0) {
         set({ trips: [], isLoading: false })
