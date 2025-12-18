@@ -1,8 +1,11 @@
 'use client';
 
+import { useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import MobileNav from '@/components/MobileNav';
+import { useAuthStore } from '@/stores/auth-store';
+import { useProfileStore, getDisplayAvatar } from '@/stores/profile-store';
 
 const achievements = [
   { icon: 'hiking', label: '百岳挑戰', color: 'bg-[#A8BCA1]', rotate: 'rotate-3' },
@@ -38,7 +41,7 @@ const friends = [
 ];
 
 // 桌面版導覽組件
-function DesktopHeader() {
+function DesktopHeader({ userName, avatarUrl }: { userName: string; avatarUrl: string | null }) {
   return (
     <header className="flex items-center justify-between py-4 px-6 lg:px-8 bg-white/40 backdrop-blur-2xl rounded-2xl border border-white/50 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.06)] mb-6">
       <div className="flex items-center gap-6">
@@ -57,10 +60,14 @@ function DesktopHeader() {
       </div>
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-3 px-4 py-2 bg-[#94A3B8]/10 rounded-full border border-[#94A3B8]/20">
-          <div className="w-8 h-8 rounded-full bg-[#D6CDC8] text-white font-bold text-sm flex items-center justify-center">
-            A
+          <div className="w-8 h-8 rounded-full bg-[#D6CDC8] text-white font-bold text-sm flex items-center justify-center overflow-hidden">
+            {avatarUrl ? (
+              <Image src={avatarUrl} alt="頭像" width={32} height={32} className="w-full h-full object-cover" />
+            ) : (
+              userName.charAt(0).toUpperCase()
+            )}
           </div>
-          <span className="text-sm font-medium text-[#5C5C5C]">Alex Chen</span>
+          <span className="text-sm font-medium text-[#5C5C5C]">{userName}</span>
         </div>
         <Link href="/my/settings" className="p-2.5 rounded-full bg-white/60 border border-white/40 text-[#949494] hover:text-[#94A3B8] transition">
           <span className="material-icons-outlined text-xl">settings</span>
@@ -71,6 +78,25 @@ function DesktopHeader() {
 }
 
 export default function ProfilePage() {
+  const { user, initialize, isInitialized } = useAuthStore();
+  const { profile, fetchProfile } = useProfileStore();
+
+  useEffect(() => {
+    if (!isInitialized) {
+      initialize();
+    }
+  }, [initialize, isInitialized]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchProfile(user.id);
+    }
+  }, [user?.id, fetchProfile]);
+
+  // 取得用戶資料
+  const userName = profile?.display_name || profile?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || '訪客';
+  const avatarUrl = getDisplayAvatar(profile, user?.user_metadata);
+  const bio = profile?.bio || '尚未設定個人簡介';
 
   return (
     <div className="bg-[#F5F4F0] font-sans antialiased text-[#5C5C5C] transition-colors duration-300 min-h-screen flex flex-col overflow-hidden">
@@ -84,7 +110,7 @@ export default function ProfilePage() {
 
       {/* ========== 電腦版佈局 ========== */}
       <div className="hidden lg:flex flex-col min-h-screen px-6 lg:px-8 py-6 relative z-10">
-        <DesktopHeader />
+        <DesktopHeader userName={userName} avatarUrl={avatarUrl} />
 
         <div className="flex-1 grid grid-cols-12 gap-6 lg:gap-8 min-h-0 overflow-hidden">
           {/* 左側 - 個人資料 */}
@@ -94,35 +120,41 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center text-center">
                 <div className="relative mb-4">
                   <div className="w-24 h-24 rounded-full p-1 border-2 border-[#94A3B8]/30">
-                    <div className="relative w-full h-full rounded-full overflow-hidden shadow-sm">
-                      <Image
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5_eWkWytRxj_z3ImVOFNOGbw-3gTjLrh0gJUyGKU2a4p-6Qw9h1Xya8DMPdQmIxwaNeXwgbjRF0271JMx8c8VVhLbPt1sXs9O2X6Z0wm3EdnU3D19GIYooQrZr1uqMCA1l0i9tM-EbMy30MIkmPHUSGd_2FWG8X10WUtwAeJ581lKAdLchWnRl1aMuDSwCXQbIe8kYx0vIGYxhlLHY-8_d-wmc_Rpacqcuy3JoV4hOo0GtBeZ1mZT-_1i3OFfeWdrxu3Gxsbnwvjk"
-                        alt="Profile"
-                        fill
-                        sizes="96px"
-                        className="object-cover"
-                      />
+                    <div className="relative w-full h-full rounded-full overflow-hidden shadow-sm bg-[#D6CDC8] flex items-center justify-center">
+                      {avatarUrl ? (
+                        <Image
+                          src={avatarUrl}
+                          alt="Profile"
+                          fill
+                          sizes="96px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <span className="text-3xl font-bold text-white">{userName.charAt(0).toUpperCase()}</span>
+                      )}
                     </div>
                   </div>
-                  <div className="absolute -bottom-1 -right-1 bg-[#94A3B8] text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm border-2 border-white">
-                    LV. 12
-                  </div>
+                  {profile?.is_founding_member && profile?.member_number && (
+                    <div className="absolute -bottom-1 -right-1 bg-[#94A3B8] text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm border-2 border-white">
+                      #{profile.member_number}
+                    </div>
+                  )}
                 </div>
-                <h2 className="text-2xl font-bold text-[#5C5C5C] mb-2">Alex Chen</h2>
+                <h2 className="text-2xl font-bold text-[#5C5C5C] mb-2">{userName}</h2>
                 <p className="text-sm text-[#949494] leading-relaxed mb-4">
-                  尋找世界角落的風景，用鏡頭記錄每一個感動瞬間
+                  {bio}
                 </p>
                 <div className="flex justify-center gap-8">
                   <div className="flex flex-col items-center">
-                    <span className="text-2xl font-bold text-[#5C5C5C]">12</span>
+                    <span className="text-2xl font-bold text-[#5C5C5C]">0</span>
                     <span className="text-xs text-[#949494] uppercase">國家</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <span className="text-2xl font-bold text-[#5C5C5C]">45</span>
+                    <span className="text-2xl font-bold text-[#5C5C5C]">0</span>
                     <span className="text-xs text-[#949494] uppercase">旅程</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <span className="text-2xl font-bold text-[#5C5C5C]">128</span>
+                    <span className="text-2xl font-bold text-[#5C5C5C]">0</span>
                     <span className="text-xs text-[#949494] uppercase">收藏</span>
                   </div>
                 </div>
@@ -311,14 +343,18 @@ export default function ProfilePage() {
           <div className="px-6 pb-5 flex items-center gap-4">
             <Link href="/my/settings" className="relative shrink-0 group">
               <div className="w-20 h-20 rounded-full p-1 border-2 border-[#94A3B8]/30 group-hover:border-[#94A3B8]/50 transition">
-                <div className="relative w-full h-full rounded-full overflow-hidden shadow-sm">
-                  <Image
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5_eWkWytRxj_z3ImVOFNOGbw-3gTjLrh0gJUyGKU2a4p-6Qw9h1Xya8DMPdQmIxwaNeXwgbjRF0271JMx8c8VVhLbPt1sXs9O2X6Z0wm3EdnU3D19GIYooQrZr1uqMCA1l0i9tM-EbMy30MIkmPHUSGd_2FWG8X10WUtwAeJ581lKAdLchWnRl1aMuDSwCXQbIe8kYx0vIGYxhlLHY-8_d-wmc_Rpacqcuy3JoV4hOo0GtBeZ1mZT-_1i3OFfeWdrxu3Gxsbnwvjk"
-                    alt="Profile"
-                    fill
-                    sizes="80px"
-                    className="object-cover"
-                  />
+                <div className="relative w-full h-full rounded-full overflow-hidden shadow-sm bg-[#D6CDC8] flex items-center justify-center">
+                  {avatarUrl ? (
+                    <Image
+                      src={avatarUrl}
+                      alt="Profile"
+                      fill
+                      sizes="80px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <span className="text-2xl font-bold text-white">{userName.charAt(0).toUpperCase()}</span>
+                  )}
                 </div>
               </div>
               <div className="absolute -bottom-1 -left-1 w-7 h-7 bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-white/50 flex items-center justify-center text-[#949494] group-hover:text-[#5C5C5C] transition">
@@ -326,24 +362,31 @@ export default function ProfilePage() {
               </div>
             </Link>
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-[#5C5C5C] mb-2">Alex Chen</h2>
+              <h2 className="text-xl font-bold text-[#5C5C5C] mb-2">{userName}</h2>
               <div className="grid grid-cols-4 gap-2">
                 <div className="bg-white/60 backdrop-blur-sm rounded-xl p-2 text-center border border-white/50">
-                  <span className="text-base font-bold text-[#5C5C5C]">12</span>
+                  <span className="text-base font-bold text-[#5C5C5C]">0</span>
                   <span className="block text-[9px] text-[#949494] font-medium">國家</span>
                 </div>
                 <div className="bg-white/60 backdrop-blur-sm rounded-xl p-2 text-center border border-white/50">
-                  <span className="text-base font-bold text-[#5C5C5C]">45</span>
+                  <span className="text-base font-bold text-[#5C5C5C]">0</span>
                   <span className="block text-[9px] text-[#949494] font-medium">旅程</span>
                 </div>
                 <div className="bg-white/60 backdrop-blur-sm rounded-xl p-2 text-center border border-white/50">
-                  <span className="text-base font-bold text-[#5C5C5C]">128</span>
+                  <span className="text-base font-bold text-[#5C5C5C]">0</span>
                   <span className="block text-[9px] text-[#949494] font-medium">收藏</span>
                 </div>
-                <div className="bg-gradient-to-r from-[#94A3B8] to-[#A8BCA1] rounded-xl p-2 text-center shadow-md">
-                  <span className="text-base font-bold text-white">12</span>
-                  <span className="block text-[9px] text-white/80 font-medium">等級</span>
-                </div>
+                {profile?.is_founding_member && profile?.member_number ? (
+                  <div className="bg-gradient-to-r from-[#94A3B8] to-[#A8BCA1] rounded-xl p-2 text-center shadow-md">
+                    <span className="text-base font-bold text-white">#{profile.member_number}</span>
+                    <span className="block text-[9px] text-white/80 font-medium">創始</span>
+                  </div>
+                ) : (
+                  <div className="bg-white/60 backdrop-blur-sm rounded-xl p-2 text-center border border-white/50">
+                    <span className="text-base font-bold text-[#5C5C5C]">1</span>
+                    <span className="block text-[9px] text-[#949494] font-medium">等級</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
