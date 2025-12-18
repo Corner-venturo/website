@@ -143,9 +143,9 @@ export default function ProfilePage() {
                   <span className="material-icons-round text-[#94A3B8] text-lg">military_tech</span>
                   成就勳章
                 </h3>
-                <button className="text-xs text-[#94A3B8] font-medium flex items-center hover:underline">
+                <Link href="/my/achievements" className="text-xs text-[#94A3B8] font-medium flex items-center hover:underline">
                   查看全部 <span className="material-icons-round text-sm">chevron_right</span>
-                </button>
+                </Link>
               </div>
               <div className="grid grid-cols-4 gap-3 relative z-10">
                 {achievements.map((item) => (
@@ -376,9 +376,9 @@ export default function ProfilePage() {
                   <span className="material-icons-round text-[#94A3B8] text-lg">military_tech</span>
                   成就勳章
                 </h3>
-                <button className="text-xs text-[#94A3B8] font-medium flex items-center hover:underline">
+                <Link href="/my/achievements" className="text-xs text-[#94A3B8] font-medium flex items-center hover:underline">
                   查看全部 <span className="material-icons-round text-sm">chevron_right</span>
-                </button>
+                </Link>
               </div>
               <div className="grid grid-cols-4 gap-3 relative z-10">
                 {achievements.map((item) => (
