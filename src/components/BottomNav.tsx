@@ -7,7 +7,7 @@ const navItems = [
   { href: '/', icon: 'home', activeIcon: 'home', label: '首頁' },
   { href: '/explore', icon: 'explore', activeIcon: 'explore', label: '探索' },
   { href: '/orders', icon: 'confirmation_number', activeIcon: 'confirmation_number', label: '訂單' },
-  { href: '/wishlist', icon: 'auto_fix_high', activeIcon: 'auto_fix_high', label: '許願池' },
+  { href: '/ai-planner', icon: 'auto_fix_high', activeIcon: 'auto_fix_high', label: '許願池' },
   { href: '/my', icon: 'person_outline', activeIcon: 'person', label: '我的' },
 ];
 
