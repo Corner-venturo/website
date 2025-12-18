@@ -165,6 +165,9 @@ const autoReplies: { keywords: string[]; response: string; showRecommendations?:
 // William 的用戶 ID (網站擁有者)
 const WILLIAM_USER_ID = process.env.NEXT_PUBLIC_WILLIAM_USER_ID || '';
 
+// William 的預設頭像（避免載入時閃爍）
+const WILLIAM_DEFAULT_AVATAR = 'https://lh3.googleusercontent.com/a/ACg8ocI7lQb0xdCXh7lMBj07f2YhAY0p3X0XgqXP8rqYQHXu1uRBYuI=s96-c';
+
 export default function AIPlannerPage() {
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<Message[]>([
@@ -177,7 +180,7 @@ export default function AIPlannerPage() {
   const [hasStartedChat, setHasStartedChat] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [addedItems, setAddedItems] = useState<DrawerItem[]>([]);
-  const [williamAvatar, setWilliamAvatar] = useState<string | null>(null);
+  const [williamAvatar, setWilliamAvatar] = useState<string>(WILLIAM_DEFAULT_AVATAR);
 
   // 取得 William 的頭像
   useEffect(() => {
@@ -287,11 +290,7 @@ export default function AIPlannerPage() {
         </Link>
         <div className="flex-1 flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-[#Cfb9a5] flex items-center justify-center shadow-sm overflow-hidden">
-            {williamAvatar ? (
-              <Image src={williamAvatar} alt="威廉" width={32} height={32} className="w-full h-full object-cover" />
-            ) : (
-              <span className="material-icons-round text-white text-[18px]">smart_toy</span>
-            )}
+            <Image src={williamAvatar} alt="威廉" width={32} height={32} className="w-full h-full object-cover" priority />
           </div>
           <span className="font-bold text-gray-800">跟威廉聊聊</span>
         </div>
@@ -321,11 +320,7 @@ export default function AIPlannerPage() {
                   /* AI 訊息 */
                   <div className="flex gap-3 w-full animate-fade-in">
                     <div className="w-8 h-8 rounded-full bg-[#Cfb9a5] flex items-center justify-center shrink-0 shadow-sm ring-2 ring-white overflow-hidden">
-                      {williamAvatar ? (
-                        <Image src={williamAvatar} alt="威廉" width={32} height={32} className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="material-icons-round text-white text-[18px]">smart_toy</span>
-                      )}
+                      <Image src={williamAvatar} alt="威廉" width={32} height={32} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex flex-col gap-3 items-start flex-1 min-w-0">
                       <div className="bg-white rounded-2xl rounded-tl-none px-4 py-3 shadow-sm text-sm text-gray-700 leading-relaxed border border-gray-100 max-w-[95%]">
