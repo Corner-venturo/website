@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import BottomNav from '@/components/BottomNav';
+import MobileNav from '@/components/MobileNav';
 
 const achievements = [
   { icon: 'hiking', label: '百岳挑戰', color: 'bg-[#A8BCA1]', rotate: 'rotate-3' },
@@ -532,7 +532,7 @@ export default function ProfilePage() {
           </div>
         </main>
 
-        <BottomNav />
+        <MobileNav />
       </div>
 
       <style jsx>{`

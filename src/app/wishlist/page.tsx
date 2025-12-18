@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import BottomNav from '@/components/BottomNav';
+import MobileNav from '@/components/MobileNav';
 
 const timelineItems = [
   {
@@ -380,7 +380,7 @@ export default function WishlistPage() {
       </div>
 
       <div className="xl:hidden">
-        <BottomNav />
+        <MobileNav />
       </div>
     </main>
   );

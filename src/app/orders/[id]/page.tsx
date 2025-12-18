@@ -246,7 +246,7 @@ export default function OrderDetailPage() {
       </header>
 
       {/* 主要內容 */}
-      <main className="flex-1 w-full overflow-y-auto pb-32">
+      <main className="flex-1 w-full overflow-y-auto pb-24">
 
         {/* 行程封面圖 */}
         <div className="px-4 sm:px-6 mb-4">
@@ -265,6 +265,35 @@ export default function OrderDetailPage() {
               <h2 className="text-xl font-bold text-white tracking-wide">{order.title}</h2>
               <p className="text-white/80 text-sm mt-1">{order.dateRange} · {order.travelers}</p>
             </div>
+          </div>
+        </div>
+
+        {/* 快捷按鈕 - 放在照片下方 */}
+        <div className="px-4 sm:px-6 mb-4">
+          <div className="flex gap-3">
+            {activeTab === "briefing" && order.briefing ? (
+              <>
+                <button className="flex-1 py-3 rounded-xl border border-[#C5B6AF]/50 text-[#C5B6AF] font-bold text-sm bg-white/60 backdrop-blur-xl hover:bg-white/80 transition-colors flex items-center justify-center gap-2">
+                  <span className="material-icons-round text-lg">edit_calendar</span>
+                  加入行事曆
+                </button>
+                <button className="flex-1 py-3 rounded-xl bg-[#C5B6AF] hover:bg-[#B5A69F] text-white font-bold text-sm shadow-lg shadow-[#C5B6AF]/30 transition-all flex items-center justify-center gap-2">
+                  <span className="material-icons-round text-lg">video_call</span>
+                  進入會議
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="flex-1 py-3 rounded-xl border border-[#94A3B8]/50 text-[#94A3B8] font-bold text-sm bg-white/60 backdrop-blur-xl hover:bg-white/80 transition-colors flex items-center justify-center gap-2">
+                  <span className="material-icons-round text-lg">support_agent</span>
+                  聯繫客服
+                </button>
+                <button className="flex-1 py-3 rounded-xl bg-[#94A3B8] hover:bg-[#8291A6] text-white font-bold text-sm shadow-lg shadow-[#94A3B8]/30 transition-all flex items-center justify-center gap-2">
+                  <span className="material-icons-round text-lg">share</span>
+                  分享行程
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -496,35 +525,6 @@ export default function OrderDetailPage() {
           )}
         </div>
       </main>
-
-      {/* 底部按鈕 */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 z-40 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-white/50 flex gap-3">
-          {activeTab === "briefing" && order.briefing ? (
-            <>
-              <button className="flex-1 py-3 rounded-xl border border-[#C5B6AF]/50 text-[#C5B6AF] font-bold text-sm bg-[#C5B6AF]/5 hover:bg-[#C5B6AF]/10 transition-colors flex items-center justify-center gap-2">
-                <span className="material-icons-round text-lg">edit_calendar</span>
-                加入行事曆
-              </button>
-              <button className="flex-1 py-3 rounded-xl bg-[#C5B6AF] hover:bg-[#B5A69F] text-white font-bold text-sm shadow-lg shadow-[#C5B6AF]/30 transition-all flex items-center justify-center gap-2">
-                <span className="material-icons-round text-lg">video_call</span>
-                進入會議
-              </button>
-            </>
-          ) : (
-            <>
-              <button className="flex-1 py-3 rounded-xl border border-[#94A3B8]/50 text-[#94A3B8] font-bold text-sm bg-[#94A3B8]/5 hover:bg-[#94A3B8]/10 transition-colors flex items-center justify-center gap-2">
-                <span className="material-icons-round text-lg">support_agent</span>
-                聯繫客服
-              </button>
-              <button className="flex-1 py-3 rounded-xl bg-[#94A3B8] hover:bg-[#8291A6] text-white font-bold text-sm shadow-lg shadow-[#94A3B8]/30 transition-all flex items-center justify-center gap-2">
-                <span className="material-icons-round text-lg">share</span>
-                分享行程
-              </button>
-            </>
-          )}
-        </div>
-      </div>
 
       {/* 手機版底部導航 */}
       <div className="xl:hidden">

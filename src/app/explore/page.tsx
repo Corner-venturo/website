@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import BottomNav from '@/components/BottomNav';
+import MobileNav from '@/components/MobileNav';
 
 // 動態載入地圖（避免 SSR 問題）
 const MapComponent = dynamic(() => import('./MapComponent'), {
@@ -531,7 +531,7 @@ export default function ExplorePage() {
         </div>
 
         {/* 底部導覽 - 只在手機版顯示 */}
-        <BottomNav />
+        <MobileNav />
       </div>
     </div>
   );

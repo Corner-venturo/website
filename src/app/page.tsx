@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import BottomNav from '@/components/BottomNav';
+import MobileNav from '@/components/MobileNav';
 
 const recommendations = [
   {
@@ -71,7 +71,6 @@ export default function HomePage() {
   const [greetingText, setGreetingText] = useState('');
   const [userName] = useState('旅人');
   const [showMessage, setShowMessage] = useState(false);
-  const [showPersonalMenu, setShowPersonalMenu] = useState(false);
 
   useEffect(() => {
     setDateString(formatDate());
@@ -205,56 +204,7 @@ export default function HomePage() {
         <div className="flex-shrink-0 h-4" />
 
         {/* 底部導覽 - 手機版 */}
-        <BottomNav onPersonClick={() => setShowPersonalMenu((prev) => !prev)} />
-
-        {/* 個人功能選單 */}
-        {showPersonalMenu && (
-          <div className="fixed inset-0 z-40 flex items-end justify-end pb-28 pr-6" onClick={() => setShowPersonalMenu(false)}>
-            <div className="absolute inset-0 bg-black/20" />
-            <div
-              className="relative pointer-events-auto bg-white/95 backdrop-blur-xl border border-white/60 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] rounded-[2rem] p-3 w-[190px] origin-bottom-right flex flex-col gap-1"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Link
-                href="#"
-                className="group flex items-center gap-3 w-full p-2.5 rounded-[1.2rem] hover:bg-[#F5F4F0] transition-all active:scale-95"
-              >
-                <div className="w-9 h-9 rounded-full bg-[#F2EBE9] flex items-center justify-center text-[#C5B6AF] group-hover:scale-110 transition-transform">
-                  <span className="material-icons-round text-[18px]">verified_user</span>
-                </div>
-                <span className="text-[13px] font-bold text-[#5C5C5C] tracking-wide">旅人護照</span>
-              </Link>
-              <Link
-                href="#"
-                className="group flex items-center gap-3 w-full p-2.5 rounded-[1.2rem] hover:bg-[#F5F4F0] transition-all active:scale-95"
-              >
-                <div className="w-9 h-9 rounded-full bg-[#EDF2EC] flex items-center justify-center text-[#A8BCA1] group-hover:scale-110 transition-transform">
-                  <span className="material-icons-round text-[18px]">airplane_ticket</span>
-                </div>
-                <span className="text-[13px] font-bold text-[#5C5C5C] tracking-wide">我的訂單</span>
-              </Link>
-              <Link
-                href="/split"
-                className="group flex items-center gap-3 w-full p-2.5 rounded-[1.2rem] hover:bg-[#F5F4F0] transition-all active:scale-95"
-                onClick={() => setShowPersonalMenu(false)}
-              >
-                <div className="w-9 h-9 rounded-full bg-[#E6EBF2] flex items-center justify-center text-[#94A3B8] group-hover:scale-110 transition-transform">
-                  <span className="material-icons-round text-[18px]">pie_chart</span>
-                </div>
-                <span className="text-[13px] font-bold text-[#5C5C5C] tracking-wide">分帳</span>
-              </Link>
-              <Link
-                href="#"
-                className="group flex items-center gap-3 w-full p-2.5 rounded-[1.2rem] hover:bg-[#F5F4F0] transition-all active:scale-95"
-              >
-                <div className="w-9 h-9 rounded-full bg-[#F0EBE6] flex items-center justify-center text-[#BAACA5] group-hover:scale-110 transition-transform">
-                  <span className="material-icons-round text-[18px]">groups</span>
-                </div>
-                <span className="text-[13px] font-bold text-[#5C5C5C] tracking-wide">朋友</span>
-              </Link>
-            </div>
-          </div>
-        )}
+        <MobileNav />
       </div>
 
       {/* 電腦版佈局 - 固定視窗不滾動 (1280px 以上) */}
