@@ -552,6 +552,23 @@ export default function ExplorePage() {
         {/* 底部導覽 - 只在手機版顯示 */}
         <MobileNav />
       </div>
+
+      {/* Leaflet Popup z-index 修正 */}
+      <style jsx global>{`
+        .leaflet-popup-pane {
+          z-index: 700 !important;
+        }
+        .leaflet-popup {
+          z-index: 700 !important;
+        }
+        .leaflet-popup-content-wrapper {
+          border-radius: 12px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        .leaflet-popup-tip {
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+      `}</style>
     </div>
   );
 }
