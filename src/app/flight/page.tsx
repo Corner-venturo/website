@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -442,7 +442,7 @@ function StayRemindersCard() {
   );
 }
 
-export default function FlightDetailPage() {
+function FlightDetailContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'flight' | 'stay'>('flight');
   const [showMapOptions, setShowMapOptions] = useState(false);
@@ -677,5 +677,17 @@ export default function FlightDetailPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function FlightDetailPage() {
+  return (
+    <Suspense fallback={
+      <div className="bg-[#F0EEE6] min-h-screen flex items-center justify-center">
+        <div className="text-gray-500">載入中...</div>
+      </div>
+    }>
+      <FlightDetailContent />
+    </Suspense>
   );
 }
