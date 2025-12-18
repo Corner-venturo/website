@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import BadgeNotification, { BADGES } from '@/components/BadgeNotification';
 
 // 桌面版 Header 組件
 function DesktopHeader() {
@@ -386,6 +387,7 @@ function AdvancedSettingsStep() {
 export default function CreateExplorePage() {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showBadge, setShowBadge] = useState(false);
 
   const isFirstStep = step === 1;
   const isLastStep = step === 3;
@@ -403,12 +405,18 @@ export default function CreateExplorePage() {
       // TODO: 實際的 API 呼叫
       setTimeout(() => {
         setIsSubmitting(false);
-        alert('活動發布成功！（功能開發中）');
-        // 之後可以 redirect 到活動頁面
+        // 顯示徽章獲得通知
+        setShowBadge(true);
       }, 1000);
     } else {
       setStep((prev) => Math.min(prev + 1, 3));
     }
+  };
+
+  const handleBadgeClose = () => {
+    setShowBadge(false);
+    // 之後可以 redirect 到活動頁面
+    // router.push('/explore');
   };
 
   const stepContent = useMemo(() => {
@@ -646,6 +654,13 @@ export default function CreateExplorePage() {
           </button>
         </div>
       </div>
+
+      {/* 徽章獲得通知 */}
+      <BadgeNotification
+        badge={BADGES.group_newbie}
+        isOpen={showBadge}
+        onClose={handleBadgeClose}
+      />
     </div>
   );
 }
