@@ -351,7 +351,7 @@ export default function OrdersPage() {
       </main>
 
       {/* 手機版底部導航 */}
-      <div className="md:hidden">
+      <div className="xl:hidden">
         <MobileNav />
       </div>
 
