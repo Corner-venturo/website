@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import MobileNav from '@/components/MobileNav';
+import { useAuthStore } from '@/stores/auth-store';
 
 const recommendations = [
   {
@@ -67,15 +68,21 @@ function getGreeting() {
 }
 
 export default function HomePage() {
+  const { user, initialize, isInitialized } = useAuthStore();
   const [dateString, setDateString] = useState('');
   const [greetingText, setGreetingText] = useState('');
-  const [userName] = useState('旅人');
   const [showMessage, setShowMessage] = useState(false);
+
+  // 取得用戶名稱
+  const userName = user?.user_metadata?.name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || '旅人';
 
   useEffect(() => {
     setDateString(formatDate());
     setGreetingText(getGreeting());
-  }, []);
+    if (!isInitialized) {
+      initialize();
+    }
+  }, [initialize, isInitialized]);
 
   // 顯示「威廉是不是很可愛」頁面
   if (showMessage) {
@@ -130,10 +137,20 @@ export default function HomePage() {
                 <h1 className="text-base font-bold text-[#5C5C5C]">{greetingText}，{userName}</h1>
               </div>
             </div>
-            {/* 右邊：登入按鈕（未登入時顯示）- 圓形跟頭像對稱 */}
-            <Link href="/login" className="w-11 h-11 rounded-full bg-[#94A3B8] hover:bg-[#8291A6] text-white text-xs font-medium flex items-center justify-center transition">
-              登入
-            </Link>
+            {/* 右邊：根據登入狀態顯示 */}
+            {user ? (
+              <Link href="/my" className="w-11 h-11 rounded-full bg-[#94A3B8] text-white font-bold flex items-center justify-center overflow-hidden">
+                {user.user_metadata?.avatar_url ? (
+                  <Image src={user.user_metadata.avatar_url} alt="頭像" width={44} height={44} className="w-full h-full object-cover" />
+                ) : (
+                  userName.charAt(0).toUpperCase()
+                )}
+              </Link>
+            ) : (
+              <Link href="/login" className="w-11 h-11 rounded-full bg-[#94A3B8] hover:bg-[#8291A6] text-white text-xs font-medium flex items-center justify-center transition">
+                登入
+              </Link>
+            )}
           </div>
         </header>
 
@@ -227,17 +244,23 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-4">
             <Link href="/my" className="flex items-center gap-3 px-4 py-2 bg-white/60 rounded-full border border-white/40 hover:bg-white/80 transition">
-              <div className="w-8 h-8 rounded-full bg-[#D6CDC8] text-white font-bold text-sm flex items-center justify-center">
-                {userName.charAt(0)}
+              <div className="w-8 h-8 rounded-full bg-[#D6CDC8] text-white font-bold text-sm flex items-center justify-center overflow-hidden">
+                {user?.user_metadata?.avatar_url ? (
+                  <Image src={user.user_metadata.avatar_url} alt="頭像" width={32} height={32} className="w-full h-full object-cover" />
+                ) : (
+                  userName.charAt(0).toUpperCase()
+                )}
               </div>
               <div>
                 <p className="text-[9px] uppercase tracking-wider text-[#949494]">{dateString}</p>
                 <p className="text-sm font-medium text-[#5C5C5C]">{greetingText}，{userName}</p>
               </div>
             </Link>
-            <Link href="/login" className="bg-[#94A3B8] hover:bg-[#8291A6] text-white text-sm py-2.5 px-6 rounded-full transition font-medium">
-              登入 / 註冊
-            </Link>
+            {!user && (
+              <Link href="/login" className="bg-[#94A3B8] hover:bg-[#8291A6] text-white text-sm py-2.5 px-6 rounded-full transition font-medium">
+                登入 / 註冊
+              </Link>
+            )}
           </div>
         </header>
 
