@@ -219,50 +219,42 @@ function TimeLocationStep() {
 
       <div className="mb-6 animate-[fadeIn_0.6s_ease-out]">
         <h2 className="text-sm font-bold text-gray-800 mb-4 px-1 flex items-center gap-2">
-          <span className="material-icons-round text-morandi-green">place</span>
+          <span className="material-icons-round text-[#A8BFA6]">place</span>
           活動地點
         </h2>
         <div className="space-y-4">
-          <div className="relative group">
-            <div className="absolute inset-0 bg-white rounded-2xl shadow-sm transition-transform group-focus-within:-translate-y-1 group-focus-within:shadow-md" />
-            <div className="relative flex items-center">
-              <span className="material-icons-round absolute left-4 text-gray-400">search</span>
+          {/* 地點名稱 */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-1.5 ml-1">地點名稱</label>
+            <div className="relative">
+              <span className="material-icons-round absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">store</span>
               <input
                 type="text"
-                placeholder="輸入地址或搜尋地標"
-                className="w-full pl-11 pr-4 py-4 rounded-2xl border-none bg-transparent text-sm text-gray-800 placeholder-gray-400 focus:ring-0"
+                placeholder="例如：台北 101、信義威秀"
+                className="w-full pl-11 pr-4 py-3.5 rounded-2xl border-none bg-white text-sm text-gray-800 placeholder-gray-300 shadow-sm focus:ring-2 focus:ring-[rgba(207,185,165,0.5)]"
               />
-              <button className="absolute right-3 p-1 text-gray-400 hover:text-[var(--primary)] transition-colors">
-                <span className="material-icons-round text-xl">my_location</span>
-              </button>
             </div>
           </div>
 
-          <div className="w-full aspect-[4/3] rounded-3xl bg-[#E5E0D8] bg-map-pattern relative overflow-hidden shadow-sm group cursor-pointer border-2 border-white hover:border-[rgba(207,185,165,0.5)] transition-colors">
-            <div className="absolute top-0 right-0 p-4 z-10">
-              <div className="bg-white/80 backdrop-blur-sm p-2 rounded-xl shadow-sm text-gray-600">
-                <span className="material-icons-round text-xl block">layers</span>
-              </div>
+          {/* 詳細地址 */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-1.5 ml-1">詳細地址</label>
+            <div className="relative">
+              <span className="material-icons-round absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">location_on</span>
+              <input
+                type="text"
+                placeholder="例如：台北市信義區信義路五段7號"
+                className="w-full pl-11 pr-4 py-3.5 rounded-2xl border-none bg-white text-sm text-gray-800 placeholder-gray-300 shadow-sm focus:ring-2 focus:ring-[rgba(207,185,165,0.5)]"
+              />
             </div>
+          </div>
 
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10 pointer-events-none">
-              <div className="w-20 h-20 rounded-full animate-ping absolute" style={{ backgroundColor: 'rgba(207,185,165,0.2)' }} />
-              <div className="relative z-10 transform -translate-y-1/2 transition-transform group-hover:-translate-y-3 duration-300 ease-out">
-                <span className="material-icons-round text-5xl drop-shadow-xl filter" style={{ color: palette.primary }}>location_on</span>
-              </div>
-              <div className="w-4 h-2 bg-black/20 rounded-[50%] blur-[2px] mt-[-10px] group-hover:scale-75 group-hover:opacity-50 transition-all duration-300" />
-              <div className="mt-2 bg-white px-4 py-2 rounded-xl shadow-lg flex flex-col items-center">
-                <span className="text-xs font-bold text-gray-700">台北 101</span>
-                <span className="text-[10px] text-gray-400">點擊地圖以更改</span>
-              </div>
-            </div>
-
-            <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/10 to-transparent">
-              <button className="w-full bg-white/95 backdrop-blur text-primary font-bold py-3.5 rounded-2xl shadow-lg flex items-center justify-center gap-2 hover:bg-[var(--primary)] hover:text-white transition-all active:scale-95">
-                <span className="material-icons-round">map</span>
-                開啟全螢幕地圖
-              </button>
-            </div>
+          {/* 提示 */}
+          <div className="flex items-start gap-2 p-3 bg-[#A8BFA6]/10 rounded-xl">
+            <span className="material-icons-round text-[#A8BFA6] text-lg mt-0.5">info</span>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              請填寫明確的集合地點，方便參加者找到位置。地圖選點功能即將推出！
+            </p>
           </div>
         </div>
       </div>
@@ -590,22 +582,24 @@ export default function CreateExplorePage() {
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-2 px-1">
-                    <label className="text-xs font-bold text-gray-500">集合地點</label>
-                    <button className="text-xs text-primary font-bold flex items-center">
-                      <span className="material-icons-round text-sm mr-0.5">my_location</span> 使用目前位置
-                    </button>
-                  </div>
-                  <div className="w-full h-36 rounded-2xl bg-[#E5E0D8] bg-map-pattern relative overflow-hidden shadow-inner group cursor-pointer border-2 border-transparent hover:border-[rgba(207,185,165,0.5)] transition-colors">
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-                      <div className="w-12 h-12 rounded-full animate-ping absolute" style={{ backgroundColor: 'rgba(207,185,165,0.2)' }} />
-                      <span className="material-icons-round text-4xl drop-shadow-md relative z-10" style={{ color: palette.primary }}>location_on</span>
-                      <div className="w-3 h-1.5 bg-black/20 rounded-[50%] blur-[1px] mt-[-4px]" />
+                  <label className="block text-xs font-bold text-gray-500 mb-2 px-1">集合地點</label>
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">store</span>
+                      <input
+                        type="text"
+                        placeholder="地點名稱（如：台北車站）"
+                        className="w-full pl-10 pr-4 py-3 rounded-2xl border-none bg-white text-sm shadow-sm placeholder-gray-300 focus:ring-2 focus:ring-[rgba(207,185,165,0.5)]"
+                      />
                     </div>
-                    <button className="absolute bottom-3 right-3 bg-white text-gray-700 text-xs font-bold px-4 py-2 rounded-xl shadow-lg flex items-center gap-1">
-                      開啟地圖選擇
-                    </button>
+                    <div className="relative">
+                      <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">location_on</span>
+                      <input
+                        type="text"
+                        placeholder="詳細地址"
+                        className="w-full pl-10 pr-4 py-3 rounded-2xl border-none bg-white text-sm shadow-sm placeholder-gray-300 focus:ring-2 focus:ring-[rgba(207,185,165,0.5)]"
+                      />
+                    </div>
                   </div>
                 </div>
 
