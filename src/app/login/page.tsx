@@ -97,6 +97,31 @@ export default function LoginPage() {
     }
   };
 
+  // 嘗試用外部瀏覽器開啟
+  const handleOpenInBrowser = () => {
+    const url = window.location.href;
+    const ua = navigator.userAgent || '';
+
+    // Android: 嘗試用 intent:// 開啟 Chrome
+    if (/android/i.test(ua)) {
+      const intentUrl = `intent://${url.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`;
+      window.location.href = intentUrl;
+      return;
+    }
+
+    // iOS: 嘗試幾種方式
+    // 1. 先複製網址
+    handleCopyUrl();
+
+    // 2. 嘗試用 window.open（某些 WebView 會開外部瀏覽器）
+    const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+
+    // 3. 如果沒成功，顯示提示
+    if (!newWindow) {
+      alert('已複製網址！\n\n請手動貼到 Safari 或 Chrome 開啟。');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSuccessMessage('');
@@ -178,15 +203,23 @@ export default function LoginPage() {
                   <p className="text-xs text-amber-700 mb-3">
                     請用 Safari 或 Chrome 開啟此頁面，或使用 Email 登入。
                   </p>
-                  <button
-                    onClick={handleCopyUrl}
-                    className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
-                  >
-                    <span className="material-icons-round text-lg">
-                      {copied ? 'check' : 'content_copy'}
-                    </span>
-                    {copied ? '已複製！' : '複製網址'}
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleOpenInBrowser}
+                      className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <span className="material-icons-round text-lg">open_in_browser</span>
+                      開啟瀏覽器
+                    </button>
+                    <button
+                      onClick={handleCopyUrl}
+                      className="py-2.5 px-3 bg-amber-100 hover:bg-amber-200 text-amber-700 text-sm font-bold rounded-xl flex items-center justify-center transition-colors"
+                    >
+                      <span className="material-icons-round text-lg">
+                        {copied ? 'check' : 'content_copy'}
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
