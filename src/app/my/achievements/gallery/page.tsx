@@ -95,15 +95,15 @@ export default function AchievementGalleryPage() {
   const earnedCount = allAchievements.filter(a => a.earned).length;
 
   return (
-    <div className="bg-[#F0EEE6] font-sans antialiased text-gray-900 min-h-screen flex flex-col overflow-hidden relative">
+    <div className="h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-[#F0EEE6] font-sans antialiased text-gray-900">
       {/* 背景光暈 */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
+      <div className="absolute inset-0 -z-10 pointer-events-none">
         <div className="absolute -top-[10%] -left-[20%] w-96 h-96 bg-[#A5BCCF]/20 rounded-full blur-3xl" />
         <div className="absolute bottom-[10%] -right-[10%] w-80 h-80 bg-[#Cfb9a5]/20 rounded-full blur-3xl" />
       </div>
 
-      {/* Header */}
-      <header className="relative z-20 px-6 pt-12 pb-4 flex items-center justify-between bg-white/85 backdrop-blur-xl border-b border-white/30 sticky top-0">
+      {/* Header - absolute 定位 */}
+      <header className="absolute top-0 left-0 right-0 z-20 px-6 pt-4 pb-4 flex items-center justify-between bg-white/85 backdrop-blur-xl border-b border-white/30">
         <Link
           href="/my/achievements"
           className="p-2 -ml-2 rounded-full text-gray-600 hover:bg-black/5 transition-colors"
@@ -117,7 +117,7 @@ export default function AchievementGalleryPage() {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 w-full overflow-y-auto pb-32">
+      <main className="h-full overflow-y-auto pt-16 pb-32">
         {/* 進度總覽 */}
         <div className="px-6 py-6 text-center">
           <div className="inline-flex items-center justify-center p-1 bg-white/40 rounded-full backdrop-blur-sm mb-4 border border-white/20">

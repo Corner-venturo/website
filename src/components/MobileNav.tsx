@@ -21,8 +21,8 @@ const navItems: NavItem[] = [
 export default function MobileNav() {
   const pathname = usePathname();
 
-  // 不顯示漸變遮罩的頁面（首頁、探索頁、有自己底部按鈕的頁面）
-  const hideGradientPages = ['/', '/explore', '/my/footprint/record'];
+  // 不顯示漸變遮罩的頁面（首頁、探索頁、AI頁、有自己底部按鈕的頁面）
+  const hideGradientPages = ['/', '/explore', '/ai-planner', '/my/footprint/record'];
   const showGradient = !hideGradientPages.some(page => pathname === page || pathname.startsWith(page + '/'));
 
   return (

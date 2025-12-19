@@ -1,21 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import MobileNav from "@/components/MobileNav";
 import { getSupabaseClient } from "@/lib/supabase";
 import {
-  ChatHeader,
   UserMessage,
   AIMessage,
   ChatInput,
-  JourneyBuilder,
-  SuggestionDatabase,
   Message,
-  JourneyItem,
-  SuggestionItem,
   recommendedTrips,
   kyotoItinerary,
-  kyotoSuggestions,
   typeConfig,
   autoReplies,
   WILLIAM_USER_ID,
@@ -33,12 +27,17 @@ export default function AIPlannerPage() {
     },
   ]);
   const [williamAvatar, setWilliamAvatar] = useState<string>(WILLIAM_DEFAULT_AVATAR);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // 行程相關狀態
-  const [journeyItems, setJourneyItems] = useState<JourneyItem[]>([]);
-  const [isSuggestionOpen, setIsSuggestionOpen] = useState(false);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
+  // 滾動到底部
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // 每當 messages 更新時，滾動到底部
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   // 取得 William 的頭像
   useEffect(() => {
@@ -59,73 +58,6 @@ export default function AIPlannerPage() {
 
     fetchWilliamProfile();
   }, []);
-
-  const showNotification = (message: string) => {
-    setToastMessage(message);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000);
-  };
-
-  // 新增項目到行程
-  const handleAddSuggestion = (item: SuggestionItem) => {
-    const newItem: JourneyItem = {
-      id: `j-${Date.now()}`,
-      day: 1,
-      time: getNextTime(journeyItems),
-      title: item.title,
-      type: item.type,
-      description: item.description,
-      image: item.image,
-    };
-    setJourneyItems([...journeyItems, newItem]);
-    setIsSuggestionOpen(false);
-    showNotification(`已將「${item.title}」加入行程！`);
-
-    // 加入 AI 回覆
-    const aiResponse: Message = {
-      id: Date.now(),
-      type: "ai",
-      content: `太棒了！已將「${item.title}」加入你的行程 🎉\n${item.description}`,
-    };
-    setMessages((prev) => [...prev, aiResponse]);
-  };
-
-  // 移除行程項目
-  const handleRemoveItem = (id: string) => {
-    const item = journeyItems.find((i) => i.id === id);
-    setJourneyItems(journeyItems.filter((i) => i.id !== id));
-    if (item) {
-      showNotification(`已移除「${item.title}」`);
-    }
-  };
-
-  // 自動生成行程
-  const handleAutoGenerate = () => {
-    // 使用預設的京都行程資料生成
-    const generatedItems: JourneyItem[] = kyotoItinerary
-      .slice(0, 2) // 只取前兩天
-      .flatMap((day) =>
-        day.items.map((item, index) => ({
-          id: `auto-${day.day}-${index}`,
-          day: day.day,
-          time: item.time,
-          title: item.title,
-          type: item.type as JourneyItem["type"],
-          description: item.description,
-        }))
-      );
-
-    setJourneyItems(generatedItems);
-    showNotification("已為你自動生成行程！");
-
-    const aiResponse: Message = {
-      id: Date.now(),
-      type: "ai",
-      content:
-        "好的！我已經幫你自動生成了京都兩天的精彩行程 ✨\n\n包含清水寺、和服體驗、伏見稻荷大社等經典景點，你可以自由調整順序或新增其他項目！",
-    };
-    setMessages((prev) => [...prev, aiResponse]);
-  };
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
@@ -173,14 +105,7 @@ export default function AIPlannerPage() {
   };
 
   return (
-    <div className="bg-[#F7F5F2] font-sans antialiased text-gray-900 min-h-screen flex flex-col">
-      {/* Toast */}
-      {showToast && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 bg-black/80 text-white text-sm rounded-full backdrop-blur-sm">
-          {toastMessage}
-        </div>
-      )}
-
+    <div className="h-[100dvh] max-h-[100dvh] overflow-hidden bg-[#F7F5F2] font-sans antialiased text-gray-900">
       {/* 背景紋理 */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-5">
         <img
@@ -190,13 +115,9 @@ export default function AIPlannerPage() {
         />
       </div>
 
-      {/* Header */}
-      <ChatHeader avatarUrl={williamAvatar} />
-
-      {/* 主要內容 */}
-      <main className="relative z-10 w-full flex-1 flex flex-col pb-28 overflow-hidden">
-        {/* 對話區域 */}
-        <section className="px-5 pt-2 pb-2 flex flex-col gap-4 max-h-[40vh] overflow-y-auto hide-scrollbar">
+      {/* 對話區域 - 可滾動 */}
+      <main className="h-full overflow-y-auto relative z-10 px-5 pt-14 pb-40 hide-scrollbar">
+        <div className="flex flex-col gap-4">
           {messages.map((message) => (
             <div key={message.id}>
               {message.type === "user" ? (
@@ -209,38 +130,23 @@ export default function AIPlannerPage() {
                   itinerary={kyotoItinerary}
                   typeConfig={typeConfig}
                   onTripClick={handleTripClick}
-                  onAddToItinerary={() => setIsSuggestionOpen(true)}
+                  onAddToItinerary={() => {}}
                 />
               )}
             </div>
           ))}
-        </section>
-
-        {/* 輸入框 */}
-        <div className="px-5 py-2 z-20 sticky top-0">
-          <ChatInput value={inputValue} onChange={setInputValue} onSend={handleSendMessage} />
+          {/* 滾動錨點 */}
+          <div ref={messagesEndRef} />
         </div>
-
-        {/* 拼湊你的旅程 */}
-        <JourneyBuilder
-          items={journeyItems}
-          onAddClick={() => setIsSuggestionOpen(true)}
-          onRemoveItem={handleRemoveItem}
-          onAutoGenerate={handleAutoGenerate}
-        />
       </main>
+
+      {/* 固定輸入框 - 在 MobileNav 上方 */}
+      <div className="fixed bottom-24 left-0 right-0 z-20 px-5 py-3 bg-gradient-to-t from-[#F7F5F2] via-[#F7F5F2] to-transparent">
+        <ChatInput value={inputValue} onChange={setInputValue} onSend={handleSendMessage} />
+      </div>
 
       {/* 底部導航 */}
       <MobileNav />
-
-      {/* 建議資料庫 */}
-      <SuggestionDatabase
-        isOpen={isSuggestionOpen}
-        onClose={() => setIsSuggestionOpen(false)}
-        onAddItem={handleAddSuggestion}
-        suggestions={kyotoSuggestions}
-        destination="京都"
-      />
 
       <style jsx>{`
         .hide-scrollbar::-webkit-scrollbar {
@@ -250,27 +156,7 @@ export default function AIPlannerPage() {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.6s ease-out forwards;
-        }
       `}</style>
     </div>
   );
-}
-
-// 取得下一個時間（簡單遞增）
-function getNextTime(items: JourneyItem[]): string {
-  const times = ["09:00", "10:30", "12:00", "14:00", "15:30", "17:00", "18:30", "20:00"];
-  const usedTimes = items.filter((i) => i.day === 1).map((i) => i.time);
-  return times.find((t) => !usedTimes.includes(t)) || "21:00";
 }

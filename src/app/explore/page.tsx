@@ -111,7 +111,7 @@ export default function ExplorePage() {
             trip.latitude,
             trip.longitude
           );
-          return distance <= 10;
+          return distance <= 2;
         })
         .filter((trip) => activeCategory === 'all' || trip.category === activeCategory);
     }
@@ -209,7 +209,7 @@ export default function ExplorePage() {
 
         {/* 底部揪團卡片列表 - 浮在地圖上 */}
         <div className="absolute bottom-20 left-0 right-0 z-20">
-          <div className={`flex overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] gap-4 px-5 py-2 ${filteredTrips.length === 0 ? 'justify-center' : ''}`}>
+          <div className={`flex overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] gap-4 px-5 py-2 ${filteredTrips.length <= 1 ? 'justify-center' : ''}`}>
             {filteredTrips.length === 0 ? (
               <div className="snap-center shrink-0 w-[280px]">
                 <EmptyState compact />

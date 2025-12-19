@@ -122,18 +122,17 @@ export default function HomePage() {
   }
 
   return (
-    <div className="bg-[#F5F4F0] text-[#5C5C5C] min-h-screen relative overflow-hidden">
+    <div className="h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-[#F5F4F0] text-[#5C5C5C]">
       {/* 背景漸層 */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
+      <div className="absolute inset-0 -z-10 pointer-events-none">
         <div className="absolute -top-[5%] -left-[15%] w-[500px] h-[500px] bg-[#D8D0C9] opacity-40 blur-[90px] rounded-full" />
         <div className="absolute -bottom-[10%] -right-[10%] w-[450px] h-[450px] bg-[#C8D6D3] opacity-40 blur-[90px] rounded-full" />
         <div className="absolute top-[40%] left-[20%] w-[300px] h-[300px] bg-[#E6DFDA] opacity-30 blur-[70px] rounded-full" />
       </div>
 
-      {/* 手機版佈局 - 使用 dvh 適應手機瀏覽器 */}
-      <div className="max-w-3xl mx-auto h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <header className="flex-shrink-0 pt-3 px-4 sm:px-6">
+      {/* Header - absolute 定位，跟探索頁一致 */}
+      <header className="absolute top-0 left-0 right-0 z-20 px-4 sm:px-6 pt-4 pb-3">
+        <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-between px-5 py-3 bg-white/50 backdrop-blur-2xl rounded-full border border-white/50 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)]">
             {/* 左邊：頭像 + 日期問候 */}
             <div className="flex items-center gap-3">
@@ -160,8 +159,11 @@ export default function HomePage() {
               </Link>
             )}
           </div>
-        </header>
+        </div>
+      </header>
 
+      {/* 主要內容區 */}
+      <div className="max-w-3xl mx-auto h-full flex flex-col pt-24">
         {/* 本週推薦標題 */}
         <div className="flex-shrink-0 px-[30px] my-4 flex items-end justify-between">
           <div className="flex items-center gap-3">

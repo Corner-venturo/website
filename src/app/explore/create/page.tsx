@@ -2,10 +2,11 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import BadgeNotification, { BADGES } from '@/components/BadgeNotification';
 import { useGroupStore, CreateGroupData } from '@/stores/group-store';
 import { useAuthStore } from '@/stores/auth-store';
+import { getSupabaseClient } from '@/lib/supabase';
 
 const palette = {
   primary: '#Cfb9a5',
@@ -588,12 +589,17 @@ function AdvancedSettingsStep({ formData, onChange }: AdvancedSettingsStepProps)
 
 export default function CreateExplorePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editGroupId = searchParams.get('edit');
+  const isEditMode = !!editGroupId;
+
   const { user } = useAuthStore();
-  const { createGroup, isLoading: isCreating } = useGroupStore();
+  const { createGroup, updateGroup, isLoading: isCreating } = useGroupStore();
 
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBadge, setShowBadge] = useState(false);
+  const [isLoadingGroup, setIsLoadingGroup] = useState(isEditMode);
   const [errorModal, setErrorModal] = useState<{ show: boolean; title: string; message: string }>({
     show: false,
     title: '',
@@ -630,12 +636,86 @@ export default function CreateExplorePage() {
     setFormData(prev => ({ ...prev, ...data }));
   };
 
+  // 編輯模式：載入現有活動資料
+  useEffect(() => {
+    const fetchGroupData = async () => {
+      if (!editGroupId) return;
+
+      setIsLoadingGroup(true);
+      const supabase = getSupabaseClient();
+
+      try {
+        const { data, error } = await supabase
+          .from('groups')
+          .select('*')
+          .eq('id', editGroupId)
+          .single();
+
+        if (error || !data) {
+          showError('找不到活動', '該活動可能已被刪除');
+          router.push('/explore');
+          return;
+        }
+
+        // 確認是主辦人
+        if (user && data.created_by !== user.id) {
+          showError('無權限', '只有主辦人可以編輯活動');
+          router.push(`/explore/${editGroupId}`);
+          return;
+        }
+
+        // 解析日期時間
+        const eventDate = data.event_date ? new Date(data.event_date) : new Date();
+        const startDateTime = new Date(eventDate);
+        const endDateTime = new Date(eventDate);
+
+        if (data.start_time) {
+          const [startHours, startMins] = data.start_time.split(':');
+          startDateTime.setHours(parseInt(startHours), parseInt(startMins), 0, 0);
+        }
+        if (data.end_time) {
+          const [endHours, endMins] = data.end_time.split(':');
+          endDateTime.setHours(parseInt(endHours), parseInt(endMins), 0, 0);
+        }
+
+        // 填入表單
+        setFormData({
+          title: data.title || '',
+          description: data.description || '',
+          category: data.category || 'food',
+          coverImage: null,
+          coverImagePreview: data.cover_image_url || '',
+          locationName: data.location_name || '',
+          locationAddress: data.location_address || '',
+          startDateTime,
+          endDateTime,
+          memberCount: data.max_members || 4,
+          genderLimit: data.gender_limit || 'all',
+          requireApproval: data.require_approval ?? true,
+          isPrivate: data.is_private ?? false,
+          estimatedCost: data.estimated_cost?.toString() || '',
+          tags: data.tags || [],
+        });
+      } catch (err) {
+        console.error('Failed to fetch group:', err);
+        showError('載入失敗', '無法載入活動資料');
+      } finally {
+        setIsLoadingGroup(false);
+      }
+    };
+
+    fetchGroupData();
+  }, [editGroupId, user, router]);
+
   // 檢查用戶登入狀態
   useEffect(() => {
     if (!user) {
-      router.push('/login?redirect=/explore/create');
+      const redirectUrl = isEditMode
+        ? `/login?redirect=/explore/create?edit=${editGroupId}`
+        : '/login?redirect=/explore/create';
+      router.push(redirectUrl);
     }
-  }, [user, router]);
+  }, [user, router, isEditMode, editGroupId]);
 
   // 取得預設的今天日期和時間（用於手機版預覽）
   const getDefaultPreview = useMemo(() => {
@@ -658,8 +738,8 @@ export default function CreateExplorePage() {
   const nextLabel = useMemo(() => {
     if (step === 1) return '下一步：時間地點';
     if (step === 2) return '下一步：進階設定';
-    return '確認發布';
-  }, [step]);
+    return isEditMode ? '確認更新' : '確認發布';
+  }, [step, isEditMode]);
 
   const showError = (title: string, message: string) => {
     setErrorModal({ show: true, title, message });
@@ -675,7 +755,7 @@ export default function CreateExplorePage() {
       }
 
       if (!user) {
-        showError('需要登入', '請先登入後再創建活動');
+        showError('需要登入', isEditMode ? '請先登入後再編輯活動' : '請先登入後再創建活動');
         return;
       }
 
@@ -686,8 +766,6 @@ export default function CreateExplorePage() {
         const eventDate = formData.startDateTime.toISOString().split('T')[0];
         const startTime = formData.startDateTime.toTimeString().slice(0, 5);
         const endTime = formData.endDateTime.toTimeString().slice(0, 5);
-
-        console.log('Creating group with user:', user.id);
 
         const groupData: CreateGroupData = {
           title: formData.title,
@@ -706,21 +784,35 @@ export default function CreateExplorePage() {
           tags: formData.tags,
         };
 
-        const result = await createGroup(user.id, groupData);
+        if (isEditMode && editGroupId) {
+          // 編輯模式：更新活動
+          console.log('Updating group:', editGroupId);
+          const result = await updateGroup(editGroupId, groupData);
 
-        if (result.success) {
-          setShowBadge(true);
-        } else {
-          // 判斷錯誤類型
-          if (result.error?.includes('已有進行中的揪團')) {
-            showError('無法創建更多揪團', result.error);
+          if (result.success) {
+            router.push(`/explore/${editGroupId}`);
           } else {
-            showError('創建失敗', result.error || '請稍後再試');
+            showError('更新失敗', result.error || '請稍後再試');
+          }
+        } else {
+          // 創建模式：新建活動
+          console.log('Creating group with user:', user.id);
+          const result = await createGroup(user.id, groupData);
+
+          if (result.success) {
+            setShowBadge(true);
+          } else {
+            // 判斷錯誤類型
+            if (result.error?.includes('已有進行中的揪團')) {
+              showError('無法創建更多揪團', result.error);
+            } else {
+              showError('創建失敗', result.error || '請稍後再試');
+            }
           }
         }
       } catch (error) {
-        console.error('Create group error:', error);
-        showError('創建失敗', '發生未知錯誤，請稍後再試');
+        console.error(isEditMode ? 'Update group error:' : 'Create group error:', error);
+        showError(isEditMode ? '更新失敗' : '創建失敗', '發生未知錯誤，請稍後再試');
       } finally {
         setIsSubmitting(false);
       }
@@ -740,11 +832,14 @@ export default function CreateExplorePage() {
     return <AdvancedSettingsStep formData={formData} onChange={updateFormData} />;
   }, [step, formData]);
 
-  // 如果沒登入，顯示載入中
-  if (!user) {
+  // 如果沒登入或正在載入活動資料，顯示載入中
+  if (!user || isLoadingGroup) {
     return (
       <div className="min-h-screen bg-[#F0EEE6] flex items-center justify-center">
-        <div className="text-gray-500">載入中...</div>
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-[#cfb9a5] border-t-transparent rounded-full animate-spin" />
+          <div className="text-gray-500">{isLoadingGroup ? '載入活動資料...' : '載入中...'}</div>
+        </div>
       </div>
     );
   }
@@ -764,10 +859,15 @@ export default function CreateExplorePage() {
       <div className="h-[100dvh] overflow-hidden flex flex-col relative z-10">
         <header className="relative z-50 px-5 pt-12 pb-2">
           <div className="flex items-center justify-between mb-4">
-            <Link href="/explore" className="w-10 h-10 rounded-full glass flex items-center justify-center text-gray-600 hover:text-[var(--primary)] transition-colors shadow-sm">
+            <Link
+              href={isEditMode ? `/explore/${editGroupId}` : '/explore'}
+              className="w-10 h-10 rounded-full glass flex items-center justify-center text-gray-600 hover:text-[var(--primary)] transition-colors shadow-sm"
+            >
               <span className="material-icons-round">arrow_back_ios_new</span>
             </Link>
-            <h1 className="text-lg font-bold text-gray-800 tracking-wide">創立活動</h1>
+            <h1 className="text-lg font-bold text-gray-800 tracking-wide">
+              {isEditMode ? '編輯活動' : '創立活動'}
+            </h1>
             <div className="w-10" />
           </div>
           <StepIndicator step={step} onChange={setStep} />
@@ -890,7 +990,7 @@ export default function CreateExplorePage() {
             disabled={isSubmitting || isCreating}
             className="w-full bg-[#Cfb9a5] text-white font-bold py-4 rounded-3xl shadow-[0_12px_30px_rgba(207,185,165,0.3)] flex items-center justify-center gap-2 active:scale-95 transition-transform hover:bg-[#b09b88] disabled:opacity-50"
           >
-            {isSubmitting || isCreating ? '發布中...' : nextLabel}
+            {isSubmitting || isCreating ? (isEditMode ? '更新中...' : '發布中...') : nextLabel}
             <span className="material-icons-round text-sm">{isLastStep ? 'check_circle' : 'arrow_forward'}</span>
           </button>
         </div>

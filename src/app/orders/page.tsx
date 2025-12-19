@@ -1,77 +1,134 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import MobileNav from "@/components/MobileNav";
 import { OrderCard, FilterTabs, FilterType, Order } from "./components";
+import { useAuthStore } from "@/stores/auth-store";
+import { useTripStore, Trip } from "@/stores/trip-store";
 
-const orders: Order[] = [
-  {
-    id: "kyoto-autumn",
-    month: "Nov",
-    day: "15",
-    chipText: "3 天後出發",
-    chipColor: "bg-[#94A3B8]",
-    title: "京都秋日賞楓五日遊",
-    dateRange: "11/15 - 11/20, 2023",
-    travelers: "2 成人, 1 兒童",
-    progress: 85,
-    filter: "upcoming",
-    statusTags: [
-      { label: "航班資訊", tone: "green", href: "/flight" },
-      { label: "住宿資訊", tone: "green", href: "/stay" },
-    ],
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAeCbTrGygE4_uzH0tj_DTbI3KKdnoQ-66HvcsNlfYVxQPtIEx94CzY2pXOnEqdq6FuX7wN-DhOHQPde4bxA4F3BCP7FN5iIfmUJNn7PT9aQFYAf9SvhzNGXL8ziV6L53mb9MeTbWDT1WJg4zcMfSvp1Mv21IiatJBbRZrilIDpDHA1o8leWHUifwEN2S4aN9duWIv9AzqngFYHlaRSfm83EjpSie_ZKPMSnOQBzWGJl5eeYSL-ryZMDgEmgNzTolv5VpqE1PnA4Ydl",
-  },
-  {
-    id: "tokyo-disney",
-    month: "Dec",
-    day: "24",
-    chipText: "等待付款",
-    chipColor: "bg-[#C5B6AF]",
-    title: "東京迪士尼夢幻之旅",
-    dateRange: "12/24 - 12/28, 2023",
-    travelers: "剩餘 23 小時付款",
-    total: "$45,200",
-    actionLabel: "前往付款",
-    filter: "pending",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCG3AJ90z0fRZUHbKu5cYlgYt0LZAkNc3uQYelVS-hJk9_kNA7CNAkyo4hBOCE25UqvUGwiMmQR2JEL8CE070Jx7fcBeNrNLbLY6AFWGqkW66DFMZQr3fpDGCa7oTu1wRwgqbdl812uGJyDjnUf7_BDfbts_gT17M79ShHbBgfODyTFMzxfn33oBnZLoKzkKCN5WiNwVJISRRQKf_MH6rzMsfQ2Wc8hcCu8tuHIRxOUXmUdukUK9SXVV4WsT1YiL5SgpqQJ0N9qk6za",
-  },
-  {
-    id: "hokkaido-ski",
-    month: "Jan",
-    day: "2024",
-    chipText: "規劃中",
-    chipColor: "bg-[#A8BCA1]",
-    title: "北海道滑雪初體驗",
-    dateRange: "2024年 1月 (暫定)",
-    travelers: "已儲存草稿",
-    filter: "planning",
-  },
-  {
-    id: "okinawa-winter",
-    month: "Dec",
-    day: "23",
-    chipText: "4 天後出發",
-    chipColor: "bg-[#94A3B8]",
-    title: "沖繩冬季五日遊",
-    dateRange: "12/23 - 12/27, 2024",
-    travelers: "3 成人",
-    progress: 100,
-    filter: "upcoming",
-    statusTags: [
-      { label: "航班資訊", tone: "green", href: "/flight" },
-      { label: "住宿資訊", tone: "green", href: "/stay" },
-    ],
-    image: "https://images.unsplash.com/photo-1542640244-7e672d6cef4e?w=800",
-  },
-];
+// 將 Trip 轉換為 Order 格式
+function tripToOrder(trip: Trip): Order {
+  const now = new Date();
+  const startDate = trip.start_date ? new Date(trip.start_date) : null;
+  const endDate = trip.end_date ? new Date(trip.end_date) : null;
+
+  // 計算月份和日期顯示
+  let month = "";
+  let day = "";
+  if (startDate) {
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    month = monthNames[startDate.getMonth()];
+    day = String(startDate.getDate());
+  } else {
+    month = "TBD";
+    day = "---";
+  }
+
+  // 計算 chipText 和 chipColor
+  let chipText = "";
+  let chipColor = "";
+  let filter: FilterType = "planning";
+
+  if (trip.status === "completed") {
+    chipText = "已完成";
+    chipColor = "bg-[#949494]";
+    filter = "planning"; // 已完成的放在 planning 分類（或可新增 completed 分類）
+  } else if (trip.status === "ongoing") {
+    chipText = "進行中";
+    chipColor = "bg-[#A8BCA1]";
+    filter = "upcoming";
+  } else if (trip.status === "upcoming" && startDate) {
+    const daysUntil = Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysUntil <= 0) {
+      chipText = "今天出發";
+      chipColor = "bg-[#CFA5A5]";
+    } else if (daysUntil === 1) {
+      chipText = "明天出發";
+      chipColor = "bg-[#CFA5A5]";
+    } else {
+      chipText = `${daysUntil} 天後出發`;
+      chipColor = "bg-[#94A3B8]";
+    }
+    filter = "upcoming";
+  } else {
+    chipText = "規劃中";
+    chipColor = "bg-[#A8BCA1]";
+    filter = "planning";
+  }
+
+  // 計算日期範圍顯示
+  let dateRange = "";
+  if (startDate && endDate) {
+    const startMonth = startDate.getMonth() + 1;
+    const startDay = startDate.getDate();
+    const endMonth = endDate.getMonth() + 1;
+    const endDay = endDate.getDate();
+    const year = startDate.getFullYear();
+    dateRange = `${startMonth}/${startDay} - ${endMonth}/${endDay}, ${year}`;
+  } else if (startDate) {
+    const startMonth = startDate.getMonth() + 1;
+    const startDay = startDate.getDate();
+    const year = startDate.getFullYear();
+    dateRange = `${startMonth}/${startDay}, ${year}`;
+  } else {
+    dateRange = "日期待定";
+  }
+
+  // 計算進度（這裡簡化處理，實際可根據更多條件判斷）
+  let progress: number | undefined;
+  if (trip.status === "upcoming" || trip.status === "ongoing") {
+    progress = trip.status === "upcoming" ? 80 : 100;
+  }
+
+  return {
+    id: trip.id,
+    month,
+    day,
+    chipText,
+    chipColor,
+    title: trip.title,
+    dateRange,
+    travelers: "", // 從 trip_members 獲取，這裡先留空
+    progress,
+    filter,
+    statusTags: trip.status === "upcoming" ? [
+      { label: "航班資訊", tone: "green", href: `/orders/${trip.id}/flight` },
+      { label: "住宿資訊", tone: "green", href: `/orders/${trip.id}/flight?tab=stay` },
+    ] : undefined,
+    image: trip.cover_image || undefined,
+  };
+}
 
 export default function OrdersPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [showMenu, setShowMenu] = useState(false);
+
+  const { user, isInitialized } = useAuthStore();
+  const { trips, isLoading, fetchMyTrips } = useTripStore();
+
+  // 取得用戶的行程
+  useEffect(() => {
+    if (isInitialized && user?.id) {
+      fetchMyTrips(user.id);
+    }
+  }, [isInitialized, user?.id, fetchMyTrips]);
+
+  // 將 trips 轉換為 orders 並按日期排序
+  const orders = useMemo(() => {
+    const orderList = trips.map(tripToOrder);
+
+    // 按照開始日期排序（最近的在前面，沒有日期的在最後）
+    return orderList.sort((a, b) => {
+      const tripA = trips.find(t => t.id === a.id);
+      const tripB = trips.find(t => t.id === b.id);
+
+      const dateA = tripA?.start_date ? new Date(tripA.start_date).getTime() : Infinity;
+      const dateB = tripB?.start_date ? new Date(tripB.start_date).getTime() : Infinity;
+
+      return dateA - dateB;
+    });
+  }, [trips]);
 
   const filteredOrders =
     activeFilter === "all"
@@ -79,16 +136,16 @@ export default function OrdersPage() {
       : orders.filter((order) => order.filter === activeFilter);
 
   return (
-    <div className="bg-[#F5F4F0] font-sans antialiased text-[#5C5C5C] min-h-screen flex flex-col">
+    <div className="h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-[#F5F4F0] font-sans antialiased text-[#5C5C5C]">
       {/* 背景光暈 */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
+      <div className="absolute inset-0 -z-10 pointer-events-none">
         <div className="absolute -top-[5%] -left-[15%] w-[300px] h-[300px] bg-[#D8D0C9] opacity-40 blur-[90px] rounded-full" />
         <div className="absolute -bottom-[10%] -right-[10%] w-[250px] h-[250px] bg-[#C8D6D3] opacity-40 blur-[90px] rounded-full" />
         <div className="absolute top-[40%] left-[20%] w-[200px] h-[200px] bg-[#E6DFDA] opacity-30 blur-[70px] rounded-full" />
       </div>
 
-      {/* Header */}
-      <header className="px-5 pt-12 pb-4 flex items-center justify-between">
+      {/* Header - absolute 定位 */}
+      <header className="absolute top-0 left-0 right-0 z-20 px-5 pt-4 pb-4 flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-800">我的行程</h1>
         <button
           onClick={() => setShowMenu(true)}
@@ -99,40 +156,51 @@ export default function OrdersPage() {
       </header>
 
       {/* 主要內容區域 */}
-      <main className="flex-1 px-4 pb-24">
+      <main className="h-full overflow-y-auto px-4 pt-16 pb-24">
         {/* 篩選標籤 */}
         <div className="mb-4">
           <FilterTabs activeFilter={activeFilter} onFilterChange={setActiveFilter} />
         </div>
 
         {/* 訂單卡片列表 */}
-        <div className="space-y-4">
-          {filteredOrders.map((order) => (
-            <OrderCard key={order.id} order={order} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="w-10 h-10 border-3 border-[#Cfb9a5]/30 border-t-[#Cfb9a5] rounded-full animate-spin mb-4" />
+            <p className="text-sm text-[#949494]">載入中...</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredOrders.map((order) => (
+              <OrderCard key={order.id} order={order} />
+            ))}
+          </div>
+        )}
 
         {/* 沒有結果時顯示 */}
-        {filteredOrders.length === 0 && (
+        {!isLoading && filteredOrders.length === 0 && (
           <div className="mt-8 p-8 text-center bg-white/40 rounded-2xl border border-white/50">
             <span className="material-icons-outlined text-[#D8D0C9] text-5xl mb-3">
               search_off
             </span>
-            <p className="text-sm text-[#949494]">此分類沒有訂單</p>
+            <p className="text-sm text-[#949494]">
+              {activeFilter === "all" ? "還沒有任何行程" : "此分類沒有訂單"}
+            </p>
           </div>
         )}
 
-        {/* 空狀態提示 */}
-        <div className="mt-6 p-6 text-center opacity-60">
-          <span className="material-icons-outlined text-[#D8D0C9] text-4xl mb-2">
-            add_circle_outline
-          </span>
-          <p className="text-xs text-[#949494]">
-            想去哪裡玩？
-            <br />
-            開始規劃下一趟旅程吧
-          </p>
-        </div>
+        {/* 空狀態提示 - 只在有訂單時顯示 */}
+        {!isLoading && orders.length > 0 && (
+          <div className="mt-6 p-6 text-center opacity-60">
+            <span className="material-icons-outlined text-[#D8D0C9] text-4xl mb-2">
+              add_circle_outline
+            </span>
+            <p className="text-xs text-[#949494]">
+              想去哪裡玩？
+              <br />
+              開始規劃下一趟旅程吧
+            </p>
+          </div>
+        )}
       </main>
 
       {/* 選單 Modal */}

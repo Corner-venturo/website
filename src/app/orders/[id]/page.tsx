@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import MobileNav from "@/components/MobileNav";
+import { useTripStore, Trip } from "@/stores/trip-store";
 
 // 個別參與者出席狀態
 interface ItemAttendance {
@@ -56,8 +57,361 @@ interface OrderData {
   schedule: DaySchedule[];
 }
 
+// 沖繩行程資料（供 UUID 和 slug 共用）
+const okinawaWinterData: OrderData = {
+  id: "okinawa-winter",
+  title: "沖繩冬季五日遊",
+  dateRange: "2025/12/23 - 12/27",
+  startDate: "2025-12-23",
+  image: "https://images.unsplash.com/photo-1542640244-7e672d6cef4e?w=800",
+  participants: [
+    { id: "1", name: "你", avatar: "" },
+  ],
+  schedule: [
+    {
+      day: 1,
+      date: "23",
+      weekday: "週一",
+      dateLabel: "12月23日",
+      items: [
+        {
+          id: "ok1-1",
+          time: "12:00",
+          title: "桃園機場集合",
+          icon: "groups",
+          description: "T1 泰越捷航空櫃檯集合",
+          paidBy: "",
+          amount: "",
+          color: "primary",
+          category: "交通",
+        },
+        {
+          id: "ok1-2",
+          time: "14:45",
+          title: "桃園機場出發",
+          icon: "flight_takeoff",
+          description: "泰越捷航空 VZ568",
+          paidBy: "",
+          amount: "",
+          color: "primary",
+          category: "交通",
+        },
+        {
+          id: "ok1-3",
+          time: "17:10",
+          title: "抵達那霸機場",
+          icon: "flight_land",
+          description: "搭乘單軌電車前往牧志站，約20分鐘",
+          paidBy: "",
+          amount: "",
+          color: "blue",
+          category: "交通",
+        },
+        {
+          id: "ok1-4",
+          time: "18:00",
+          title: "飯店入住",
+          icon: "hotel",
+          description: "琉球Orion那霸國際通飯店 | 1-2-21 Asato, Naha | +81 98-866-5533",
+          paidBy: "",
+          amount: "",
+          color: "green",
+          category: "住宿",
+          image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400",
+        },
+        {
+          id: "ok1-5",
+          time: "19:00",
+          title: "國際通散策",
+          icon: "storefront",
+          description: "逛街購物、感受沖繩夜晚",
+          paidBy: "",
+          amount: "",
+          color: "pink",
+          category: "購物",
+        },
+        {
+          id: "ok1-6",
+          time: "20:30",
+          title: "七輪燒肉晚餐",
+          icon: "restaurant",
+          description: "沖繩和牛燒肉",
+          paidBy: "",
+          amount: "",
+          color: "primary",
+          category: "美食",
+          image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400",
+        },
+      ],
+    },
+    {
+      day: 2,
+      date: "24",
+      weekday: "週二",
+      dateLabel: "12月24日",
+      items: [
+        {
+          id: "ok2-1",
+          time: "08:00",
+          title: "晨喚出發",
+          icon: "wb_sunny",
+          description: "準備前往北部",
+          paidBy: "",
+          amount: "",
+          color: "green",
+          category: "其他",
+        },
+        {
+          id: "ok2-2",
+          time: "10:00",
+          title: "沖繩美麗海水族館",
+          icon: "water",
+          description: "黑潮之海、鯨鯊、魟魚",
+          paidBy: "",
+          amount: "",
+          color: "blue",
+          category: "景點",
+          image: "https://images.unsplash.com/photo-1559494007-9f5847c49d94?w=400",
+        },
+        {
+          id: "ok2-3",
+          time: "15:00",
+          title: "美國村",
+          icon: "shopping_bag",
+          description: "購物、美食、摩天輪",
+          paidBy: "",
+          amount: "",
+          color: "pink",
+          category: "購物",
+          image: "https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=400",
+        },
+        {
+          id: "ok2-4",
+          time: "20:00",
+          title: "返回飯店",
+          icon: "hotel",
+          description: "休息準備明天行程",
+          paidBy: "",
+          amount: "",
+          color: "green",
+          category: "住宿",
+        },
+      ],
+    },
+    {
+      day: 3,
+      date: "25",
+      weekday: "週三",
+      dateLabel: "12月25日",
+      items: [
+        {
+          id: "ok3-1",
+          time: "08:00",
+          title: "晨喚出發",
+          icon: "wb_sunny",
+          description: "聖誕節快樂！",
+          paidBy: "",
+          amount: "",
+          color: "green",
+          category: "其他",
+        },
+        {
+          id: "ok3-2",
+          time: "09:30",
+          title: "殘波岬",
+          icon: "landscape",
+          description: "沖繩西海岸最大海岬",
+          paidBy: "",
+          amount: "",
+          color: "blue",
+          category: "景點",
+          image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400",
+        },
+        {
+          id: "ok3-3",
+          time: "11:00",
+          title: "BANTA CAFE",
+          icon: "local_cafe",
+          description: "絕景海景咖啡廳",
+          paidBy: "",
+          amount: "",
+          color: "primary",
+          category: "美食",
+          image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400",
+        },
+        {
+          id: "ok3-4",
+          time: "14:00",
+          title: "AEON MALL Okinawa Rycom",
+          icon: "shopping_cart",
+          description: "寶可夢中心、購物",
+          paidBy: "",
+          amount: "",
+          color: "pink",
+          category: "購物",
+        },
+        {
+          id: "ok3-5",
+          time: "17:00",
+          title: "東南植物樂園",
+          icon: "park",
+          description: "熱帶植物園、燈飾",
+          paidBy: "",
+          amount: "",
+          color: "green",
+          category: "景點",
+          image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400",
+        },
+        {
+          id: "ok3-6",
+          time: "20:00",
+          title: "國際通無菜單料理",
+          icon: "restaurant",
+          description: "主廚特製晚餐",
+          paidBy: "",
+          amount: "",
+          color: "primary",
+          category: "美食",
+        },
+      ],
+    },
+    {
+      day: 4,
+      date: "26",
+      weekday: "週四",
+      dateLabel: "12月26日",
+      items: [
+        {
+          id: "ok4-1",
+          time: "08:00",
+          title: "晨喚出發",
+          icon: "wb_sunny",
+          description: "前往南部區域",
+          paidBy: "",
+          amount: "",
+          color: "green",
+          category: "其他",
+        },
+        {
+          id: "ok4-2",
+          time: "10:00",
+          title: "DMM Kariyushi水族館",
+          icon: "water",
+          description: "結合科技的新型水族館",
+          paidBy: "",
+          amount: "",
+          color: "blue",
+          category: "景點",
+          image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400",
+        },
+        {
+          id: "ok4-3",
+          time: "13:00",
+          title: "iias 沖繩豐崎",
+          icon: "shopping_bag",
+          description: "購物中心、午餐",
+          paidBy: "",
+          amount: "",
+          color: "pink",
+          category: "購物",
+        },
+        {
+          id: "ok4-4",
+          time: "15:00",
+          title: "自由活動",
+          icon: "explore",
+          description: "自由探索或休息",
+          paidBy: "",
+          amount: "",
+          color: "green",
+          category: "其他",
+        },
+        {
+          id: "ok4-5",
+          time: "19:00",
+          title: "Churasun 6 沖繩",
+          icon: "celebration",
+          description: "傳統表演晚餐秀",
+          paidBy: "",
+          amount: "",
+          color: "primary",
+          category: "體驗",
+          image: "https://images.unsplash.com/photo-1528495612343-9ca9f4a4de28?w=400",
+        },
+      ],
+    },
+    {
+      day: 5,
+      date: "27",
+      weekday: "週五",
+      dateLabel: "12月27日",
+      items: [
+        {
+          id: "ok5-1",
+          time: "08:00",
+          title: "晨喚",
+          icon: "wb_sunny",
+          description: "收拾行李、退房",
+          paidBy: "",
+          amount: "",
+          color: "green",
+          category: "其他",
+        },
+        {
+          id: "ok5-2",
+          time: "11:00",
+          title: "敘敘苑燒肉 歌町店",
+          icon: "restaurant",
+          description: "最後的沖繩美食",
+          paidBy: "",
+          amount: "",
+          color: "primary",
+          category: "美食",
+          image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
+        },
+        {
+          id: "ok5-3",
+          time: "15:00",
+          title: "前往那霸機場",
+          icon: "airport_shuttle",
+          description: "辦理登機手續",
+          paidBy: "",
+          amount: "",
+          color: "blue",
+          category: "交通",
+        },
+        {
+          id: "ok5-4",
+          time: "18:05",
+          title: "那霸機場出發",
+          icon: "flight_takeoff",
+          description: "泰越捷航空 VZ569",
+          paidBy: "",
+          amount: "",
+          color: "primary",
+          category: "交通",
+        },
+        {
+          id: "ok5-5",
+          time: "18:45",
+          title: "抵達桃園機場",
+          icon: "flight_land",
+          description: "結束美好的沖繩之旅",
+          paidBy: "",
+          amount: "",
+          color: "green",
+          category: "交通",
+        },
+      ],
+    },
+  ],
+};
+
 // 模擬訂單資料
 const ordersData: Record<string, OrderData> = {
+  // 用 UUID 也能找到沖繩行程
+  "fe9b114d-f2b6-4d44-9352-ce9b9068b1f5": okinawaWinterData,
+  "okinawa-winter": okinawaWinterData,
   "kyoto-autumn": {
     id: "kyoto-autumn",
     title: "京都秋日賞楓五日遊",
@@ -260,356 +614,6 @@ const ordersData: Record<string, OrderData> = {
       },
     ],
   },
-  "okinawa-winter": {
-    id: "okinawa-winter",
-    title: "沖繩冬季五日遊",
-    dateRange: "2024/12/23 - 12/27",
-    startDate: "2024-12-23",
-    image: "https://images.unsplash.com/photo-1542640244-7e672d6cef4e?w=800",
-    participants: [
-      { id: "1", name: "你", avatar: "" },
-      { id: "2", name: "旅伴A", avatar: "" },
-      { id: "3", name: "旅伴B", avatar: "" },
-    ],
-    schedule: [
-      {
-        day: 1,
-        date: "23",
-        weekday: "週二",
-        dateLabel: "12月23日",
-        items: [
-          {
-            id: "ok1-1",
-            time: "12:00",
-            title: "桃園機場集合",
-            icon: "groups",
-            description: "T1 泰越捷航空櫃檯集合",
-            paidBy: "",
-            amount: "",
-            color: "primary",
-            category: "交通",
-          },
-          {
-            id: "ok1-2",
-            time: "14:45",
-            title: "桃園機場出發",
-            icon: "flight_takeoff",
-            description: "泰越捷航空 VZ568",
-            paidBy: "",
-            amount: "",
-            color: "primary",
-            category: "交通",
-          },
-          {
-            id: "ok1-3",
-            time: "17:10",
-            title: "抵達那霸機場",
-            icon: "flight_land",
-            description: "搭乘單軌電車前往牧志站，約20分鐘",
-            paidBy: "",
-            amount: "",
-            color: "blue",
-            category: "交通",
-          },
-          {
-            id: "ok1-4",
-            time: "18:00",
-            title: "飯店入住",
-            icon: "hotel",
-            description: "琉球Orion那霸國際通飯店",
-            paidBy: "",
-            amount: "",
-            color: "green",
-            category: "住宿",
-            image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400",
-          },
-          {
-            id: "ok1-5",
-            time: "19:00",
-            title: "國際通散策",
-            icon: "storefront",
-            description: "逛街購物、感受沖繩夜晚",
-            paidBy: "",
-            amount: "",
-            color: "pink",
-            category: "購物",
-          },
-          {
-            id: "ok1-6",
-            time: "20:30",
-            title: "七輪燒肉晚餐",
-            icon: "restaurant",
-            description: "沖繩和牛燒肉",
-            paidBy: "",
-            amount: "",
-            color: "primary",
-            category: "美食",
-            image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400",
-          },
-        ],
-      },
-      {
-        day: 2,
-        date: "24",
-        weekday: "週三",
-        dateLabel: "12月24日",
-        items: [
-          {
-            id: "ok2-1",
-            time: "08:00",
-            title: "晨喚出發",
-            icon: "wb_sunny",
-            description: "準備前往北部",
-            paidBy: "",
-            amount: "",
-            color: "green",
-            category: "其他",
-          },
-          {
-            id: "ok2-2",
-            time: "10:00",
-            title: "沖繩美麗海水族館",
-            icon: "water",
-            description: "黑潮之海、鯨鯊、魟魚",
-            paidBy: "",
-            amount: "",
-            color: "blue",
-            category: "景點",
-            image: "https://images.unsplash.com/photo-1559494007-9f5847c49d94?w=400",
-          },
-          {
-            id: "ok2-3",
-            time: "15:00",
-            title: "美國村",
-            icon: "shopping_bag",
-            description: "購物、美食、摩天輪",
-            paidBy: "",
-            amount: "",
-            color: "pink",
-            category: "購物",
-            image: "https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=400",
-          },
-          {
-            id: "ok2-4",
-            time: "20:00",
-            title: "返回飯店",
-            icon: "hotel",
-            description: "休息準備明天行程",
-            paidBy: "",
-            amount: "",
-            color: "green",
-            category: "住宿",
-          },
-        ],
-      },
-      {
-        day: 3,
-        date: "25",
-        weekday: "週四",
-        dateLabel: "12月25日",
-        items: [
-          {
-            id: "ok3-1",
-            time: "08:00",
-            title: "晨喚出發",
-            icon: "wb_sunny",
-            description: "聖誕節快樂！",
-            paidBy: "",
-            amount: "",
-            color: "green",
-            category: "其他",
-          },
-          {
-            id: "ok3-2",
-            time: "09:30",
-            title: "殘波岬",
-            icon: "landscape",
-            description: "沖繩西海岸最大海岬",
-            paidBy: "",
-            amount: "",
-            color: "blue",
-            category: "景點",
-            image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400",
-          },
-          {
-            id: "ok3-3",
-            time: "11:00",
-            title: "BANTA CAFE",
-            icon: "local_cafe",
-            description: "絕景海景咖啡廳",
-            paidBy: "",
-            amount: "",
-            color: "primary",
-            category: "美食",
-            image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400",
-          },
-          {
-            id: "ok3-4",
-            time: "14:00",
-            title: "AEON MALL Okinawa Rycom",
-            icon: "shopping_cart",
-            description: "寶可夢中心、購物",
-            paidBy: "",
-            amount: "",
-            color: "pink",
-            category: "購物",
-          },
-          {
-            id: "ok3-5",
-            time: "17:00",
-            title: "東南植物樂園",
-            icon: "park",
-            description: "熱帶植物園、燈飾",
-            paidBy: "",
-            amount: "",
-            color: "green",
-            category: "景點",
-            image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400",
-          },
-          {
-            id: "ok3-6",
-            time: "20:00",
-            title: "國際通無菜單料理",
-            icon: "restaurant",
-            description: "主廚特製晚餐",
-            paidBy: "",
-            amount: "",
-            color: "primary",
-            category: "美食",
-          },
-        ],
-      },
-      {
-        day: 4,
-        date: "26",
-        weekday: "週五",
-        dateLabel: "12月26日",
-        items: [
-          {
-            id: "ok4-1",
-            time: "08:00",
-            title: "晨喚出發",
-            icon: "wb_sunny",
-            description: "前往南部區域",
-            paidBy: "",
-            amount: "",
-            color: "green",
-            category: "其他",
-          },
-          {
-            id: "ok4-2",
-            time: "10:00",
-            title: "DMM Kariyushi水族館",
-            icon: "water",
-            description: "結合科技的新型水族館",
-            paidBy: "",
-            amount: "",
-            color: "blue",
-            category: "景點",
-            image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400",
-          },
-          {
-            id: "ok4-3",
-            time: "13:00",
-            title: "iias 沖繩豐崎",
-            icon: "shopping_bag",
-            description: "購物中心、午餐",
-            paidBy: "",
-            amount: "",
-            color: "pink",
-            category: "購物",
-          },
-          {
-            id: "ok4-4",
-            time: "15:00",
-            title: "自由活動",
-            icon: "explore",
-            description: "自由探索或休息",
-            paidBy: "",
-            amount: "",
-            color: "green",
-            category: "其他",
-          },
-          {
-            id: "ok4-5",
-            time: "19:00",
-            title: "Churasun 6 沖繩",
-            icon: "celebration",
-            description: "傳統表演晚餐秀",
-            paidBy: "",
-            amount: "",
-            color: "primary",
-            category: "體驗",
-            image: "https://images.unsplash.com/photo-1528495612343-9ca9f4a4de28?w=400",
-          },
-        ],
-      },
-      {
-        day: 5,
-        date: "27",
-        weekday: "週六",
-        dateLabel: "12月27日",
-        items: [
-          {
-            id: "ok5-1",
-            time: "08:00",
-            title: "晨喚",
-            icon: "wb_sunny",
-            description: "收拾行李、退房",
-            paidBy: "",
-            amount: "",
-            color: "green",
-            category: "其他",
-          },
-          {
-            id: "ok5-2",
-            time: "11:00",
-            title: "敘敘苑燒肉 歌町店",
-            icon: "restaurant",
-            description: "最後的沖繩美食",
-            paidBy: "",
-            amount: "",
-            color: "primary",
-            category: "美食",
-            image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
-          },
-          {
-            id: "ok5-3",
-            time: "15:00",
-            title: "前往那霸機場",
-            icon: "airport_shuttle",
-            description: "辦理登機手續",
-            paidBy: "",
-            amount: "",
-            color: "blue",
-            category: "交通",
-          },
-          {
-            id: "ok5-4",
-            time: "18:05",
-            title: "那霸機場出發",
-            icon: "flight_takeoff",
-            description: "泰越捷航空 VZ569",
-            paidBy: "",
-            amount: "",
-            color: "primary",
-            category: "交通",
-          },
-          {
-            id: "ok5-5",
-            time: "18:45",
-            title: "抵達桃園機場",
-            icon: "flight_land",
-            description: "結束美好的沖繩之旅",
-            paidBy: "",
-            amount: "",
-            color: "green",
-            category: "交通",
-          },
-        ],
-      },
-    ],
-  },
 };
 
 const colorConfig = {
@@ -678,10 +682,76 @@ function isWithinTripDates(startDate: string, totalDays: number): boolean {
   return today >= start && today <= end;
 }
 
+// 將資料庫 Trip 轉換為 OrderData 格式
+function tripToOrderData(trip: Trip): OrderData {
+  const startDate = trip.start_date || "";
+  const endDate = trip.end_date || "";
+
+  let dateRange = "";
+  if (startDate && endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    dateRange = `${start.getFullYear()}/${start.getMonth() + 1}/${start.getDate()} - ${end.getMonth() + 1}/${end.getDate()}`;
+  }
+
+  // 計算行程天數
+  const days = startDate && endDate
+    ? Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1
+    : 1;
+
+  // 生成空白的行程表
+  const schedule: DaySchedule[] = [];
+  for (let i = 0; i < days; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
+    const weekdays = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
+    schedule.push({
+      day: i + 1,
+      date: String(date.getDate()),
+      weekday: weekdays[date.getDay()],
+      dateLabel: `${date.getMonth() + 1}月${date.getDate()}日`,
+      items: [], // 尚未有行程項目
+    });
+  }
+
+  return {
+    id: trip.id,
+    title: trip.title,
+    dateRange,
+    startDate,
+    image: trip.cover_image || "",
+    participants: [{ id: "1", name: "你", avatar: "" }], // 預設只有自己
+    schedule,
+  };
+}
+
 export default function OrderDetailPage() {
   const params = useParams();
   const orderId = params.id as string;
-  const order = ordersData[orderId];
+
+  // 先嘗試從假資料找
+  const mockOrder = ordersData[orderId];
+
+  // 從資料庫載入
+  const { currentTrip, isLoading, fetchTripById } = useTripStore();
+  const [dbOrder, setDbOrder] = useState<OrderData | null>(null);
+
+  useEffect(() => {
+    // 如果不是假資料的 ID，就從資料庫載入
+    if (!mockOrder && orderId) {
+      fetchTripById(orderId);
+    }
+  }, [orderId, mockOrder, fetchTripById]);
+
+  useEffect(() => {
+    // 當資料庫資料載入完成，轉換格式
+    if (currentTrip && currentTrip.id === orderId) {
+      setDbOrder(tripToOrderData(currentTrip));
+    }
+  }, [currentTrip, orderId]);
+
+  // 優先使用假資料，否則用資料庫資料
+  const order = mockOrder || dbOrder;
 
   // 根據日期自動計算初始天數
   const initialDay = order ? calculateCurrentDay(order.startDate, order.schedule.length) : 1;
@@ -698,6 +768,18 @@ export default function OrderDetailPage() {
     description: "",
     category: "景點" as "景點" | "美食" | "體驗" | "住宿" | "交通" | "購物" | "其他",
   });
+
+  // 載入中
+  if (isLoading && !mockOrder) {
+    return (
+      <div className="min-h-screen bg-[#F7F5F2] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 border-3 border-[#Cfb9a5]/30 border-t-[#Cfb9a5] rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-500">載入中...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!order) {
     return (
@@ -762,18 +844,18 @@ export default function OrderDetailPage() {
   const currentUserId = "1";
 
   return (
-    <div className="bg-[#F7F5F2] font-sans antialiased text-gray-900 min-h-screen flex flex-col pb-28">
+    <div className="h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-[#F7F5F2] font-sans antialiased text-gray-900">
       {/* 背景紋理 */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-5">
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-5">
         <div className="absolute -top-[10%] -left-[10%] w-96 h-96 bg-[#Cfb9a5]/30 rounded-full blur-3xl" />
         <div className="absolute bottom-[20%] -right-[10%] w-80 h-80 bg-[#A5BCCF]/30 rounded-full blur-3xl" />
       </div>
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 px-5 py-4 bg-[#F7F5F2]/95 backdrop-blur-md flex items-center justify-between shadow-sm">
+      {/* Header - absolute 定位 */}
+      <header className="absolute top-0 left-0 right-0 z-50 px-5 pt-4 pb-4 bg-[#F7F5F2]/95 backdrop-blur-md flex items-center justify-between shadow-sm">
         <Link
           href="/orders"
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm hover:shadow-md transition-all active:scale-95 border border-gray-100"
+          className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full bg-white shadow-sm hover:shadow-md transition-all active:scale-95 border border-gray-100"
         >
           <span className="material-icons-round text-gray-700 text-[22px]">arrow_back</span>
         </Link>
@@ -785,16 +867,16 @@ export default function OrderDetailPage() {
         </div>
         <button
           onClick={() => setShowHeaderMenu(true)}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm hover:shadow-md transition-all active:scale-95 border border-gray-100"
+          className="w-10 h-10 min-w-[40px] min-h-[40px] shrink-0 flex items-center justify-center rounded-full bg-white shadow-sm hover:shadow-md transition-all active:scale-95 border border-gray-100"
         >
-          <span className="material-icons-round text-gray-700 text-[22px]">more_horiz</span>
+          <span className="material-icons-round text-gray-700 text-[22px]">more_vert</span>
         </button>
       </header>
 
       {/* 主要內容 */}
-      <main className="relative z-10 w-full flex-1 flex flex-col">
+      <main className="h-full overflow-y-auto pt-16 pb-28">
         {/* Day 選擇器 - 膠囊式 */}
-        <div className="sticky top-[72px] z-40 bg-[#F7F5F2]/98 backdrop-blur pt-3 pb-3 px-4">
+        <div className="sticky top-0 z-40 bg-[#F7F5F2]/98 backdrop-blur pt-3 pb-3 px-4">
           <div className="bg-white/60 backdrop-blur-xl rounded-full p-1 flex gap-1 overflow-x-auto hide-scrollbar border border-white/50 shadow-sm">
             {order.schedule.map((day) => {
               // 只有在行程期間內才顯示「今天」的紅點

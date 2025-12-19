@@ -100,9 +100,9 @@ export default function RecordFlightPage() {
   };
 
   return (
-    <div className="bg-[#F0EEE6] font-sans antialiased text-[#5C5C5C] min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-20 px-5 pt-12 pb-4 flex items-center justify-between bg-[#F0EEE6]/95 backdrop-blur-md">
+    <div className="h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-[#F0EEE6] font-sans antialiased text-[#5C5C5C]">
+      {/* Header - absolute 定位 */}
+      <header className="absolute top-0 left-0 right-0 z-20 px-5 pt-4 pb-4 flex items-center justify-between bg-[#F0EEE6]/95 backdrop-blur-md">
         <Link
           href="/my/footprint"
           className="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-[#5C5C5C] hover:text-[#cfb9a5] transition-colors"
@@ -116,7 +116,7 @@ export default function RecordFlightPage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto pb-36 px-5">
+      <main className="h-full overflow-y-auto pt-16 pb-36 px-5">
         {/* 航段列表 */}
         <div className="space-y-4">
           {segments.map((segment, index) => (

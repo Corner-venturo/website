@@ -16,20 +16,21 @@ export default function SplitPage() {
   );
 
   return (
-    <div className="bg-[#F5F4F0] min-h-screen font-sans">
+    <div className="h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-[#F5F4F0] font-sans">
       {/* 背景 */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
+      <div className="absolute inset-0 -z-10 pointer-events-none">
         <div className="absolute -top-[5%] -left-[15%] w-[500px] h-[500px] bg-[#D8D0C9] opacity-40 blur-[90px] rounded-full" />
         <div className="absolute -bottom-[10%] -right-[10%] w-[450px] h-[450px] bg-[#C8D6D3] opacity-40 blur-[90px] rounded-full" />
       </div>
 
+      {/* Header - absolute 定位 */}
+      <header className="absolute top-0 left-0 right-0 z-20 px-5 pt-4 pb-4">
+        <h1 className="text-2xl font-bold text-[#5C5C5C]">旅費分帳</h1>
+        <p className="text-sm text-[#949494] mt-1">選擇旅程來記錄或查看分帳</p>
+      </header>
+
       {/* 主要內容 */}
-      <div className="relative z-10 pb-32">
-        {/* Header */}
-        <header className="px-5 pt-6 pb-4">
-          <h1 className="text-2xl font-bold text-[#5C5C5C]">旅費分帳</h1>
-          <p className="text-sm text-[#949494] mt-1">選擇旅程來記錄或查看分帳</p>
-        </header>
+      <div className="h-full overflow-y-auto pt-16 pb-32">
 
         {/* 總覽卡片 */}
         <div className="px-5 mb-4">

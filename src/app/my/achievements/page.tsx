@@ -52,16 +52,16 @@ export default function AchievementsPage() {
   const progressPercent = totalAchievements > 0 ? Math.round((earnedAchievements.length / totalAchievements) * 100) : 0;
 
   return (
-    <div className="bg-[#F0EEE6] font-sans antialiased text-gray-900 min-h-screen flex flex-col overflow-hidden">
+    <div className="h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-[#F0EEE6] font-sans antialiased text-gray-900">
       {/* 背景光暈 */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
+      <div className="absolute inset-0 -z-10 pointer-events-none">
         <div className="absolute -top-[10%] -left-[10%] w-96 h-96 bg-[#A5BCCF]/20 rounded-full blur-3xl" />
         <div className="absolute bottom-[20%] -right-[10%] w-80 h-80 bg-[#Cfb9a5]/20 rounded-full blur-3xl" />
         <div className="absolute top-[30%] left-[40%] w-64 h-64 bg-[#CFA5A5]/15 rounded-full blur-3xl" />
       </div>
 
-      {/* Header */}
-      <header className="relative z-50 px-6 pt-12 pb-2 flex items-center justify-between">
+      {/* Header - absolute 定位 */}
+      <header className="absolute top-0 left-0 right-0 z-20 px-6 pt-4 pb-2 flex items-center justify-between">
         <Link
           href="/my"
           className="bg-white/70 backdrop-blur-xl border border-white/60 p-2.5 rounded-full shadow-sm text-gray-600 hover:text-[#Cfb9a5] transition-colors"
@@ -73,7 +73,7 @@ export default function AchievementsPage() {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 w-full h-full overflow-y-auto pb-32">
+      <main className="h-full overflow-y-auto pt-16 pb-32">
         {/* 總覽卡片 */}
         <div className="px-6 mt-4">
           <div className="bg-white/50 backdrop-blur-xl border border-white/40 p-6 rounded-3xl flex items-center gap-6 relative overflow-hidden">

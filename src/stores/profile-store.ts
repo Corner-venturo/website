@@ -181,12 +181,51 @@ export const useProfileStore = create<ProfileState>()(
     set({ isLoading: true, error: null })
 
     try {
+      // 檢查此用戶是否已經有 member_number（已有的話不要覆蓋）
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('member_number, is_founding_member')
+        .eq('id', userId)
+        .maybeSingle()
+
+      let foundingMemberData = {}
+
+      // 如果用戶還沒有 member_number，嘗試分配一個（前 100 名為創始會員）
+      if (!existingProfile?.member_number) {
+        // 查詢目前已使用的 member_number
+        const { data: usedNumbers } = await supabase
+          .from('profiles')
+          .select('member_number')
+          .not('member_number', 'is', null)
+          .order('member_number')
+
+        const usedSet = new Set(usedNumbers?.map((p: { member_number: number }) => p.member_number) || [])
+
+        // 找出 1-100 中最小的可用號碼
+        let availableNumber: number | null = null
+        for (let i = 1; i <= 100; i++) {
+          if (!usedSet.has(i)) {
+            availableNumber = i
+            break
+          }
+        }
+
+        // 如果有可用號碼，設為創始會員
+        if (availableNumber) {
+          foundingMemberData = {
+            is_founding_member: true,
+            member_number: availableNumber,
+          }
+        }
+      }
+
       // 使用 upsert：如果 profile 不存在就建立，存在就更新
       const { data: updated, error } = await supabase
         .from('profiles')
         .upsert({
           id: userId,
           ...data,
+          ...foundingMemberData,
           is_profile_complete: true,
         })
         .select()

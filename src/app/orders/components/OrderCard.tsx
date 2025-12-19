@@ -64,43 +64,49 @@ export default function OrderCard({ order }: OrderCardProps) {
         </div>
       </div>
 
-      {/* 京都訂單：進度條和狀態標籤 */}
-      {order.id === "kyoto-autumn" && (
+      {/* 即將出發的行程：進度條和狀態標籤 */}
+      {order.filter === "upcoming" && (order.progress !== undefined || order.statusTags?.length) && (
         <div className="space-y-3">
-          <div className="flex justify-between items-center text-xs">
-            <span className="font-medium text-[#5C5C5C]">行程準備進度</span>
-            <span className="font-bold text-[#94A3B8]">{order.progress}%</span>
-          </div>
-          <div className="h-1.5 w-full bg-[#E8E2DD] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#94A3B8] rounded-full"
-              style={{ width: `${order.progress}%` }}
-            />
-          </div>
-          <div className="flex gap-2 pt-2 overflow-x-auto hide-scrollbar">
-            {order.statusTags?.map((tag) => (
-              <button
-                key={tag.label}
-                onClick={(e) => tag.href && handleTagClick(e, tag.href)}
-                className={`px-3 py-2 rounded-full text-xs font-medium border flex items-center gap-1.5 whitespace-nowrap transition-all ${
-                  tag.tone === "green"
-                    ? "bg-white/80 border-[#C8E6C9] hover:bg-[#E8F5E9]"
-                    : "bg-white/60 border-[#E8E2DD] hover:bg-white/80"
-                } ${tag.href ? "cursor-pointer active:scale-95" : ""}`}
-              >
-                <span
-                  className={`material-icons-round text-sm ${
-                    tag.tone === "green" ? "text-[#6B8E6B]" : "text-[#B8A065]"
-                  }`}
+          {order.progress !== undefined && (
+            <>
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-medium text-[#5C5C5C]">行程準備進度</span>
+                <span className="font-bold text-[#94A3B8]">{order.progress}%</span>
+              </div>
+              <div className="h-1.5 w-full bg-[#E8E2DD] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#94A3B8] rounded-full"
+                  style={{ width: `${order.progress}%` }}
+                />
+              </div>
+            </>
+          )}
+          {order.statusTags && order.statusTags.length > 0 && (
+            <div className="flex gap-2 pt-2 overflow-x-auto hide-scrollbar">
+              {order.statusTags.map((tag) => (
+                <button
+                  key={tag.label}
+                  onClick={(e) => tag.href && handleTagClick(e, tag.href)}
+                  className={`px-3 py-2 rounded-full text-xs font-medium border flex items-center gap-1.5 whitespace-nowrap transition-all ${
+                    tag.tone === "green"
+                      ? "bg-white/80 border-[#C8E6C9] hover:bg-[#E8F5E9]"
+                      : "bg-white/60 border-[#E8E2DD] hover:bg-white/80"
+                  } ${tag.href ? "cursor-pointer active:scale-95" : ""}`}
                 >
-                  {tag.tone === "green" ? "check_circle" : "more_horiz"}
-                </span>
-                <span className={tag.tone === "green" ? "text-[#6B8E6B]" : "text-[#949494]"}>
-                  {tag.label}
-                </span>
-              </button>
-            ))}
-          </div>
+                  <span
+                    className={`material-icons-round text-sm ${
+                      tag.tone === "green" ? "text-[#6B8E6B]" : "text-[#B8A065]"
+                    }`}
+                  >
+                    {tag.tone === "green" ? "check_circle" : "more_horiz"}
+                  </span>
+                  <span className={tag.tone === "green" ? "text-[#6B8E6B]" : "text-[#949494]"}>
+                    {tag.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

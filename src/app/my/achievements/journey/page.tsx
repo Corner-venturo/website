@@ -19,16 +19,16 @@ export default function AchievementJourneyPage() {
   const progressPercent = Math.round((earnedCount / journeyMilestones.length) * 100);
 
   return (
-    <div className="bg-[#F0EEE6] font-sans antialiased text-gray-900 min-h-screen flex flex-col overflow-hidden">
+    <div className="h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-[#F0EEE6] font-sans antialiased text-gray-900">
       {/* 背景光暈 */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
+      <div className="absolute inset-0 -z-10 pointer-events-none">
         <div className="absolute -top-[10%] -right-[10%] w-96 h-96 bg-[#A5BCCF]/20 rounded-full blur-3xl" />
         <div className="absolute bottom-[20%] -left-[10%] w-80 h-80 bg-[#Cfb9a5]/20 rounded-full blur-3xl" />
         <div className="absolute top-[40%] right-[20%] w-64 h-64 bg-[#CFA5A5]/15 rounded-full blur-3xl" />
       </div>
 
-      {/* Header */}
-      <header className="relative z-50 px-6 pt-12 pb-4 flex items-center justify-between">
+      {/* Header - absolute 定位 */}
+      <header className="absolute top-0 left-0 right-0 z-20 px-6 pt-4 pb-4 flex items-center justify-between">
         <Link
           href="/my/achievements"
           className="bg-white/70 backdrop-blur-xl border border-white/60 w-10 h-10 rounded-full shadow-sm text-gray-600 hover:text-[#Cfb9a5] transition-colors flex items-center justify-center"
@@ -43,7 +43,7 @@ export default function AchievementJourneyPage() {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 w-full h-full overflow-y-auto pb-12">
+      <main className="h-full overflow-y-auto pt-16 pb-12">
         {/* 進度總覽卡片 */}
         <section className="px-6 mb-8">
           <div className="bg-white/50 backdrop-blur-xl border border-white/40 rounded-3xl p-6 relative overflow-hidden shadow-lg">

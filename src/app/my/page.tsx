@@ -61,17 +61,16 @@ export default function ProfilePage() {
     : demoAchievements;
 
   return (
-    <div className="bg-[#F5F4F0] font-sans antialiased text-[#5C5C5C] transition-colors duration-300 min-h-screen flex flex-col overflow-hidden">
+    <div className="h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-[#F5F4F0] font-sans antialiased text-[#5C5C5C] transition-colors duration-300">
       {/* 背景光暈 */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
+      <div className="absolute inset-0 -z-10 pointer-events-none">
         <div className="absolute -top-[5%] -left-[15%] w-[500px] h-[500px] bg-[#D8D0C9] opacity-40 blur-[90px] rounded-full" />
         <div className="absolute -bottom-[10%] -right-[10%] w-[450px] h-[450px] bg-[#C8D6D3] opacity-40 blur-[90px] rounded-full" />
         <div className="absolute top-[40%] left-[20%] w-[300px] h-[300px] bg-[#E6DFDA] opacity-30 blur-[70px] rounded-full" />
       </div>
 
       {/* 主要內容 */}
-      <div className="relative z-10 flex flex-col flex-1">
-        <main className="flex-1 w-full h-full overflow-y-auto hide-scrollbar pb-32 pt-5">
+      <main className="h-full overflow-y-auto hide-scrollbar pb-32 pt-8">
           <ProfileHeader
             userName={userName}
             avatarUrl={avatarUrl}
@@ -89,8 +88,7 @@ export default function ProfilePage() {
           </div>
         </main>
 
-        <MobileNav />
-      </div>
+      <MobileNav />
 
       <style jsx>{`
         .hide-scrollbar::-webkit-scrollbar {
