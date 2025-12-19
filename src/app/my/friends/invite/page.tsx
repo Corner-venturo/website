@@ -101,7 +101,7 @@ export default function InvitePage() {
     if (username) {
       return `${typeof window !== 'undefined' ? window.location.origin : ''}/invite/${username}`;
     }
-    return `${typeof window !== 'undefined' ? window.location.origin : ''}/invite?ref=${user?.id?.slice(0, 8) || ''}`;
+    return `${typeof window !== 'undefined' ? window.location.origin : ''}/invite?ref=${user?.id || ''}`;
   };
 
   return (

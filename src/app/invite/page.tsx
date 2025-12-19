@@ -52,11 +52,11 @@ function InvitePageContent() {
       const supabase = getSupabaseClient();
 
       try {
-        // ref 是 user ID 的前 8 個字元，使用 filter 查詢 (需要將 UUID 轉為 text)
+        // ref 是完整的 user ID
         const { data, error: fetchError } = await supabase
           .from('profiles')
           .select('id, username, display_name, full_name, avatar_url, bio')
-          .filter('id::text', 'ilike', `${ref}%`)
+          .eq('id', ref)
           .maybeSingle();
 
         if (fetchError) {
