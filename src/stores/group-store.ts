@@ -78,10 +78,13 @@ export const useGroupStore = create<GroupState>((set, get) => ({
     set({ isLoading: true, error: null })
 
     try {
-      // 先用簡單查詢測試
+      // 恢復 JOIN 查詢（RLS 已修復）
       let query = supabase
         .from('groups')
-        .select('*')
+        .select(`
+          *,
+          creator:profiles!created_by(id, display_name, avatar_url)
+        `)
         .in('status', ['active', 'full'])
         .eq('is_private', false)
         .order('created_at', { ascending: false })
@@ -114,7 +117,10 @@ export const useGroupStore = create<GroupState>((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('groups')
-        .select('*')
+        .select(`
+          *,
+          creator:profiles!created_by(id, display_name, avatar_url)
+        `)
         .eq('created_by', userId)
         .order('created_at', { ascending: false })
 
