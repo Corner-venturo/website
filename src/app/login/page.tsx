@@ -67,11 +67,18 @@ export default function LoginPage() {
             return;
           }
         }
-        router.push('/');
+        // 檢查是否有待跳轉頁面
+        const redirectUrl = localStorage.getItem('redirect_after_login');
+        if (redirectUrl) {
+          router.push(redirectUrl);
+        } else {
+          router.push('/');
+        }
       }
     } else if (mode === 'register') {
       const result = await signUp(email, password, name);
       if (result.success) {
+        // 註冊後一律去 onboarding，onboarding 完成後會檢查 localStorage
         router.push('/onboarding');
       }
     } else if (mode === 'forgot') {
