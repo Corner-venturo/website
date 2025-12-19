@@ -14,6 +14,32 @@ import {
   titles,
 } from './components';
 
+// 偵測是否在 WebView（App 內建瀏覽器）中
+function detectWebView(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  const ua = navigator.userAgent || navigator.vendor || '';
+
+  // 常見的 WebView 特徵
+  const webviewPatterns = [
+    /Line\//i,           // LINE
+    /FBAN|FBAV/i,        // Facebook
+    /Instagram/i,        // Instagram
+    /MicroMessenger/i,   // WeChat
+    /Twitter/i,          // Twitter
+    /Snapchat/i,         // Snapchat
+    /BytedanceWebview/i, // TikTok
+    /musical_ly/i,       // TikTok (舊版)
+    /Telegram/i,         // Telegram
+    /Discord/i,          // Discord
+    /Slack/i,            // Slack
+    /WebView/i,          // 通用 WebView
+    /wv\)/i,             // Android WebView
+  ];
+
+  return webviewPatterns.some(pattern => pattern.test(ua));
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const {
@@ -33,17 +59,43 @@ export default function LoginPage() {
   const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [isWebView, setIsWebView] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // 初始化 Auth
   useEffect(() => {
     initialize();
   }, [initialize]);
 
+  // 偵測 WebView
+  useEffect(() => {
+    setIsWebView(detectWebView());
+  }, []);
+
   // 切換模式時清除錯誤
   useEffect(() => {
     clearError();
     setSuccessMessage('');
   }, [mode, clearError]);
+
+  // 複製網址到剪貼簿
+  const handleCopyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = window.location.href;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,6 +164,34 @@ export default function LoginPage() {
           {/* Logo */}
           <Logo />
 
+          {/* WebView 警告 */}
+          {isWebView && (
+            <div className="max-w-sm mx-auto w-full mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+              <div className="flex items-start gap-3">
+                <span className="material-icons-round text-amber-500 text-xl flex-shrink-0 mt-0.5">
+                  warning
+                </span>
+                <div className="flex-1">
+                  <p className="text-sm text-amber-800 font-medium mb-2">
+                    目前無法使用 Google 登入
+                  </p>
+                  <p className="text-xs text-amber-700 mb-3">
+                    請用 Safari 或 Chrome 開啟此頁面，或使用 Email 登入。
+                  </p>
+                  <button
+                    onClick={handleCopyUrl}
+                    className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <span className="material-icons-round text-lg">
+                      {copied ? 'check' : 'content_copy'}
+                    </span>
+                    {copied ? '已複製！' : '複製網址'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Title */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-[#5C5C5C] mb-2">
@@ -150,8 +230,8 @@ export default function LoginPage() {
             onForgotPassword={() => setMode('forgot')}
           />
 
-          {/* Social Login */}
-          {mode !== 'forgot' && (
+          {/* Social Login - 在 WebView 中隱藏 */}
+          {mode !== 'forgot' && !isWebView && (
             <SocialLogin isLoading={isLoading} onGoogleLogin={handleGoogleLogin} />
           )}
 
