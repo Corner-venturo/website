@@ -62,7 +62,7 @@ interface GroupState {
   fetchGroups: (options?: { category?: string; limit?: number }) => Promise<void>
   fetchMyGroups: (userId: string) => Promise<void>
   createGroup: (userId: string, data: CreateGroupData) => Promise<{ success: boolean; groupId?: string; error?: string }>
-  updateGroup: (groupId: string, data: Partial<CreateGroupData>) => Promise<{ success: boolean; error?: string }>
+  updateGroup: (groupId: string, data: Partial<CreateGroupData & { status: string }>) => Promise<{ success: boolean; error?: string }>
   deleteGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>
   joinGroup: (groupId: string, userId: string) => Promise<{ success: boolean; error?: string }>
 }
@@ -235,7 +235,7 @@ export const useGroupStore = create<GroupState>((set, get) => ({
     }
   },
 
-  updateGroup: async (groupId: string, data: Partial<CreateGroupData>) => {
+  updateGroup: async (groupId: string, data: Partial<CreateGroupData & { status: string }>) => {
     const supabase = getSupabaseClient()
     set({ isLoading: true, error: null })
 

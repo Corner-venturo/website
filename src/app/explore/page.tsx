@@ -175,7 +175,7 @@ function groupToDisplayTrip(group: Group): DisplayTrip {
 
 export default function ExplorePage() {
   const { user, initialize, isInitialized } = useAuthStore();
-  const { groups, myGroups, fetchGroups, fetchMyGroups, isLoading: isLoadingGroups } = useGroupStore();
+  const { groups, myGroups, fetchGroups, fetchMyGroups, deleteGroup, updateGroup, isLoading: isLoadingGroups } = useGroupStore();
   const [activeCategory, setActiveCategory] = useState('all');
   const [selectedTrip, setSelectedTrip] = useState<DisplayTrip | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number]>([25.033, 121.5654]); // 預設台北
@@ -295,6 +295,36 @@ export default function ExplorePage() {
     }
   }, [filteredTrips, selectedTrip]);
 
+  // 刪除活動確認
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteGroup = async (groupId: string) => {
+    setIsDeleting(true);
+    const result = await deleteGroup(groupId);
+    setIsDeleting(false);
+    setDeleteConfirm(null);
+    if (result.success) {
+      setSelectedTrip(null);
+      // 重新載入資料
+      if (user) {
+        fetchMyGroups(user.id);
+        fetchGroups();
+      }
+    }
+  };
+
+  const handleCloseGroup = async (groupId: string) => {
+    const result = await updateGroup(groupId, { status: 'completed' });
+    if (result.success) {
+      // 重新載入資料
+      if (user) {
+        fetchMyGroups(user.id);
+        fetchGroups();
+      }
+    }
+  };
+
   // 揪團卡片組件
   const TripCard = ({ trip, isSelected, onClick }: { trip: DisplayTrip; isSelected: boolean; onClick: () => void }) => (
     <div
@@ -305,6 +335,37 @@ export default function ExplorePage() {
           : 'bg-white/80 border-white/50 opacity-80 hover:opacity-100'
       } ${trip.isMyGroup ? 'ring-2 ring-[#Cfb9a5]/50' : ''}`}
     >
+      {/* 我的活動管理按鈕 */}
+      {trip.isMyGroup && (
+        <div className="absolute -top-2 right-6 flex gap-1 z-10">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCloseGroup(trip.id);
+            }}
+            className="bg-green-500 hover:bg-green-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-0.5"
+            title="結束揪團"
+          >
+            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+            </svg>
+            結束
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteConfirm(trip.id);
+            }}
+            className="bg-red-400 hover:bg-red-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-0.5"
+            title="刪除揪團"
+          >
+            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+            </svg>
+            刪除
+          </button>
+        </div>
+      )}
       {/* 我的活動標籤 */}
       {trip.isMyGroup && (
         <div className="absolute -top-2 -right-2 bg-[#Cfb9a5] text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm z-10">
@@ -632,6 +693,39 @@ export default function ExplorePage() {
         {/* 底部導覽 - 只在手機版顯示 */}
         <MobileNav />
       </div>
+
+      {/* 刪除確認 Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full shadow-2xl">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-[#5C5C5C] mb-2">確定要刪除這個揪團嗎？</h3>
+              <p className="text-sm text-[#949494] mb-6">刪除後將無法復原，所有成員也會收到通知。</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="flex-1 py-3 px-4 bg-gray-100 text-[#5C5C5C] rounded-xl font-medium hover:bg-gray-200 transition"
+                  disabled={isDeleting}
+                >
+                  取消
+                </button>
+                <button
+                  onClick={() => handleDeleteGroup(deleteConfirm)}
+                  className="flex-1 py-3 px-4 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition disabled:opacity-50"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? '刪除中...' : '確定刪除'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Leaflet Popup z-index 修正 */}
       <style jsx global>{`
