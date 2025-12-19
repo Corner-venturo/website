@@ -1,6 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/stores/auth-store';
+import ConfirmModal from '@/components/ConfirmModal';
 
 const settingsItems = [
   {
@@ -30,6 +34,16 @@ const settingsItems = [
 ];
 
 export default function SettingsPage() {
+  const router = useRouter();
+  const { signOut, isLoading } = useAuthStore();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const handleLogout = async () => {
+    await signOut();
+    setShowLogoutModal(false);
+    router.push('/');
+  };
+
   return (
     <div className="bg-[#F5F4F0] font-sans antialiased text-[#5C5C5C] min-h-screen flex flex-col">
       {/* 背景光暈 */}
@@ -73,10 +87,26 @@ export default function SettingsPage() {
         </div>
 
         {/* Logout Button */}
-        <button className="w-full mt-6 bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm p-4 flex items-center justify-center gap-2 text-[#C5B6AF] hover:text-[#94A3B8] transition-colors">
+        <button
+          onClick={() => setShowLogoutModal(true)}
+          className="w-full mt-6 bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm p-4 flex items-center justify-center gap-2 text-[#C5B6AF] hover:text-[#94A3B8] transition-colors"
+        >
           <span className="material-icons-round">logout</span>
           <span className="font-bold text-sm">登出帳號</span>
         </button>
+
+        {/* Logout Confirm Modal */}
+        <ConfirmModal
+          isOpen={showLogoutModal}
+          onClose={() => setShowLogoutModal(false)}
+          onConfirm={handleLogout}
+          title="確定要登出嗎？"
+          description="登出後需要重新登入才能使用完整功能"
+          confirmText="登出"
+          cancelText="取消"
+          isLoading={isLoading}
+          variant="warning"
+        />
 
         {/* Version Info */}
         <div className="mt-8 text-center text-xs text-[#949494]">
