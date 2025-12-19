@@ -324,22 +324,23 @@ function TimeLocationStep({ formData, onChange }: TimeLocationStepProps) {
             <label className="text-xs font-medium text-gray-400 mb-1.5 block ml-10">開始時間</label>
             <div className="flex items-center gap-4">
               <div className="w-3 h-3 rounded-full bg-morandi-green ring-4 ring-white shadow-sm shrink-0" />
-              <div className="relative flex-1">
+              <label className="relative flex-1 cursor-pointer">
                 <input
                   type="datetime-local"
                   value={formatForInput(formData.startDateTime)}
                   min={getMinDateTime()}
                   onChange={handleStartChange}
-                  className="absolute inset-0 w-full h-full opacity-[0.011] cursor-pointer z-10"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  style={{ colorScheme: 'light' }}
                 />
-                <div className="w-full text-left rounded-2xl p-3 flex items-center justify-between group transition-all cursor-pointer" style={{ backgroundColor: '#F7F5F2' }}>
+                <div className="w-full text-left rounded-2xl p-3 flex items-center justify-between group transition-all" style={{ backgroundColor: '#F7F5F2' }}>
                   <div>
                     <div className="text-sm font-bold text-gray-800 tracking-wide">{startDisplay.date}</div>
                     <div className="text-xs text-gray-500 mt-0.5">{startDisplay.time}</div>
                   </div>
                   <span className="material-icons-round text-gray-400 group-hover:text-[var(--primary)] transition-colors">edit_calendar</span>
                 </div>
-              </div>
+              </label>
             </div>
           </div>
 
@@ -348,22 +349,23 @@ function TimeLocationStep({ formData, onChange }: TimeLocationStepProps) {
             <label className="text-xs font-medium text-gray-400 mb-1.5 block ml-10">結束時間</label>
             <div className="flex items-center gap-4">
               <div className="w-3 h-3 rounded-full bg-morandi-pink ring-4 ring-white shadow-sm shrink-0" />
-              <div className="relative flex-1">
+              <label className="relative flex-1 cursor-pointer">
                 <input
                   type="datetime-local"
                   value={formatForInput(formData.endDateTime)}
                   min={formatForInput(formData.startDateTime)}
                   onChange={handleEndChange}
-                  className="absolute inset-0 w-full h-full opacity-[0.011] cursor-pointer z-10"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  style={{ colorScheme: 'light' }}
                 />
-                <div className="w-full text-left rounded-2xl p-3 flex items-center justify-between group transition-all cursor-pointer" style={{ backgroundColor: '#F7F5F2' }}>
+                <div className="w-full text-left rounded-2xl p-3 flex items-center justify-between group transition-all" style={{ backgroundColor: '#F7F5F2' }}>
                   <div>
                     <div className="text-sm font-bold text-gray-800 tracking-wide">{endDisplay.date}</div>
                     <div className="text-xs text-gray-500 mt-0.5">{endDisplay.time}</div>
                   </div>
                   <span className="material-icons-round text-gray-400 group-hover:text-[var(--primary)] transition-colors">edit_calendar</span>
                 </div>
-              </div>
+              </label>
             </div>
           </div>
         </div>
