@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import MobileNav from "@/components/MobileNav";
 import { SummaryCard, TripCard, EmptyState, trips } from "./components";
 
@@ -31,8 +32,46 @@ export default function SplitPage() {
         </header>
 
         {/* 總覽卡片 */}
-        <div className="px-5 mb-6">
+        <div className="px-5 mb-4">
           <SummaryCard totalToReceive={totalToReceive} totalOwed={totalOwed} />
+        </div>
+
+        {/* 快捷入口 */}
+        <div className="px-5 mb-6 flex gap-3">
+          <Link
+            href="/split/tasks"
+            className="flex-1 bg-gradient-to-br from-[#DBCBB9] to-[#Cfb9a5] rounded-2xl p-4 shadow-md relative overflow-hidden group active:scale-[0.98] transition-transform"
+          >
+            <div className="absolute top-0 right-0 opacity-20">
+              <span className="material-icons-round text-5xl text-white transform rotate-12">
+                emoji_events
+              </span>
+            </div>
+            <div className="relative z-10">
+              <span className="material-icons-round text-white/90 text-xl mb-1">
+                task_alt
+              </span>
+              <p className="text-white font-bold text-sm">新手任務</p>
+              <p className="text-white/70 text-xs mt-0.5">完成任務領點數</p>
+            </div>
+          </Link>
+          <Link
+            href="/split/points"
+            className="flex-1 bg-gradient-to-br from-[#B8C9D4] to-[#A5BCCF] rounded-2xl p-4 shadow-md relative overflow-hidden group active:scale-[0.98] transition-transform"
+          >
+            <div className="absolute top-0 right-0 opacity-20">
+              <span className="material-icons-round text-5xl text-white transform rotate-12">
+                monetization_on
+              </span>
+            </div>
+            <div className="relative z-10">
+              <span className="material-icons-round text-white/90 text-xl mb-1">
+                account_balance_wallet
+              </span>
+              <p className="text-white font-bold text-sm">我的點數</p>
+              <p className="text-white/70 text-xs mt-0.5">查看點數紀錄</p>
+            </div>
+          </Link>
         </div>
 
         {/* 行程列表 */}
