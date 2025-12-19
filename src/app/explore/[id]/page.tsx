@@ -46,6 +46,7 @@ export default function GroupDetailPage() {
   const [toastMessage, setToastMessage] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [isLoadingGroup, setIsLoadingGroup] = useState(true); // 追蹤載入狀態
 
   const groupId = params.id as string;
 
@@ -78,10 +79,13 @@ export default function GroupDetailPage() {
   // 載入揪團資料
   useEffect(() => {
     const fetchGroup = async () => {
+      setIsLoadingGroup(true);
+
       // 先檢查是否為 mock ID
       const mock = mockTrips.find(t => t.id === groupId);
       if (mock) {
         setMockGroup(mock);
+        setIsLoadingGroup(false);
         return;
       }
 
@@ -102,6 +106,7 @@ export default function GroupDetailPage() {
         // 找不到，可能是無效 ID
         console.log('Group not found:', groupId, error);
       }
+      setIsLoadingGroup(false);
     };
 
     fetchGroup();
@@ -580,7 +585,19 @@ export default function GroupDetailPage() {
     );
   }
 
-  // 載入中或找不到
+  // 載入中
+  if (isLoadingGroup) {
+    return (
+      <div className="min-h-screen bg-[#F0EEE6] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 border-3 border-[#cfb9a5]/30 border-t-[#cfb9a5] rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-[#949494]">載入中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 找不到
   return (
     <div className="min-h-screen bg-[#F0EEE6] flex items-center justify-center">
       <div className="text-center">
