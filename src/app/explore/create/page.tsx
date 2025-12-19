@@ -622,7 +622,11 @@ export default function CreateExplorePage() {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBadge, setShowBadge] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [errorModal, setErrorModal] = useState<{ show: boolean; title: string; message: string }>({
+    show: false,
+    title: '',
+    message: '',
+  });
 
   // 初始化預設日期時間
   const getDefaultDateTime = (hoursOffset: number) => {
@@ -685,22 +689,25 @@ export default function CreateExplorePage() {
     return '確認發布';
   }, [step]);
 
+  const showError = (title: string, message: string) => {
+    setErrorModal({ show: true, title, message });
+  };
+
   const handleNext = async () => {
     if (isLastStep) {
       // 驗證必填欄位
       if (!formData.title.trim()) {
-        setSubmitError('請輸入活動名稱');
+        showError('缺少必填欄位', '請輸入活動名稱');
         setStep(1);
         return;
       }
 
       if (!user) {
-        setSubmitError('請先登入');
+        showError('需要登入', '請先登入後再創建活動');
         return;
       }
 
       setIsSubmitting(true);
-      setSubmitError(null);
 
       try {
         // 格式化日期
@@ -727,22 +734,21 @@ export default function CreateExplorePage() {
           tags: formData.tags,
         };
 
-        // TODO: 如果有封面圖片，先上傳到 storage
-        // if (formData.coverImage) {
-        //   const coverUrl = await uploadCoverImage(formData.coverImage);
-        //   groupData.cover_image = coverUrl;
-        // }
-
         const result = await createGroup(user.id, groupData);
 
         if (result.success) {
           setShowBadge(true);
         } else {
-          setSubmitError(result.error || '創建失敗，請稍後再試');
+          // 判斷錯誤類型
+          if (result.error?.includes('已有進行中的揪團')) {
+            showError('無法創建更多揪團', result.error);
+          } else {
+            showError('創建失敗', result.error || '請稍後再試');
+          }
         }
       } catch (error) {
         console.error('Create group error:', error);
-        setSubmitError('創建失敗，請稍後再試');
+        showError('創建失敗', '發生未知錯誤，請稍後再試');
       } finally {
         setIsSubmitting(false);
       }
@@ -852,14 +858,6 @@ export default function CreateExplorePage() {
                 {stepContent}
               </div>
 
-              {/* 錯誤提示 */}
-              {submitError && (
-                <div className="max-w-2xl mx-auto mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-600">
-                  <span className="material-icons-round text-lg">error</span>
-                  <span className="text-sm">{submitError}</span>
-                </div>
-              )}
-
               {/* 底部按鈕 */}
               <div className="max-w-2xl mx-auto mt-8 pt-6 border-t border-gray-100 flex justify-between items-center">
                 <button
@@ -899,14 +897,6 @@ export default function CreateExplorePage() {
 
         <main className="relative z-10 flex-1 overflow-y-auto hide-scrollbar pb-32 px-5 pt-2">
           {stepContent}
-
-          {/* 錯誤提示 */}
-          {submitError && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-600">
-              <span className="material-icons-round text-lg">error</span>
-              <span className="text-sm">{submitError}</span>
-            </div>
-          )}
 
           {isFirstStep ? (
             <>
@@ -1027,6 +1017,33 @@ export default function CreateExplorePage() {
           </button>
         </div>
       </div>
+
+      {/* 錯誤彈窗 */}
+      {errorModal.show && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setErrorModal({ ...errorModal, show: false })}
+          />
+          <div className="relative bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-[fadeIn_0.2s_ease-out]">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+              <span className="material-icons-round text-red-500 text-3xl">error_outline</span>
+            </div>
+            <h3 className="text-lg font-bold text-gray-800 text-center mb-2">
+              {errorModal.title}
+            </h3>
+            <p className="text-sm text-gray-500 text-center mb-6 leading-relaxed">
+              {errorModal.message}
+            </p>
+            <button
+              onClick={() => setErrorModal({ ...errorModal, show: false })}
+              className="w-full py-3 rounded-2xl bg-gray-100 text-gray-700 font-bold text-sm hover:bg-gray-200 transition-colors"
+            >
+              我知道了
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 徽章獲得通知 */}
       <BadgeNotification
