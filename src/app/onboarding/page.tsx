@@ -53,10 +53,15 @@ export default function OnboardingPage() {
     }
   }, [user, fetchProfile]);
 
-  // 如果已完成資料填寫，導回首頁
+  // 如果已完成資料填寫，導回首頁或待跳轉頁面
   useEffect(() => {
     if (profile?.is_profile_complete) {
-      router.push('/');
+      const redirectUrl = localStorage.getItem('redirect_after_login');
+      if (redirectUrl) {
+        router.push(redirectUrl);
+      } else {
+        router.push('/');
+      }
     }
   }, [profile, router]);
 
@@ -178,7 +183,13 @@ export default function OnboardingPage() {
     });
 
     if (result.success) {
-      router.push('/');
+      // 檢查是否有待跳轉的頁面（例如好友邀請連結）
+      const redirectUrl = localStorage.getItem('redirect_after_login');
+      if (redirectUrl) {
+        router.push(redirectUrl);
+      } else {
+        router.push('/');
+      }
     }
   };
 
