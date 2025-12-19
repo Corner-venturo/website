@@ -1,8 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import BadgeNotification, { BADGES } from '@/components/BadgeNotification';
+import { useGroupStore, CreateGroupData } from '@/stores/group-store';
+import { useAuthStore } from '@/stores/auth-store';
 
 // 桌面版 Header 組件
 function DesktopHeader() {
@@ -50,10 +53,29 @@ const categories = [
 ];
 
 const genderOptions = [
-  { id: 'all', label: '不限', default: true },
+  { id: 'all', label: '不限' },
   { id: 'male', label: '限男生' },
   { id: 'female', label: '限女生' },
 ];
+
+// Form Data Interface
+interface FormData {
+  title: string;
+  description: string;
+  category: string;
+  coverImage: File | null;
+  coverImagePreview: string;
+  locationName: string;
+  locationAddress: string;
+  startDateTime: Date;
+  endDateTime: Date;
+  memberCount: number;
+  genderLimit: string;
+  requireApproval: boolean;
+  isPrivate: boolean;
+  estimatedCost: string;
+  tags: string[];
+}
 
 function StepIndicator({ step, onChange }: { step: number; onChange: (value: number) => void }) {
   const steps = [
@@ -117,8 +139,25 @@ function StepIndicator({ step, onChange }: { step: number; onChange: (value: num
   );
 }
 
-function BasicInfoStep() {
-  const [selectedCategory, setSelectedCategory] = useState<string>('food');
+interface BasicInfoStepProps {
+  formData: FormData;
+  onChange: (data: Partial<FormData>) => void;
+}
+
+function BasicInfoStep({ formData, onChange }: BasicInfoStepProps) {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        onChange({
+          coverImage: file,
+          coverImagePreview: reader.result as string,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -127,6 +166,8 @@ function BasicInfoStep() {
         <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">活動名稱</label>
         <input
           type="text"
+          value={formData.title}
+          onChange={(e) => onChange({ title: e.target.value })}
           placeholder="例如：週五晚間爵士音樂會"
           className="w-full rounded-2xl border-none bg-white py-3.5 px-4 text-sm shadow-sm placeholder-gray-300 focus:ring-2 focus:ring-[rgba(207,185,165,0.5)] text-gray-800"
         />
@@ -137,12 +178,12 @@ function BasicInfoStep() {
         <label className="block text-xs font-bold text-gray-500 mb-2 ml-1">活動類別</label>
         <div className="flex flex-wrap gap-2.5">
           {categories.map((category) => {
-            const isSelected = selectedCategory === category.id;
+            const isSelected = formData.category === category.id;
             return (
               <button
                 key={category.id}
                 type="button"
-                onClick={() => setSelectedCategory(category.id)}
+                onClick={() => onChange({ category: category.id })}
                 className={`px-4 py-2 rounded-xl text-xs font-medium border shadow-sm transition-all flex items-center gap-1.5 ${
                   isSelected
                     ? 'bg-[#Cfb9a5] text-white border-[#Cfb9a5] shadow-[0_4px_12px_rgba(207,185,165,0.3)]'
@@ -163,13 +204,33 @@ function BasicInfoStep() {
           <span className="material-icons-round text-[#Cfb9a5] text-base">image</span>
           活動封面
         </label>
-        <div className="w-full h-52 rounded-2xl bg-white border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 transition-colors cursor-pointer relative overflow-hidden group shadow-sm hover:border-[#Cfb9a5] hover:text-[#Cfb9a5]"
-          style={{ borderColor: 'rgba(207,185,165,0.5)' }}
-        >
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: 'rgba(207,185,165,0.05)' }} />
-          <span className="material-icons-round text-4xl mb-2 group-hover:scale-110 transition-transform">add_photo_alternate</span>
-          <span className="text-xs font-medium tracking-wide">點擊上傳精彩照片</span>
-        </div>
+        <label className="block cursor-pointer">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="hidden"
+          />
+          <div
+            className="w-full h-52 rounded-2xl bg-white border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 transition-colors relative overflow-hidden group shadow-sm hover:border-[#Cfb9a5] hover:text-[#Cfb9a5]"
+            style={{ borderColor: formData.coverImagePreview ? 'transparent' : 'rgba(207,185,165,0.5)' }}
+          >
+            {formData.coverImagePreview ? (
+              <>
+                <img src={formData.coverImagePreview} alt="封面預覽" className="absolute inset-0 w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">點擊更換照片</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: 'rgba(207,185,165,0.05)' }} />
+                <span className="material-icons-round text-4xl mb-2 group-hover:scale-110 transition-transform">add_photo_alternate</span>
+                <span className="text-xs font-medium tracking-wide">點擊上傳精彩照片</span>
+              </>
+            )}
+          </div>
+        </label>
       </div>
 
       {/* 4. 活動描述 */}
@@ -177,6 +238,8 @@ function BasicInfoStep() {
         <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">活動描述</label>
         <textarea
           rows={4}
+          value={formData.description}
+          onChange={(e) => onChange({ description: e.target.value })}
           placeholder="請簡單介紹活動內容、行程安排與注意事項..."
           className="w-full rounded-2xl border-none bg-white py-3.5 px-4 text-sm shadow-sm placeholder-gray-300 focus:ring-2 focus:ring-[rgba(207,185,165,0.5)] text-gray-800 resize-none leading-relaxed"
         />
@@ -185,7 +248,67 @@ function BasicInfoStep() {
   );
 }
 
-function TimeLocationStep() {
+interface TimeLocationStepProps {
+  formData: FormData;
+  onChange: (data: Partial<FormData>) => void;
+}
+
+function TimeLocationStep({ formData, onChange }: TimeLocationStepProps) {
+  // 格式化日期時間給 input
+  const formatForInput = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const mins = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${mins}`;
+  };
+
+  // 格式化顯示
+  const formatDisplay = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const weekdays = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+    const weekday = weekdays[date.getDay()];
+    const hours = date.getHours();
+    const mins = String(date.getMinutes()).padStart(2, '0');
+    const period = hours < 12 ? '上午' : '下午';
+    const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+
+    return {
+      date: `${year}年 ${month}月 ${day}日`,
+      time: `${weekday}${period} ${displayHour}:${mins}`,
+    };
+  };
+
+  // 取得現在的最小值
+  const getMinDateTime = () => {
+    const now = new Date();
+    return formatForInput(now);
+  };
+
+  const handleStartChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newStart = new Date(e.target.value);
+    onChange({ startDateTime: newStart });
+    // 如果開始時間超過結束時間，自動調整結束時間
+    if (newStart >= formData.endDateTime) {
+      const newEnd = new Date(newStart);
+      newEnd.setHours(newEnd.getHours() + 3);
+      onChange({ endDateTime: newEnd });
+    }
+  };
+
+  const handleEndChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newEnd = new Date(e.target.value);
+    if (newEnd > formData.startDateTime) {
+      onChange({ endDateTime: newEnd });
+    }
+  };
+
+  const startDisplay = formatDisplay(formData.startDateTime);
+  const endDisplay = formatDisplay(formData.endDateTime);
+
   return (
     <>
       <div className="mb-8 animate-[fadeIn_0.5s_ease-out]">
@@ -196,24 +319,53 @@ function TimeLocationStep() {
         <div className="bg-white rounded-3xl p-5 shadow-sm space-y-6 relative overflow-hidden">
           <div className="absolute left-[29px] top-[45px] bottom-[45px] w-0.5 bg-gray-100" />
 
-          {[{ label: '開始時間', tagColor: 'bg-morandi-green' }, { label: '結束時間', tagColor: 'bg-morandi-pink' }].map((item) => (
-            <div className="relative z-10" key={item.label}>
-              <label className="text-xs font-medium text-gray-400 mb-1.5 block ml-10">{item.label}</label>
-              <div className="flex items-center gap-4">
-                <div className={`w-3 h-3 rounded-full ${item.tagColor} ring-4 ring-white shadow-sm shrink-0`} />
-                <div className="relative flex-1">
-                  <input type="datetime-local" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                  <div className="w-full text-left rounded-2xl p-3 flex items-center justify-between group transition-all cursor-pointer" style={{ backgroundColor: '#F7F5F2' }}>
-                    <div>
-                      <div className="text-sm font-bold text-gray-800 tracking-wide">2023年 11月 12日</div>
-                      <div className="text-xs text-gray-500 mt-0.5">{item.label === '開始時間' ? '週六上午 10:00' : '週六下午 16:00'}</div>
-                    </div>
-                    <span className="material-icons-round text-gray-400 group-hover:text-[var(--primary)] transition-colors">edit_calendar</span>
+          {/* 開始時間 */}
+          <div className="relative z-10">
+            <label className="text-xs font-medium text-gray-400 mb-1.5 block ml-10">開始時間</label>
+            <div className="flex items-center gap-4">
+              <div className="w-3 h-3 rounded-full bg-morandi-green ring-4 ring-white shadow-sm shrink-0" />
+              <div className="relative flex-1">
+                <input
+                  type="datetime-local"
+                  value={formatForInput(formData.startDateTime)}
+                  min={getMinDateTime()}
+                  onChange={handleStartChange}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                />
+                <div className="w-full text-left rounded-2xl p-3 flex items-center justify-between group transition-all cursor-pointer" style={{ backgroundColor: '#F7F5F2' }}>
+                  <div>
+                    <div className="text-sm font-bold text-gray-800 tracking-wide">{startDisplay.date}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">{startDisplay.time}</div>
                   </div>
+                  <span className="material-icons-round text-gray-400 group-hover:text-[var(--primary)] transition-colors">edit_calendar</span>
                 </div>
               </div>
             </div>
-          ))}
+          </div>
+
+          {/* 結束時間 */}
+          <div className="relative z-10">
+            <label className="text-xs font-medium text-gray-400 mb-1.5 block ml-10">結束時間</label>
+            <div className="flex items-center gap-4">
+              <div className="w-3 h-3 rounded-full bg-morandi-pink ring-4 ring-white shadow-sm shrink-0" />
+              <div className="relative flex-1">
+                <input
+                  type="datetime-local"
+                  value={formatForInput(formData.endDateTime)}
+                  min={formatForInput(formData.startDateTime)}
+                  onChange={handleEndChange}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                />
+                <div className="w-full text-left rounded-2xl p-3 flex items-center justify-between group transition-all cursor-pointer" style={{ backgroundColor: '#F7F5F2' }}>
+                  <div>
+                    <div className="text-sm font-bold text-gray-800 tracking-wide">{endDisplay.date}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">{endDisplay.time}</div>
+                  </div>
+                  <span className="material-icons-round text-gray-400 group-hover:text-[var(--primary)] transition-colors">edit_calendar</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -230,6 +382,8 @@ function TimeLocationStep() {
               <span className="material-icons-round absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">store</span>
               <input
                 type="text"
+                value={formData.locationName}
+                onChange={(e) => onChange({ locationName: e.target.value })}
                 placeholder="例如：台北 101、信義威秀"
                 className="w-full pl-11 pr-4 py-3.5 rounded-2xl border-none bg-white text-sm text-gray-800 placeholder-gray-300 shadow-sm focus:ring-2 focus:ring-[rgba(207,185,165,0.5)]"
               />
@@ -243,6 +397,8 @@ function TimeLocationStep() {
               <span className="material-icons-round absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">location_on</span>
               <input
                 type="text"
+                value={formData.locationAddress}
+                onChange={(e) => onChange({ locationAddress: e.target.value })}
                 placeholder="例如：台北市信義區信義路五段7號"
                 className="w-full pl-11 pr-4 py-3.5 rounded-2xl border-none bg-white text-sm text-gray-800 placeholder-gray-300 shadow-sm focus:ring-2 focus:ring-[rgba(207,185,165,0.5)]"
               />
@@ -262,11 +418,25 @@ function TimeLocationStep() {
   );
 }
 
-function AdvancedSettingsStep() {
-  const [memberCount, setMemberCount] = useState(4);
-  const [selectedGender, setSelectedGender] = useState('all');
-  const [requireApproval, setRequireApproval] = useState(true);
-  const [isPrivate, setIsPrivate] = useState(false);
+interface AdvancedSettingsStepProps {
+  formData: FormData;
+  onChange: (data: Partial<FormData>) => void;
+}
+
+function AdvancedSettingsStep({ formData, onChange }: AdvancedSettingsStepProps) {
+  const [showPrivateWarning, setShowPrivateWarning] = useState(false);
+
+  // TODO: 從用戶資料取得實名狀態
+  const isVerified = false; // 假設目前未實名
+
+  const handlePrivateToggle = () => {
+    if (!isVerified && !formData.isPrivate) {
+      setShowPrivateWarning(true);
+      setTimeout(() => setShowPrivateWarning(false), 3000);
+    } else {
+      onChange({ isPrivate: !formData.isPrivate });
+    }
+  };
 
   return (
     <>
@@ -284,15 +454,15 @@ function AdvancedSettingsStep() {
             <div className="flex items-center gap-4 bg-[#F7F5F2] p-1.5 rounded-xl">
               <button
                 type="button"
-                onClick={() => setMemberCount(Math.max(2, memberCount - 1))}
+                onClick={() => onChange({ memberCount: Math.max(2, formData.memberCount - 1) })}
                 className="w-8 h-8 rounded-lg bg-white shadow-sm text-gray-600 flex items-center justify-center hover:text-[#Cfb9a5] active:scale-95 transition-all"
               >
                 <span className="material-icons-round text-sm">remove</span>
               </button>
-              <span className="text-base font-bold text-gray-800 w-6 text-center">{memberCount}</span>
+              <span className="text-base font-bold text-gray-800 w-6 text-center">{formData.memberCount}</span>
               <button
                 type="button"
-                onClick={() => setMemberCount(Math.min(50, memberCount + 1))}
+                onClick={() => onChange({ memberCount: Math.min(50, formData.memberCount + 1) })}
                 className="w-8 h-8 rounded-lg bg-white shadow-sm text-gray-600 flex items-center justify-center hover:text-[#Cfb9a5] active:scale-95 transition-all"
               >
                 <span className="material-icons-round text-sm">add</span>
@@ -307,9 +477,9 @@ function AdvancedSettingsStep() {
                 <button
                   key={option.id}
                   type="button"
-                  onClick={() => setSelectedGender(option.id)}
+                  onClick={() => onChange({ genderLimit: option.id })}
                   className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-                    selectedGender === option.id
+                    formData.genderLimit === option.id
                       ? 'bg-white shadow-sm text-[#Cfb9a5]'
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
@@ -337,14 +507,14 @@ function AdvancedSettingsStep() {
               </div>
               <button
                 type="button"
-                onClick={() => setRequireApproval(!requireApproval)}
+                onClick={() => onChange({ requireApproval: !formData.requireApproval })}
                 className={`relative w-11 h-6 rounded-full transition-colors ${
-                  requireApproval ? 'bg-[#Cfb9a5]' : 'bg-gray-200'
+                  formData.requireApproval ? 'bg-[#Cfb9a5]' : 'bg-gray-200'
                 }`}
               >
                 <div
                   className={`absolute top-[2px] left-[2px] w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                    requireApproval ? 'translate-x-5' : 'translate-x-0'
+                    formData.requireApproval ? 'translate-x-5' : 'translate-x-0'
                   }`}
                 />
               </button>
@@ -361,18 +531,28 @@ function AdvancedSettingsStep() {
               </div>
               <button
                 type="button"
-                onClick={() => setIsPrivate(!isPrivate)}
+                onClick={handlePrivateToggle}
                 className={`relative w-11 h-6 rounded-full transition-colors ${
-                  isPrivate ? 'bg-[#Cfb9a5]' : 'bg-gray-200'
+                  formData.isPrivate ? 'bg-[#Cfb9a5]' : 'bg-gray-200'
                 }`}
               >
                 <div
                   className={`absolute top-[2px] left-[2px] w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                    isPrivate ? 'translate-x-5' : 'translate-x-0'
+                    formData.isPrivate ? 'translate-x-5' : 'translate-x-0'
                   }`}
                 />
               </button>
             </div>
+            {/* 實名認證提示 */}
+            {showPrivateWarning && (
+              <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2 animate-[fadeIn_0.2s_ease-out]">
+                <span className="material-icons-round text-amber-500 text-lg mt-0.5">warning</span>
+                <div>
+                  <p className="text-sm font-medium text-amber-700">需要實名認證</p>
+                  <p className="text-xs text-amber-600 mt-0.5">只有實名會員才能創立私密活動</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -389,6 +569,8 @@ function AdvancedSettingsStep() {
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
               <input
                 type="number"
+                value={formData.estimatedCost}
+                onChange={(e) => onChange({ estimatedCost: e.target.value })}
                 placeholder="0"
                 className="w-full bg-[#F7F5F2] rounded-2xl py-3 pl-8 pr-12 text-sm font-bold text-gray-800 border-none focus:ring-2 focus:ring-[rgba(207,185,165,0.5)] transition-all placeholder-gray-300"
               />
@@ -399,21 +581,29 @@ function AdvancedSettingsStep() {
           <div>
             <label className="text-xs font-medium text-gray-400 mb-2 block ml-1">活動標籤</label>
             <div className="flex flex-wrap gap-2">
-              {['#美食探店', '#攝影', '#新手友善'].map((tag, index) => (
-                <span
-                  key={tag}
-                  className={`px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-colors ${
-                    index === 0
-                      ? 'bg-[rgba(207,185,165,0.1)] text-[var(--primary)] border border-[rgba(207,185,165,0.2)]'
-                      : 'bg-[#F7F5F2] text-gray-500 border border-transparent hover:border-gray-200'
-                  }`}
-                >
-                  {tag}
-                </span>
-              ))}
-              <button className="w-7 h-7 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center hover:bg-gray-200 transition-colors">
-                <span className="material-icons-round text-sm">add</span>
-              </button>
+              {['#美食探店', '#攝影', '#新手友善'].map((tag) => {
+                const isSelected = formData.tags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => {
+                      if (isSelected) {
+                        onChange({ tags: formData.tags.filter(t => t !== tag) });
+                      } else {
+                        onChange({ tags: [...formData.tags, tag] });
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-colors ${
+                      isSelected
+                        ? 'bg-[rgba(207,185,165,0.1)] text-[#Cfb9a5] border border-[rgba(207,185,165,0.2)]'
+                        : 'bg-[#F7F5F2] text-gray-500 border border-transparent hover:border-gray-200'
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -423,11 +613,68 @@ function AdvancedSettingsStep() {
 }
 
 export default function CreateExplorePage() {
+  const router = useRouter();
+  const { user } = useAuthStore();
+  const { createGroup, isLoading: isCreating } = useGroupStore();
+
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [showBadge, setShowBadge] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // 初始化預設日期時間
+  const getDefaultDateTime = (hoursOffset: number) => {
+    const d = new Date();
+    d.setHours(d.getHours() + hoursOffset, 0, 0, 0);
+    return d;
+  };
+
+  // 表單資料狀態
+  const [formData, setFormData] = useState<FormData>({
+    title: '',
+    description: '',
+    category: 'food',
+    coverImage: null,
+    coverImagePreview: '',
+    locationName: '',
+    locationAddress: '',
+    startDateTime: getDefaultDateTime(2),
+    endDateTime: getDefaultDateTime(5),
+    memberCount: 4,
+    genderLimit: 'all',
+    requireApproval: true,
+    isPrivate: false,
+    estimatedCost: '',
+    tags: [],
+  });
+
+  const updateFormData = (data: Partial<FormData>) => {
+    setFormData(prev => ({ ...prev, ...data }));
+  };
+
+  // 檢查用戶登入狀態
+  useEffect(() => {
+    if (!user) {
+      router.push('/login?redirect=/explore/create');
+    }
+  }, [user, router]);
+
+  // 取得預設的今天日期和時間（用於手機版預覽）
+  const getDefaultPreview = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = now.getHours() + 2;
+    const displayHour = hours > 12 ? hours - 12 : hours;
+    const period = hours < 12 ? '上午' : '下午';
+    return {
+      date: `${year}/${month}/${day}`,
+      time: `${period} ${displayHour}:00`,
+    };
+  }, []);
 
   const isFirstStep = step === 1;
   const isLastStep = step === 3;
@@ -448,16 +695,65 @@ export default function CreateExplorePage() {
     }, 800);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (isLastStep) {
-      // 發布活動
+      // 驗證必填欄位
+      if (!formData.title.trim()) {
+        setSubmitError('請輸入活動名稱');
+        setStep(1);
+        return;
+      }
+
+      if (!user) {
+        setSubmitError('請先登入');
+        return;
+      }
+
       setIsSubmitting(true);
-      // TODO: 實際的 API 呼叫
-      setTimeout(() => {
+      setSubmitError(null);
+
+      try {
+        // 格式化日期
+        const eventDate = formData.startDateTime.toISOString().split('T')[0];
+        const startTime = formData.startDateTime.toTimeString().slice(0, 5);
+        const endTime = formData.endDateTime.toTimeString().slice(0, 5);
+
+        const groupData: CreateGroupData = {
+          title: formData.title,
+          description: formData.description || undefined,
+          category: formData.category,
+          location_name: formData.locationName || undefined,
+          location_address: formData.locationAddress || undefined,
+          event_date: eventDate,
+          start_time: startTime,
+          end_time: endTime,
+          max_members: formData.memberCount,
+          gender_limit: formData.genderLimit,
+          require_approval: formData.requireApproval,
+          is_private: formData.isPrivate,
+          estimated_cost: formData.estimatedCost ? parseFloat(formData.estimatedCost) : undefined,
+          tags: formData.tags,
+        };
+
+        // TODO: 如果有封面圖片，先上傳到 storage
+        // if (formData.coverImage) {
+        //   const coverUrl = await uploadCoverImage(formData.coverImage);
+        //   groupData.cover_image = coverUrl;
+        // }
+
+        const result = await createGroup(user.id, groupData);
+
+        if (result.success) {
+          setShowBadge(true);
+        } else {
+          setSubmitError(result.error || '創建失敗，請稍後再試');
+        }
+      } catch (error) {
+        console.error('Create group error:', error);
+        setSubmitError('創建失敗，請稍後再試');
+      } finally {
         setIsSubmitting(false);
-        // 顯示徽章獲得通知
-        setShowBadge(true);
-      }, 1000);
+      }
     } else {
       setStep((prev) => Math.min(prev + 1, 3));
     }
@@ -465,15 +761,23 @@ export default function CreateExplorePage() {
 
   const handleBadgeClose = () => {
     setShowBadge(false);
-    // 之後可以 redirect 到活動頁面
-    // router.push('/explore');
+    router.push('/explore');
   };
 
   const stepContent = useMemo(() => {
-    if (step === 1) return <BasicInfoStep />;
-    if (step === 2) return <TimeLocationStep />;
-    return <AdvancedSettingsStep />;
-  }, [step]);
+    if (step === 1) return <BasicInfoStep formData={formData} onChange={updateFormData} />;
+    if (step === 2) return <TimeLocationStep formData={formData} onChange={updateFormData} />;
+    return <AdvancedSettingsStep formData={formData} onChange={updateFormData} />;
+  }, [step, formData]);
+
+  // 如果沒登入，顯示載入中
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#F0EEE6] flex items-center justify-center">
+        <div className="text-gray-500">載入中...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#F0EEE6] font-sans antialiased text-gray-900 transition-colors duration-300 min-h-screen relative">
@@ -565,6 +869,14 @@ export default function CreateExplorePage() {
                 {stepContent}
               </div>
 
+              {/* 錯誤提示 */}
+              {submitError && (
+                <div className="max-w-2xl mx-auto mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-600">
+                  <span className="material-icons-round text-lg">error</span>
+                  <span className="text-sm">{submitError}</span>
+                </div>
+              )}
+
               {/* 底部按鈕 */}
               <div className="max-w-2xl mx-auto mt-8 pt-6 border-t border-gray-100 flex justify-between items-center">
                 <button
@@ -577,10 +889,10 @@ export default function CreateExplorePage() {
                 </button>
                 <button
                   onClick={handleNext}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isCreating}
                   className="px-8 py-3 bg-[#Cfb9a5] text-white font-bold rounded-xl shadow-lg shadow-[#Cfb9a5]/30 flex items-center gap-2 hover:bg-[#b09b88] transition disabled:opacity-50"
                 >
-                  {isSubmitting ? '發布中...' : nextLabel}
+                  {isSubmitting || isCreating ? '發布中...' : nextLabel}
                   <span className="material-icons-round text-lg">{isLastStep ? 'check_circle' : 'arrow_forward'}</span>
                 </button>
               </div>
@@ -610,6 +922,15 @@ export default function CreateExplorePage() {
 
         <main className="relative z-10 flex-1 overflow-y-auto hide-scrollbar pb-32 px-5 pt-2">
           {stepContent}
+
+          {/* 錯誤提示 */}
+          {submitError && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-600">
+              <span className="material-icons-round text-lg">error</span>
+              <span className="text-sm">{submitError}</span>
+            </div>
+          )}
+
           {isFirstStep ? (
             <>
               <div className="relative py-8 flex items-center justify-center">
@@ -629,7 +950,7 @@ export default function CreateExplorePage() {
                       </div>
                       <div>
                         <div className="text-[10px] text-gray-400">日期</div>
-                        <div className="text-sm font-bold text-gray-700">2023/10/28</div>
+                        <div className="text-sm font-bold text-gray-700">{getDefaultPreview.date}</div>
                       </div>
                     </button>
                     <button className="flex items-center gap-3 bg-white p-3 rounded-2xl shadow-sm text-left hover:ring-2 hover:ring-[rgba(207,185,165,0.3)] transition-all">
@@ -641,7 +962,7 @@ export default function CreateExplorePage() {
                       </div>
                       <div>
                         <div className="text-[10px] text-gray-400">時間</div>
-                        <div className="text-sm font-bold text-gray-700">14:30</div>
+                        <div className="text-sm font-bold text-gray-700">{getDefaultPreview.time}</div>
                       </div>
                     </button>
                   </div>
@@ -654,6 +975,8 @@ export default function CreateExplorePage() {
                       <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">store</span>
                       <input
                         type="text"
+                        value={formData.locationName}
+                        onChange={(e) => updateFormData({ locationName: e.target.value })}
                         placeholder="地點名稱（如：台北車站）"
                         className="w-full pl-10 pr-4 py-3 rounded-2xl border-none bg-white text-sm shadow-sm placeholder-gray-300 focus:ring-2 focus:ring-[rgba(207,185,165,0.5)]"
                       />
@@ -662,6 +985,8 @@ export default function CreateExplorePage() {
                       <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">location_on</span>
                       <input
                         type="text"
+                        value={formData.locationAddress}
+                        onChange={(e) => updateFormData({ locationAddress: e.target.value })}
                         placeholder="詳細地址"
                         className="w-full pl-10 pr-4 py-3 rounded-2xl border-none bg-white text-sm shadow-sm placeholder-gray-300 focus:ring-2 focus:ring-[rgba(207,185,165,0.5)]"
                       />
@@ -676,6 +1001,8 @@ export default function CreateExplorePage() {
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-serif italic text-lg">$</span>
                       <input
                         type="number"
+                        value={formData.estimatedCost}
+                        onChange={(e) => updateFormData({ estimatedCost: e.target.value })}
                         placeholder="0"
                         className="w-full rounded-2xl border-none bg-white py-3 pl-8 pr-4 text-sm font-bold shadow-sm focus:ring-2 focus:ring-[rgba(207,185,165,0.5)] text-gray-800"
                       />
@@ -684,15 +1011,24 @@ export default function CreateExplorePage() {
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">預計人數</label>
                     <div className="flex items-center bg-white rounded-2xl p-1 shadow-sm h-[46px]">
-                      <button className="w-10 h-full flex items-center justify-center text-primary hover:bg-gray-100 rounded-xl transition-colors">
+                      <button
+                        type="button"
+                        onClick={() => updateFormData({ memberCount: Math.max(2, formData.memberCount - 1) })}
+                        className="w-10 h-full flex items-center justify-center text-primary hover:bg-gray-100 rounded-xl transition-colors"
+                      >
                         <span className="material-icons-round">remove</span>
                       </button>
                       <input
                         type="text"
-                        defaultValue="4"
+                        value={formData.memberCount}
+                        readOnly
                         className="flex-1 w-full bg-transparent border-none text-center p-0 text-gray-700 font-bold focus:ring-0 text-sm"
                       />
-                      <button className="w-10 h-full flex items-center justify-center text-primary hover:bg-gray-100 rounded-xl transition-colors">
+                      <button
+                        type="button"
+                        onClick={() => updateFormData({ memberCount: Math.min(50, formData.memberCount + 1) })}
+                        className="w-10 h-full flex items-center justify-center text-primary hover:bg-gray-100 rounded-xl transition-colors"
+                      >
                         <span className="material-icons-round">add</span>
                       </button>
                     </div>
@@ -706,10 +1042,10 @@ export default function CreateExplorePage() {
         <div className="fixed bottom-0 inset-x-0 p-5 bg-gradient-to-t from-[#F0EEE6] via-[#F0EEE6] to-transparent z-50 pt-10">
           <button
             onClick={handleNext}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isCreating}
             className="w-full bg-[#Cfb9a5] text-white font-bold py-4 rounded-3xl shadow-[0_12px_30px_rgba(207,185,165,0.3)] flex items-center justify-center gap-2 active:scale-95 transition-transform hover:bg-[#b09b88] disabled:opacity-50"
           >
-            {isSubmitting ? '發布中...' : nextLabel}
+            {isSubmitting || isCreating ? '發布中...' : nextLabel}
             <span className="material-icons-round text-sm">{isLastStep ? 'check_circle' : 'arrow_forward'}</span>
           </button>
         </div>

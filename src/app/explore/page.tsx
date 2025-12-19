@@ -6,6 +6,7 @@ import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import MobileNav from '@/components/MobileNav';
 import { useAuthStore } from '@/stores/auth-store';
+import { useGroupStore, Group } from '@/stores/group-store';
 
 // 動態載入地圖（避免 SSR 問題）
 const MapComponent = dynamic(() => import('./MapComponent'), {
@@ -137,10 +138,46 @@ function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon
   return R * c;
 }
 
+// 將 Group 轉換為顯示用的格式
+interface DisplayTrip {
+  id: string;
+  title: string;
+  category: string;
+  event_date: string;
+  location: string;
+  latitude: number;
+  longitude: number;
+  member_count: number;
+  max_members: number;
+  organizer_name: string;
+  organizer_avatar: string;
+  image: string;
+  isMyGroup?: boolean;
+}
+
+function groupToDisplayTrip(group: Group): DisplayTrip {
+  return {
+    id: group.id,
+    title: group.title,
+    category: group.category,
+    event_date: group.event_date,
+    location: group.location_name || group.location_address || '未指定地點',
+    latitude: group.latitude || 25.033,
+    longitude: group.longitude || 121.5654,
+    member_count: group.current_members,
+    max_members: group.max_members,
+    organizer_name: group.creator?.display_name || '主辦人',
+    organizer_avatar: group.creator?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
+    image: group.cover_image || 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=400&h=300&fit=crop',
+    isMyGroup: false,
+  };
+}
+
 export default function ExplorePage() {
   const { user, initialize, isInitialized } = useAuthStore();
+  const { groups, myGroups, fetchGroups, fetchMyGroups, isLoading: isLoadingGroups } = useGroupStore();
   const [activeCategory, setActiveCategory] = useState('all');
-  const [selectedTrip, setSelectedTrip] = useState<typeof mockTrips[0] | null>(null);
+  const [selectedTrip, setSelectedTrip] = useState<DisplayTrip | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number]>([25.033, 121.5654]); // 預設台北
   const [searchCenter, setSearchCenter] = useState<[number, number]>([25.033, 121.5654]); // 搜尋中心
 
@@ -153,6 +190,14 @@ export default function ExplorePage() {
       initialize();
     }
   }, [initialize, isInitialized]);
+
+  // 載入揪團資料（登入後）
+  useEffect(() => {
+    if (isLoggedIn && user) {
+      fetchGroups({ category: activeCategory === 'all' ? undefined : activeCategory });
+      fetchMyGroups(user.id);
+    }
+  }, [isLoggedIn, user, activeCategory, fetchGroups, fetchMyGroups]);
 
   // 取得用戶位置
   useEffect(() => {
@@ -180,11 +225,39 @@ export default function ExplorePage() {
   }, []);
 
   // 篩選揪團 - 2公里內 + 類別（用 useMemo 優化）
-  // 登入後顯示空陣列（真實資料），未登入顯示假資料
+  // 登入後顯示真實資料，未登入顯示假資料
   const filteredTrips = useMemo(() => {
-    // 登入後：顯示真實資料（目前為空）
+    // 登入後：顯示真實資料
     if (isLoggedIn) {
-      return [];
+      // 先處理我的揪團（優先顯示）
+      const myGroupsDisplay = myGroups.map(g => ({
+        ...groupToDisplayTrip(g),
+        isMyGroup: true,
+      }));
+
+      // 再處理其他揪團（排除已經在我的揪團中的）
+      const myGroupIds = new Set(myGroups.map(g => g.id));
+      const otherGroupsDisplay = groups
+        .filter(g => !myGroupIds.has(g.id))
+        .map(groupToDisplayTrip);
+
+      // 合併：我的揪團在前，其他揪團在後
+      const allGroups = [...myGroupsDisplay, ...otherGroupsDisplay];
+
+      // 根據距離和類別篩選
+      return allGroups
+        .filter((trip) => {
+          // 我的揪團不受距離限制
+          if (trip.isMyGroup) return true;
+          const distance = getDistanceFromLatLonInKm(
+            searchCenter[0],
+            searchCenter[1],
+            trip.latitude,
+            trip.longitude
+          );
+          return distance <= 10; // 10 公里內
+        })
+        .filter((trip) => activeCategory === 'all' || trip.category === activeCategory);
     }
 
     // 未登入：顯示假資料作為展示
@@ -199,7 +272,7 @@ export default function ExplorePage() {
         return distance <= 2; // 2 公里內
       })
       .filter((trip) => activeCategory === 'all' || trip.category === activeCategory);
-  }, [searchCenter, activeCategory, isLoggedIn]);
+  }, [searchCenter, activeCategory, isLoggedIn, groups, myGroups]);
 
   // 格式化日期
   const formatDate = (dateStr: string) => {
@@ -223,15 +296,22 @@ export default function ExplorePage() {
   }, [filteredTrips, selectedTrip]);
 
   // 揪團卡片組件
-  const TripCard = ({ trip, isSelected, onClick }: { trip: typeof mockTrips[0]; isSelected: boolean; onClick: () => void }) => (
+  const TripCard = ({ trip, isSelected, onClick }: { trip: DisplayTrip; isSelected: boolean; onClick: () => void }) => (
     <div
       onClick={onClick}
-      className={`p-3 backdrop-blur-xl rounded-2xl shadow-lg border flex gap-3 cursor-pointer transition-all ${
+      className={`p-3 backdrop-blur-xl rounded-2xl shadow-lg border flex gap-3 cursor-pointer transition-all relative ${
         isSelected
           ? 'bg-white/95 border-white/80 ring-2 ring-[#94A3B8]/50 shadow-xl'
           : 'bg-white/80 border-white/50 opacity-80 hover:opacity-100'
-      }`}
+      } ${trip.isMyGroup ? 'ring-2 ring-[#Cfb9a5]/50' : ''}`}
     >
+      {/* 我的活動標籤 */}
+      {trip.isMyGroup && (
+        <div className="absolute -top-2 -right-2 bg-[#Cfb9a5] text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm z-10">
+          我的活動
+        </div>
+      )}
+
       {/* 圖片 */}
       <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 relative">
         <Image src={trip.image} alt={trip.title} fill className="object-cover" />
