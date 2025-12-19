@@ -283,7 +283,7 @@ export default function TasksPage() {
             </span>
             新手必做
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {beginnerTasks.map((task) => (
               <TaskCard key={task.id} task={task} />
             ))}
@@ -296,7 +296,7 @@ export default function TasksPage() {
             <span className="material-icons-round text-[#A5BCCF]">explore</span>
             探索旅程
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {exploreTasks.map((task) => (
               <TaskCard key={task.id} task={task} />
             ))}
@@ -311,7 +311,7 @@ export default function TasksPage() {
             </span>
             進階挑戰
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {advancedTasks.map((task) => (
               <TaskCard key={task.id} task={task} />
             ))}
