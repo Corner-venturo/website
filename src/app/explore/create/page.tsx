@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import BadgeNotification, { BADGES } from '@/components/BadgeNotification';
@@ -587,7 +587,7 @@ function AdvancedSettingsStep({ formData, onChange }: AdvancedSettingsStepProps)
   );
 }
 
-export default function CreateExplorePage() {
+function CreateExplorePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editGroupId = searchParams.get('edit');
@@ -1036,5 +1036,13 @@ export default function CreateExplorePage() {
         onClose={handleBadgeClose}
       />
     </div>
+  );
+}
+
+export default function CreateExplorePage() {
+  return (
+    <Suspense fallback={<div className="h-[100dvh] bg-[#F0EEE6] flex items-center justify-center"><div className="text-[#949494]">載入中...</div></div>}>
+      <CreateExplorePageContent />
+    </Suspense>
   );
 }
