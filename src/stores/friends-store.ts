@@ -259,12 +259,16 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
 
     const supabase = getSupabaseClient()
 
+    // 移除 @ 符號（如果有的話）
+    const cleanQuery = query.replace(/^@/, '').trim()
+    if (!cleanQuery) return []
+
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, display_name, avatar_url')
+        .select('id, username, display_name, avatar_url')
         .neq('id', currentUserId)
-        .or(`display_name.ilike.%${query}%,full_name.ilike.%${query}%`)
+        .or(`username.ilike.%${cleanQuery}%,display_name.ilike.%${cleanQuery}%,full_name.ilike.%${cleanQuery}%`)
         .limit(10)
 
       if (error) throw error
