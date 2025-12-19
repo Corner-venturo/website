@@ -199,25 +199,51 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
     }
 
     try {
-      // RLS 要求 auth.uid() = friend_id，所以明確加上 friend_id 條件
+      // 先查詢這個邀請的狀態
+      const { data: existingRequest, error: fetchError } = await supabase
+        .from('friends')
+        .select('*')
+        .eq('id', requestId)
+        .maybeSingle()
+
+      if (fetchError) {
+        console.error('Fetch error:', fetchError)
+        throw fetchError
+      }
+
+      if (!existingRequest) {
+        return { success: false, error: '找不到此邀請' }
+      }
+
+      if (existingRequest.status !== 'pending') {
+        return { success: false, error: `此邀請已${existingRequest.status === 'accepted' ? '接受' : '拒絕'}` }
+      }
+
+      if (existingRequest.friend_id !== user.id) {
+        return { success: false, error: '這不是發給你的邀請' }
+      }
+
+      // 執行更新
       const { data, error } = await supabase
         .from('friends')
         .update({ status: 'accepted' })
         .eq('id', requestId)
-        .eq('friend_id', user.id)  // 確保是發給自己的邀請
-        .eq('status', 'pending')   // 確保是待處理狀態
         .select()
         .maybeSingle()
 
-      if (error) throw error
+      if (error) {
+        console.error('Update error:', error)
+        throw error
+      }
 
       if (!data) {
-        return { success: false, error: '找不到此邀請或已處理' }
+        return { success: false, error: '更新失敗，請重試' }
       }
 
       await get().fetchFriends(user.id)
       return { success: true }
     } catch (error: unknown) {
+      console.error('acceptFriendRequest error:', error)
       const message = error instanceof Error ? error.message : '接受邀請失敗'
       return { success: false, error: message }
     }
