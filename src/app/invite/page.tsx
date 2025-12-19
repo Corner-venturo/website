@@ -10,7 +10,6 @@ import { getSupabaseClient } from '@/lib/supabase';
 
 interface InviterProfile {
   id: string;
-  username: string | null;
   display_name: string | null;
   full_name: string | null;
   avatar_url: string | null;
@@ -55,7 +54,7 @@ function InvitePageContent() {
         // ref 是完整的 user ID
         const { data, error: fetchError } = await supabase
           .from('profiles')
-          .select('id, username, display_name, full_name, avatar_url, bio')
+          .select('id, display_name, full_name, avatar_url, bio')
           .eq('id', ref)
           .maybeSingle();
 
@@ -71,7 +70,12 @@ function InvitePageContent() {
         }
       } catch (err) {
         console.error('Invite page error:', err);
-        const errorMessage = err instanceof Error ? err.message : '未知錯誤';
+        let errorMessage = '未知錯誤';
+        if (err instanceof Error) {
+          errorMessage = err.message;
+        } else if (typeof err === 'object' && err !== null) {
+          errorMessage = JSON.stringify(err);
+        }
         setError(`載入失敗：${errorMessage}`);
       } finally {
         setIsLoading(false);
@@ -112,7 +116,7 @@ function InvitePageContent() {
     router.push('/login');
   };
 
-  const displayName = inviter?.display_name || inviter?.full_name || inviter?.username || '用戶';
+  const displayName = inviter?.display_name || inviter?.full_name || '用戶';
 
   return (
     <div className="min-h-[100dvh] relative bg-[#F0EEE6] font-sans antialiased text-[#5C5C5C]">
@@ -179,10 +183,7 @@ function InvitePageContent() {
             </div>
 
             {/* 邀請者名稱 */}
-            <h2 className="text-2xl font-bold text-gray-800 mb-1">{displayName}</h2>
-            {inviter.username && (
-              <p className="text-sm text-[#cfb9a5] font-medium mb-3">@{inviter.username}</p>
-            )}
+            <h2 className="text-2xl font-bold text-gray-800 mb-3">{displayName}</h2>
 
             {/* 邀請訊息 */}
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 w-full max-w-sm mb-8 text-center border border-white/60 shadow-sm">
