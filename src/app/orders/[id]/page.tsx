@@ -19,9 +19,9 @@ interface ItineraryItem {
   time: string;
   title: string;
   icon: string;
-  description: string;
-  paidBy: string;
-  amount: string;
+  description?: string;
+  paidBy?: string;
+  amount?: string;
   color: "primary" | "blue" | "pink" | "green";
   category?: "景點" | "美食" | "體驗" | "住宿" | "交通" | "購物" | "其他";
   image?: string;
@@ -1475,8 +1475,32 @@ export default function OrderDetailPage() {
               <div className="px-5 pb-5 pt-2 border-t border-gray-100 bg-white">
                 <button
                   onClick={() => {
-                    // 這裡只是 demo，實際需要接後端 API
-                    alert(`已新增行程：${newItem.title}\n時間：${newItem.time}\n類別：${newItem.category}\n說明：${newItem.description}`);
+                    if (!order) return;
+
+                    // 建立新項目
+                    const newItineraryItem: ItineraryItem = {
+                      id: `item-${Date.now()}`,
+                      time: newItem.time,
+                      title: newItem.title,
+                      description: newItem.description,
+                      icon: "place",
+                      color: "primary",
+                      category: newItem.category,
+                    };
+
+                    // 加入當前天數的行程
+                    const updatedSchedule = order.schedule.map((day) => {
+                      if (day.day === selectedDay) {
+                        // 按時間排序插入
+                        const newItems = [...day.items, newItineraryItem].sort((a, b) =>
+                          a.time.localeCompare(b.time)
+                        );
+                        return { ...day, items: newItems };
+                      }
+                      return day;
+                    });
+
+                    setOrder({ ...order, schedule: updatedSchedule });
                     setNewItem({ time: "", title: "", description: "", category: "景點" });
                     setShowAddItemModal(false);
                   }}

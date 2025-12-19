@@ -52,21 +52,25 @@ function InvitePageContent() {
       const supabase = getSupabaseClient();
 
       try {
-        // ref 是 user ID 的前 8 個字元，使用 like 查詢
+        // ref 是 user ID 的前 8 個字元，使用 filter 查詢 (需要將 UUID 轉為 text)
         const { data, error: fetchError } = await supabase
           .from('profiles')
           .select('id, username, display_name, full_name, avatar_url, bio')
-          .like('id', `${ref}%`)
+          .filter('id::text', 'ilike', `${ref}%`)
           .maybeSingle();
 
-        if (fetchError) throw fetchError;
+        if (fetchError) {
+          console.error('Fetch error:', fetchError);
+          throw fetchError;
+        }
 
         if (!data) {
           setError('找不到此用戶');
         } else {
           setInviter(data);
         }
-      } catch {
+      } catch (err) {
+        console.error('Invite page error:', err);
         setError('載入失敗，請稍後再試');
       } finally {
         setIsLoading(false);
