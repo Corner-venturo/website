@@ -6,9 +6,9 @@ const contributors = ['我', 'Alice', 'Ben', 'Coco'];
 
 export default function SplitRecordPage() {
   return (
-    <main className="bg-[#F5F4F0] text-gray-900 min-h-screen font-sans relative overflow-hidden">
+    <main className="bg-[#F0EEE6] text-gray-900 min-h-screen font-sans relative overflow-hidden">
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-[#F5F4F0]" />
+        <div className="absolute inset-0 bg-[#F0EEE6]" />
         <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-[#A5BCCF]/20 rounded-full blur-[80px]" />
         <div className="absolute bottom-[10%] left-[-10%] w-80 h-80 bg-[#CFA5A5]/20 rounded-full blur-[80px]" />
         <div className="absolute top-[30%] left-[40%] w-64 h-64 bg-[#Cfb9a5]/15 rounded-full blur-[60px]" />

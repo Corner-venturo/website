@@ -103,7 +103,7 @@ export default function FAQPage() {
       </div>
 
       {/* Header - absolute 定位 */}
-      <header className="absolute top-0 left-0 right-0 z-20 px-6 pt-4 pb-4 flex items-center justify-between">
+      <header className="absolute top-0 left-0 right-0 z-20 px-5 pt-4 pb-4 flex items-center justify-between">
         <button
           onClick={() => router.back()}
           className="bg-white/70 backdrop-blur-xl border border-white/60 w-10 h-10 flex items-center justify-center rounded-full shadow-sm text-gray-600 hover:text-[#Cfb9a5] transition-colors"

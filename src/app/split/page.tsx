@@ -16,7 +16,7 @@ export default function SplitPage() {
   );
 
   return (
-    <div className="h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-[#F5F4F0] font-sans">
+    <div className="h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-[#F0EEE6] font-sans">
       {/* 背景 */}
       <div className="absolute inset-0 -z-10 pointer-events-none">
         <div className="absolute -top-[5%] -left-[15%] w-[500px] h-[500px] bg-[#D8D0C9] opacity-40 blur-[90px] rounded-full" />

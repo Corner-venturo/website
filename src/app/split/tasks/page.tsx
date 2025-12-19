@@ -193,7 +193,7 @@ export default function TasksPage() {
   const progress = (currentPoints / targetPoints) * 100;
 
   return (
-    <div className="bg-[#F5F4F0] min-h-screen font-sans">
+    <div className="bg-[#F0EEE6] min-h-screen font-sans">
       {/* 背景 */}
       <div className="fixed inset-0 -z-10 pointer-events-none">
         <div className="absolute -top-[5%] -left-[15%] w-[500px] h-[500px] bg-[#D8D0C9] opacity-40 blur-[90px] rounded-full" />

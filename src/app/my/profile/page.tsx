@@ -80,7 +80,7 @@ export default function ProfileEditPage() {
   };
 
   return (
-    <div className="bg-[#F5F4F0] font-sans antialiased text-[#5C5C5C] min-h-screen flex flex-col">
+    <div className="bg-[#F0EEE6] font-sans antialiased text-[#5C5C5C] min-h-screen flex flex-col">
       {/* 背景光暈 */}
       <div className="fixed inset-0 -z-10 pointer-events-none">
         <div className="absolute -top-[5%] -left-[15%] w-[500px] h-[500px] bg-[#D8D0C9] opacity-40 blur-[90px] rounded-full" />
@@ -88,7 +88,7 @@ export default function ProfileEditPage() {
       </div>
 
       {/* Header */}
-      <header className="px-6 pt-12 pb-4 flex items-center justify-between">
+      <header className="px-5 pt-4 pb-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link
             href="/my/settings"
@@ -115,7 +115,7 @@ export default function ProfileEditPage() {
       )}
 
       {/* Profile Form */}
-      <main className="flex-1 px-6 pb-8 overflow-y-auto">
+      <main className="flex-1 px-5 pb-8 overflow-y-auto">
         {/* Avatar Section */}
         <div className="flex flex-col items-center py-6">
           <div className="relative">

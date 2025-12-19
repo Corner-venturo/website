@@ -15,7 +15,7 @@ const legalLinks = [
 
 export default function AboutPage() {
   return (
-    <div className="bg-[#F5F4F0] font-sans antialiased text-[#5C5C5C] min-h-screen flex flex-col">
+    <div className="bg-[#F0EEE6] font-sans antialiased text-[#5C5C5C] min-h-screen flex flex-col">
       {/* 背景光暈 */}
       <div className="fixed inset-0 -z-10 pointer-events-none">
         <div className="absolute -top-[5%] -left-[15%] w-[500px] h-[500px] bg-[#D8D0C9] opacity-40 blur-[90px] rounded-full" />
@@ -23,7 +23,7 @@ export default function AboutPage() {
       </div>
 
       {/* Header */}
-      <header className="px-6 pt-12 pb-4 flex items-center gap-4">
+      <header className="px-5 pt-4 pb-4 flex items-center gap-4">
         <Link
           href="/my/settings"
           className="w-10 h-10 flex items-center justify-center rounded-full bg-white/60 backdrop-blur-xl border border-white/50 shadow-sm text-[#5C5C5C] hover:text-[#94A3B8] transition-colors"
@@ -34,7 +34,7 @@ export default function AboutPage() {
       </header>
 
       {/* About Content */}
-      <main className="flex-1 px-6 pb-8 overflow-y-auto">
+      <main className="flex-1 px-5 pb-8 overflow-y-auto">
         {/* Logo & Brand */}
         <div className="flex flex-col items-center py-8">
           <div className="w-20 h-20 rounded-2xl bg-[#D6CDC8] text-white font-bold text-3xl flex items-center justify-center shadow-lg mb-4">
