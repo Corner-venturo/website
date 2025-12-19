@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import MobileNav from "@/components/MobileNav";
 
 export default function ContactPage() {
+  const router = useRouter();
   return (
     <div className="h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-[#F0EEE6] font-sans antialiased text-gray-900">
       {/* 背景光暈 */}
@@ -15,12 +17,12 @@ export default function ContactPage() {
 
       {/* Header - absolute 定位 */}
       <header className="absolute top-0 left-0 right-0 z-20 px-6 pt-4 pb-4 flex items-center justify-between">
-        <Link
-          href="/my"
+        <button
+          onClick={() => router.back()}
           className="bg-white/70 backdrop-blur-xl border border-white/60 w-10 h-10 flex items-center justify-center rounded-full shadow-sm text-gray-600 hover:text-[#Cfb9a5] transition-colors"
         >
           <span className="material-icons-round text-xl">arrow_back</span>
-        </Link>
+        </button>
         <h1 className="text-lg font-bold text-gray-800 tracking-tight">聯絡客服</h1>
         <div className="w-10" />
       </header>

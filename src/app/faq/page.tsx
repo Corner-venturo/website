@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import MobileNav from "@/components/MobileNav";
 
 interface FAQItem {
@@ -75,6 +76,7 @@ const faqItems: FAQItem[] = [
 const categories = ["全部", "行程相關", "住宿與餐食", "簽證與保險", "其他"];
 
 export default function FAQPage() {
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState("全部");
   const [searchQuery, setSearchQuery] = useState("");
   const [openItems, setOpenItems] = useState<string[]>(["1"]);
@@ -102,12 +104,12 @@ export default function FAQPage() {
 
       {/* Header - absolute 定位 */}
       <header className="absolute top-0 left-0 right-0 z-20 px-6 pt-4 pb-4 flex items-center justify-between">
-        <Link
-          href="/my"
+        <button
+          onClick={() => router.back()}
           className="bg-white/70 backdrop-blur-xl border border-white/60 w-10 h-10 flex items-center justify-center rounded-full shadow-sm text-gray-600 hover:text-[#Cfb9a5] transition-colors"
         >
           <span className="material-icons-round text-xl">arrow_back</span>
-        </Link>
+        </button>
         <h1 className="text-lg font-bold text-gray-800 tracking-tight">常見問題</h1>
         <Link
           href="/contact"

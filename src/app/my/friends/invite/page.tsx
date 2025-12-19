@@ -76,7 +76,7 @@ export default function InvitePage() {
     const username = profile?.username;
     const inviteUrl = username
       ? `${window.location.origin}/invite/${username}`
-      : `${window.location.origin}/invite?ref=${user?.id?.slice(0, 8)}`;
+      : `${window.location.origin}/invite?ref=${user?.id}`;
 
     if (navigator.share) {
       try {

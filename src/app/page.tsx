@@ -75,9 +75,11 @@ export default function HomePage() {
   const [greetingText, setGreetingText] = useState('');
   const [showMessage, setShowMessage] = useState(false);
 
-  // 取得用戶名稱和頭像
-  const userName = profile?.display_name || profile?.full_name || user?.user_metadata?.name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || '旅人';
-  const avatarUrl = getDisplayAvatar(profile, user?.user_metadata);
+  // 取得用戶名稱和頭像 - 只有登入時才使用 profile 數據
+  const userName = user
+    ? (profile?.display_name || profile?.full_name || user?.user_metadata?.name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || '旅人')
+    : '旅人';
+  const avatarUrl = user ? getDisplayAvatar(profile, user?.user_metadata) : null;
 
   useEffect(() => {
     setDateString(formatDate());
