@@ -43,6 +43,8 @@ interface FriendsState {
   rejectFriendRequest: (requestId: string) => Promise<{ success: boolean; error?: string }>
   removeFriend: (friendshipId: string) => Promise<{ success: boolean; error?: string }>
   searchUsers: (query: string, currentUserId: string) => Promise<{ id: string; display_name: string | null; avatar_url: string | null }[]>
+  // 透過邀請連結直接成為好友
+  acceptInviteLink: (userId: string, inviterId: string) => Promise<{ success: boolean; error?: string }>
 }
 
 export const useFriendsStore = create<FriendsState>((set, get) => ({
@@ -275,6 +277,54 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
       return data || []
     } catch {
       return []
+    }
+  },
+
+  // 透過邀請連結直接成為好友（不需要對方確認）
+  acceptInviteLink: async (userId: string, inviterId: string) => {
+    const supabase = getSupabaseClient()
+
+    try {
+      // 檢查是否已經有好友關係
+      const { data: existing } = await supabase
+        .from('friends')
+        .select('id, status, user_id, friend_id')
+        .or(`and(user_id.eq.${userId},friend_id.eq.${inviterId}),and(user_id.eq.${inviterId},friend_id.eq.${userId})`)
+        .maybeSingle()
+
+      if (existing) {
+        if (existing.status === 'accepted') {
+          return { success: true, error: '已經是好友了' }
+        }
+        // 如果有 pending 的邀請，直接更新為 accepted
+        if (existing.status === 'pending') {
+          const { error: updateError } = await supabase
+            .from('friends')
+            .update({ status: 'accepted' })
+            .eq('id', existing.id)
+
+          if (updateError) throw updateError
+          await get().fetchFriends(userId)
+          return { success: true }
+        }
+      }
+
+      // 沒有現有關係，直接建立 accepted 的好友關係
+      const { error } = await supabase
+        .from('friends')
+        .insert({
+          user_id: inviterId,  // 邀請者
+          friend_id: userId,   // 接受邀請的人
+          status: 'accepted'
+        })
+
+      if (error) throw error
+
+      await get().fetchFriends(userId)
+      return { success: true }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '加入好友失敗'
+      return { success: false, error: message }
     }
   }
 }))

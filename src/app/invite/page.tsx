@@ -22,7 +22,7 @@ function InvitePageContent() {
   const ref = searchParams.get('ref');
 
   const { user, initialize, isInitialized } = useAuthStore();
-  const { sendFriendRequest } = useFriendsStore();
+  const { acceptInviteLink } = useFriendsStore();
 
   const [inviter, setInviter] = useState<InviterProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,6 +35,32 @@ function InvitePageContent() {
       initialize();
     }
   }, [initialize, isInitialized]);
+
+  // 登入後自動成為好友
+  useEffect(() => {
+    const processPendingRequest = async () => {
+      const pendingFriendId = localStorage.getItem('pending_friend_request');
+      if (pendingFriendId && user?.id && inviter?.id && pendingFriendId === inviter.id) {
+        // 清除 localStorage
+        localStorage.removeItem('pending_friend_request');
+        localStorage.removeItem('redirect_after_login');
+
+        // 自動成為好友
+        if (user.id !== inviter.id) {
+          setRequestStatus('sending');
+          const result = await acceptInviteLink(user.id, inviter.id);
+          if (result.success) {
+            setRequestStatus('sent');
+          } else {
+            setRequestError(result.error || '加入失敗');
+            setRequestStatus('error');
+          }
+        }
+      }
+    };
+
+    processPendingRequest();
+  }, [user?.id, inviter?.id, acceptInviteLink]);
 
   // 根據 ref 查詢邀請者的 profile
   useEffect(() => {
@@ -85,7 +111,7 @@ function InvitePageContent() {
     fetchInviter();
   }, [ref]);
 
-  // 發送好友邀請
+  // 成為好友
   const handleAddFriend = async () => {
     if (!user?.id || !inviter?.id) return;
 
@@ -99,19 +125,22 @@ function InvitePageContent() {
     setRequestStatus('sending');
     setRequestError(null);
 
-    const result = await sendFriendRequest(user.id, inviter.id);
+    const result = await acceptInviteLink(user.id, inviter.id);
 
     if (result.success) {
       setRequestStatus('sent');
     } else {
-      setRequestError(result.error || '發送失敗');
+      setRequestError(result.error || '加入失敗');
       setRequestStatus('error');
     }
   };
 
   // 前往登入
   const handleLogin = () => {
-    // 將當前頁面存入 localStorage，登入後可以跳轉回來
+    // 儲存待處理的好友邀請動作
+    if (inviter?.id) {
+      localStorage.setItem('pending_friend_request', inviter.id);
+    }
     localStorage.setItem('redirect_after_login', `/invite?ref=${ref}`);
     router.push('/login');
   };
@@ -209,8 +238,8 @@ function InvitePageContent() {
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#A8BFA6]/20 flex items-center justify-center">
                       <span className="material-icons-round text-3xl text-[#A8BFA6]">check_circle</span>
                     </div>
-                    <p className="text-lg font-bold text-gray-800 mb-2">已發送邀請！</p>
-                    <p className="text-sm text-[#949494] mb-6">等待 {displayName} 確認</p>
+                    <p className="text-lg font-bold text-gray-800 mb-2">成功成為好友！</p>
+                    <p className="text-sm text-[#949494] mb-6">你和 {displayName} 現在是旅伴了</p>
                     <Link
                       href="/my/friends"
                       className="inline-block px-6 py-3 rounded-full bg-[#cfb9a5] text-white font-medium hover:bg-[#b09b88] transition-colors"
