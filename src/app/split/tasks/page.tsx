@@ -62,17 +62,6 @@ const exploreTasks = [
     status: "todo",
     href: "/explore",
   },
-  {
-    id: "first-login",
-    icon: "check_circle",
-    iconBg: "bg-gray-100",
-    iconColor: "text-gray-400",
-    title: "首次登入應用程式",
-    description: "歡迎來到 Venturo",
-    points: 10,
-    status: "completed",
-    href: null,
-  },
 ];
 
 const advancedTasks = [
