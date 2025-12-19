@@ -105,7 +105,7 @@ export default function InvitePage() {
   };
 
   return (
-    <div className="bg-[#F0EEE6] font-sans antialiased text-[#5C5C5C] min-h-screen flex flex-col overflow-hidden">
+    <div className="h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-[#F0EEE6] font-sans antialiased text-[#5C5C5C]">
       {/* Toast */}
       {showToast && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 bg-black/80 text-white text-sm rounded-full backdrop-blur-sm">
@@ -114,27 +114,27 @@ export default function InvitePage() {
       )}
 
       {/* 背景 */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
+      <div className="absolute inset-0 -z-10 pointer-events-none">
         <div className="absolute -top-[10%] -left-[10%] w-96 h-96 bg-[#A5BCCF]/20 rounded-full blur-3xl" />
         <div className="absolute bottom-[20%] -right-[10%] w-80 h-80 bg-[#Cfb9a5]/20 rounded-full blur-3xl" />
       </div>
 
-      {/* Header */}
-      <header className="relative z-50 px-6 pt-12 pb-4 flex items-center justify-between">
+      {/* Header - absolute 定位 */}
+      <header className="absolute top-0 left-0 right-0 z-20 px-6 pt-4 pb-4 flex items-center justify-between">
         <Link
           href="/my/friends"
-          className="bg-white/70 backdrop-blur-xl border border-white/60 p-2.5 rounded-full shadow-sm text-gray-600 hover:text-[#Cfb9a5] transition-colors"
+          className="w-10 h-10 bg-white/70 backdrop-blur-xl border border-white/60 rounded-full shadow-sm text-gray-600 hover:text-[#Cfb9a5] transition-colors flex items-center justify-center"
         >
           <span className="material-icons-round text-xl">close</span>
         </Link>
-        <h1 className="text-lg font-bold text-gray-800 tracking-wide absolute left-1/2 -translate-x-1/2">
+        <h1 className="text-lg font-bold text-gray-800 tracking-wide">
           邀請夥伴
         </h1>
         <div className="w-10" />
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 w-full overflow-y-auto pb-36 px-6 pt-2">
+      <main className="h-full overflow-y-auto pt-16 pb-36 px-6">
         {/* 搜尋 APP 用戶 */}
         <section className="mb-6">
           <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">

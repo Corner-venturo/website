@@ -843,6 +843,65 @@ export default function OrderDetailPage() {
   // 取得當前用戶 ID (模擬為 "1")
   const currentUserId = "1";
 
+  // 刪除行程項目
+  const handleDeleteItem = (item: ItineraryItem) => {
+    if (!confirm(`確定要刪除「${item.title}」嗎？`)) {
+      return;
+    }
+
+    // 更新 dbOrder state（如果是資料庫資料）
+    if (dbOrder) {
+      const updatedSchedule = dbOrder.schedule.map((day) => ({
+        ...day,
+        items: day.items.filter((i) => i.id !== item.id),
+      }));
+      setDbOrder({ ...dbOrder, schedule: updatedSchedule });
+    }
+
+    // 關閉選單
+    setShowItemMenu(false);
+    setSelectedItem(null);
+
+    // TODO: 如果需要持久化，這裡應該呼叫 API 更新資料庫
+  };
+
+  // 發起出席詢問
+  const handleInitiateInquiry = (item: ItineraryItem) => {
+    // 更新 dbOrder state（如果是資料庫資料）
+    if (dbOrder) {
+      const updatedSchedule = dbOrder.schedule.map((day) => ({
+        ...day,
+        items: day.items.map((i) =>
+          i.id === item.id
+            ? {
+                ...i,
+                inquiryBy: currentUserId,
+                attendanceList: {
+                  [currentUserId]: "attending" as const, // 發起者預設出席
+                },
+              }
+            : i
+        ),
+      }));
+      setDbOrder({ ...dbOrder, schedule: updatedSchedule });
+    }
+
+    // 更新 selectedItem 以便 UI 立即反應
+    const updatedItem = {
+      ...item,
+      inquiryBy: currentUserId,
+      attendanceList: {
+        [currentUserId]: "attending" as const,
+      },
+    };
+    setSelectedItem(updatedItem);
+
+    // 開啟出席 modal 顯示結果
+    setShowAttendanceModal(true);
+
+    // TODO: 如果需要持久化，這裡應該呼叫 API 更新資料庫
+  };
+
   return (
     <div className="h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-[#F7F5F2] font-sans antialiased text-gray-900">
       {/* 背景紋理 */}
@@ -874,7 +933,7 @@ export default function OrderDetailPage() {
       </header>
 
       {/* 主要內容 */}
-      <main className="h-full overflow-y-auto pt-16 pb-28">
+      <main className="h-full overflow-y-auto pt-16 pb-36">
         {/* Day 選擇器 - 膠囊式 */}
         <div className="sticky top-0 z-40 bg-[#F7F5F2]/98 backdrop-blur pt-3 pb-3 px-4">
           <div className="bg-white/60 backdrop-blur-xl rounded-full p-1 flex gap-1 overflow-x-auto hide-scrollbar border border-white/50 shadow-sm">
@@ -947,9 +1006,9 @@ export default function OrderDetailPage() {
             return (
               <div key={item.id} className="flex items-start gap-3 group">
                 {/* 時間軸：圓點 + 連接線 */}
-                <div className="flex flex-col items-center gap-1 pt-3">
-                  <div className={`w-3 h-3 rounded-full ${colors.dot} ring-4 ring-[#F7F5F2] shadow-sm z-10`} />
-                  {!isLast && <div className="w-0.5 flex-1 bg-gray-200 min-h-[3rem]" />}
+                <div className="flex flex-col items-center pt-3">
+                  <div className={`w-3 h-3 rounded-full ${colors.dot} ring-4 ring-[#F7F5F2] shadow-sm z-10 shrink-0`} />
+                  {!isLast && <div className="w-0.5 flex-1 bg-gray-200 mt-1" />}
                 </div>
 
                 {/* 卡片內容 */}
@@ -1030,9 +1089,9 @@ export default function OrderDetailPage() {
                   {/* 右上角選單按鈕 */}
                   <button
                     onClick={() => handleOpenItemMenu(item)}
-                    className="absolute top-2 right-2 bg-gray-50 rounded-full p-1.5 shadow-sm text-gray-400 hover:text-[#Cfb9a5] transition-colors"
+                    className="absolute top-2 right-2 w-7 h-7 bg-gray-50 rounded-full shadow-sm text-gray-400 hover:text-[#Cfb9a5] transition-colors flex items-center justify-center"
                   >
-                    <span className="material-icons-round text-[16px]">more_vert</span>
+                    <span className="material-icons-round text-[16px]">more_horiz</span>
                   </button>
                 </div>
               </div>
@@ -1234,7 +1293,7 @@ export default function OrderDetailPage() {
                   <button
                     onClick={() => {
                       setShowItemMenu(false);
-                      // TODO: 實作發起詢問功能
+                      handleInitiateInquiry(selectedItem);
                     }}
                     className="w-full flex items-center gap-4 p-4 rounded-2xl bg-[#CFA5A5]/10 hover:bg-[#CFA5A5]/20 transition-colors active:scale-[0.98]"
                   >
@@ -1269,7 +1328,17 @@ export default function OrderDetailPage() {
 
                 {/* 編輯行程 */}
                 <button
-                  onClick={() => setShowItemMenu(false)}
+                  onClick={() => {
+                    setShowItemMenu(false);
+                    // 預填表單資料
+                    setNewItem({
+                      time: selectedItem.time,
+                      title: selectedItem.title,
+                      description: selectedItem.description || "",
+                      category: selectedItem.category || "其他",
+                    });
+                    setShowAddItemModal(true);
+                  }}
                   className="w-full flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors active:scale-[0.98]"
                 >
                   <div className="w-12 h-12 rounded-xl bg-[#A5BCCF]/15 flex items-center justify-center">
@@ -1283,14 +1352,14 @@ export default function OrderDetailPage() {
 
                 {/* 刪除行程 */}
                 <button
-                  onClick={() => setShowItemMenu(false)}
+                  onClick={() => handleDeleteItem(selectedItem)}
                   className="w-full flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors active:scale-[0.98]"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
-                    <span className="material-icons-round text-gray-400 text-2xl">delete</span>
+                  <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center">
+                    <span className="material-icons-round text-red-400 text-2xl">delete</span>
                   </div>
                   <div className="flex-1 text-left">
-                    <div className="font-bold text-gray-600">刪除行程</div>
+                    <div className="font-bold text-red-500">刪除行程</div>
                     <div className="text-xs text-gray-500">移除此行程項目</div>
                   </div>
                 </button>
