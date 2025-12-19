@@ -9,20 +9,20 @@ export const demoAchievements: Achievement[] = [
 
 export const demoQuickActions: QuickAction[] = [
   {
-    title: "進行中訂單",
-    subtitle: "2 個即將出發",
-    icon: "confirmation_number",
-    color: "text-[#94A3B8]",
-    accent: "bg-[#94A3B8]/10",
-    href: "/orders",
+    title: "分帳管理",
+    subtitle: "管理旅途花費",
+    icon: "account_balance_wallet",
+    color: "text-[#A8BFA6]",
+    accent: "bg-[#A8BFA6]/10",
+    href: "/split",
   },
   {
-    title: "歷史訂單",
-    subtitle: "查看過往回憶",
-    icon: "history_edu",
-    color: "text-[#949494]",
-    accent: "bg-[#E8E2DD]",
-    href: "/orders",
+    title: "新手任務",
+    subtitle: "完成任務領點數",
+    icon: "emoji_events",
+    color: "text-[#Cfb9a5]",
+    accent: "bg-[#Cfb9a5]/10",
+    href: "/split/tasks",
   },
 ];
 
@@ -35,19 +35,19 @@ export const demoFriends: string[] = [
 
 export const realQuickActions: QuickAction[] = [
   {
-    title: "進行中訂單",
-    subtitle: "暫無訂單",
-    icon: "confirmation_number",
-    color: "text-[#94A3B8]",
-    accent: "bg-[#94A3B8]/10",
-    href: "/orders",
+    title: "分帳管理",
+    subtitle: "管理旅途花費",
+    icon: "account_balance_wallet",
+    color: "text-[#A8BFA6]",
+    accent: "bg-[#A8BFA6]/10",
+    href: "/split",
   },
   {
-    title: "歷史訂單",
-    subtitle: "查看過往回憶",
-    icon: "history_edu",
-    color: "text-[#949494]",
-    accent: "bg-[#E8E2DD]",
-    href: "/orders",
+    title: "新手任務",
+    subtitle: "完成任務領點數",
+    icon: "emoji_events",
+    color: "text-[#Cfb9a5]",
+    accent: "bg-[#Cfb9a5]/10",
+    href: "/split/tasks",
   },
 ];
