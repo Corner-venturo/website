@@ -148,6 +148,20 @@ export const useGroupStore = create<GroupState>((set, get) => ({
     set({ isLoading: true, error: null })
 
     try {
+      // 檢查是否可以創建更多活動
+      const { data: canCreate, error: checkError } = await supabase
+        .rpc('can_create_group', { user_id: userId })
+
+      if (checkError) {
+        console.error('Check create group error:', checkError)
+      } else if (canCreate === false) {
+        set({ isLoading: false })
+        return {
+          success: false,
+          error: '你已有進行中的揪團活動，需等活動結束才能開新的揪團（升級會員可開更多）'
+        }
+      }
+
       // 建立活動
       const { data: group, error: groupError } = await supabase
         .from('groups')
