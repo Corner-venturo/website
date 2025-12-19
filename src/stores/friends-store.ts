@@ -343,14 +343,17 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
         if (existing.status === 'accepted') {
           return { success: true, error: '已經是好友了' }
         }
-        // 如果有 pending 的邀請，直接更新為 accepted
-        if (existing.status === 'pending') {
+        // 如果有 pending 或 rejected 的記錄，更新為 accepted
+        if (existing.status === 'pending' || existing.status === 'rejected') {
           const { error: updateError } = await supabase
             .from('friends')
             .update({ status: 'accepted' })
             .eq('id', existing.id)
 
-          if (updateError) throw updateError
+          if (updateError) {
+            console.error('Update existing friendship error:', updateError)
+            throw updateError
+          }
           await get().fetchFriends(userId)
           return { success: true }
         }
@@ -371,7 +374,13 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
       await get().fetchFriends(userId)
       return { success: true }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : '加入好友失敗'
+      console.error('acceptInviteLink error:', error)
+      let message = '加入好友失敗'
+      if (error instanceof Error) {
+        message = error.message
+      } else if (typeof error === 'object' && error !== null && 'message' in error) {
+        message = (error as { message: string }).message
+      }
       return { success: false, error: message }
     }
   }
