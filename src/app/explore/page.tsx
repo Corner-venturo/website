@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 import MobileNav from '@/components/MobileNav';
 import { useAuthStore } from '@/stores/auth-store';
 import { useGroupStore, Group } from '@/stores/group-store';
+import TripCard, { DisplayTrip, getCategoryColor, getCategoryTextColor, formatDate } from './TripCard';
 
 // 動態載入地圖（避免 SSR 問題）
 const MapComponent = dynamic(() => import('./MapComponent'), {
@@ -29,7 +30,7 @@ const categories = [
 ];
 
 // Mock 揪團資料 - 集中在台北車站附近（預設位置 25.033, 121.5654 的 2 公里內）
-const mockTrips = [
+const mockTrips: DisplayTrip[] = [
   {
     id: '1',
     title: '週末咖啡探險',
@@ -102,29 +103,6 @@ const mockTrips = [
   },
 ];
 
-// 類別顏色
-const getCategoryColor = (category: string) => {
-  switch (category) {
-    case 'food': return 'bg-[#E8C4C4]';
-    case 'photo': return 'bg-[#A5BCCD]';
-    case 'outdoor': return 'bg-[#A8BFA6]';
-    case 'music': return 'bg-[#C4B8E0]';
-    case 'coffee': return 'bg-[#D4C4A8]';
-    default: return 'bg-[#CFB9A5]';
-  }
-};
-
-const getCategoryTextColor = (category: string) => {
-  switch (category) {
-    case 'food': return 'text-[#8B5A5A]';
-    case 'photo': return 'text-[#4A6B8A]';
-    case 'outdoor': return 'text-[#4A6B4A]';
-    case 'music': return 'text-[#6B4A8A]';
-    case 'coffee': return 'text-[#6B5A4A]';
-    default: return 'text-[#8B7355]';
-  }
-};
-
 // 計算兩點之間的距離（公里）
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
@@ -136,23 +114,6 @@ function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
-}
-
-// 將 Group 轉換為顯示用的格式
-interface DisplayTrip {
-  id: string;
-  title: string;
-  category: string;
-  event_date: string;
-  location: string;
-  latitude: number;
-  longitude: number;
-  member_count: number;
-  max_members: number;
-  organizer_name: string;
-  organizer_avatar: string;
-  image: string;
-  isMyGroup?: boolean;
 }
 
 function groupToDisplayTrip(group: Group): DisplayTrip {
@@ -175,13 +136,14 @@ function groupToDisplayTrip(group: Group): DisplayTrip {
 
 export default function ExplorePage() {
   const { user, initialize, isInitialized } = useAuthStore();
-  const { groups, myGroups, fetchGroups, fetchMyGroups, deleteGroup, updateGroup, isLoading: isLoadingGroups } = useGroupStore();
+  const { groups, myGroups, fetchGroups, fetchMyGroups, deleteGroup, updateGroup } = useGroupStore();
   const [activeCategory, setActiveCategory] = useState('all');
   const [selectedTrip, setSelectedTrip] = useState<DisplayTrip | null>(null);
-  const [userLocation, setUserLocation] = useState<[number, number]>([25.033, 121.5654]); // 預設台北
-  const [searchCenter, setSearchCenter] = useState<[number, number]>([25.033, 121.5654]); // 搜尋中心
+  const [userLocation, setUserLocation] = useState<[number, number]>([25.033, 121.5654]);
+  const [searchCenter, setSearchCenter] = useState<[number, number]>([25.033, 121.5654]);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // 登入狀態
   const isLoggedIn = !!user;
 
   // 初始化 auth
@@ -214,40 +176,31 @@ export default function ExplorePage() {
     }
   }, []);
 
-  // 回到目前位置
   const handleBackToMyLocation = useCallback(() => {
     setSearchCenter(userLocation);
   }, [userLocation]);
 
-  // 處理地圖中心變化（用 useCallback 防止不必要的重渲染）
   const handleCenterChange = useCallback((center: [number, number]) => {
     setSearchCenter(center);
   }, []);
 
-  // 篩選揪團 - 2公里內 + 類別（用 useMemo 優化）
-  // 登入後顯示真實資料，未登入顯示假資料
+  // 篩選揪團
   const filteredTrips = useMemo(() => {
-    // 登入後：顯示真實資料
     if (isLoggedIn) {
-      // 先處理我的揪團（優先顯示）
       const myGroupsDisplay = myGroups.map(g => ({
         ...groupToDisplayTrip(g),
         isMyGroup: true,
       }));
 
-      // 再處理其他揪團（排除已經在我的揪團中的）
       const myGroupIds = new Set(myGroups.map(g => g.id));
       const otherGroupsDisplay = groups
         .filter(g => !myGroupIds.has(g.id))
         .map(groupToDisplayTrip);
 
-      // 合併：我的揪團在前，其他揪團在後
       const allGroups = [...myGroupsDisplay, ...otherGroupsDisplay];
 
-      // 根據距離和類別篩選
       return allGroups
         .filter((trip) => {
-          // 我的揪團不受距離限制
           if (trip.isMyGroup) return true;
           const distance = getDistanceFromLatLonInKm(
             searchCenter[0],
@@ -255,12 +208,11 @@ export default function ExplorePage() {
             trip.latitude,
             trip.longitude
           );
-          return distance <= 10; // 10 公里內
+          return distance <= 10;
         })
         .filter((trip) => activeCategory === 'all' || trip.category === activeCategory);
     }
 
-    // 未登入：顯示假資料作為展示
     return mockTrips
       .filter((trip) => {
         const distance = getDistanceFromLatLonInKm(
@@ -269,24 +221,10 @@ export default function ExplorePage() {
           trip.latitude,
           trip.longitude
         );
-        return distance <= 2; // 2 公里內
+        return distance <= 2;
       })
       .filter((trip) => activeCategory === 'all' || trip.category === activeCategory);
   }, [searchCenter, activeCategory, isLoggedIn, groups, myGroups]);
-
-  // 格式化日期
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffTime = date.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return '今天';
-    if (diffDays === 1) return '明天';
-    if (diffDays > 0 && diffDays <= 7) return `${diffDays} 天後`;
-
-    return `${date.getMonth() + 1}/${date.getDate()}`;
-  };
 
   // 預設選中第一個
   useEffect(() => {
@@ -295,10 +233,6 @@ export default function ExplorePage() {
     }
   }, [filteredTrips, selectedTrip]);
 
-  // 刪除活動確認
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-
   const handleDeleteGroup = async (groupId: string) => {
     setIsDeleting(true);
     const result = await deleteGroup(groupId);
@@ -306,7 +240,6 @@ export default function ExplorePage() {
     setDeleteConfirm(null);
     if (result.success) {
       setSelectedTrip(null);
-      // 重新載入資料
       if (user) {
         fetchMyGroups(user.id);
         fetchGroups();
@@ -316,101 +249,48 @@ export default function ExplorePage() {
 
   const handleCloseGroup = async (groupId: string) => {
     const result = await updateGroup(groupId, { status: 'completed' });
-    if (result.success) {
-      // 重新載入資料
-      if (user) {
-        fetchMyGroups(user.id);
-        fetchGroups();
-      }
+    if (result.success && user) {
+      fetchMyGroups(user.id);
+      fetchGroups();
     }
   };
 
-  // 揪團卡片組件
-  const TripCard = ({ trip, isSelected, onClick }: { trip: DisplayTrip; isSelected: boolean; onClick: () => void }) => (
-    <div
-      onClick={onClick}
-      className={`p-3 backdrop-blur-xl rounded-2xl shadow-lg border flex gap-3 cursor-pointer transition-all relative ${
-        isSelected
-          ? 'bg-white/95 border-white/80 ring-2 ring-[#94A3B8]/50 shadow-xl'
-          : 'bg-white/80 border-white/50 opacity-80 hover:opacity-100'
-      } ${trip.isMyGroup ? 'ring-2 ring-[#Cfb9a5]/50' : ''}`}
+  const handleCategoryChange = (categoryId: string) => {
+    setActiveCategory(categoryId);
+    setSelectedTrip(null);
+  };
+
+  // 類別篩選按鈕
+  const CategoryButton = ({ cat }: { cat: typeof categories[0] }) => (
+    <button
+      onClick={() => handleCategoryChange(cat.id)}
+      className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all ${
+        activeCategory === cat.id
+          ? 'bg-[#94A3B8] text-white shadow-lg shadow-[#94A3B8]/30'
+          : 'bg-white/60 text-[#5C5C5C] border border-white/50 hover:bg-white/80'
+      }`}
     >
-      {/* 我的活動管理按鈕 */}
-      {trip.isMyGroup && (
-        <div className="absolute -top-2 right-6 flex gap-1 z-10">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleCloseGroup(trip.id);
-            }}
-            className="bg-green-500 hover:bg-green-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-0.5"
-            title="結束揪團"
-          >
-            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-            </svg>
-            結束
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setDeleteConfirm(trip.id);
-            }}
-            className="bg-red-400 hover:bg-red-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-0.5"
-            title="刪除揪團"
-          >
-            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
-            </svg>
-            刪除
-          </button>
-        </div>
-      )}
-      {/* 我的活動標籤 */}
-      {trip.isMyGroup && (
-        <div className="absolute -top-2 -right-2 bg-[#Cfb9a5] text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm z-10">
-          我的活動
-        </div>
-      )}
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+        <path d={cat.icon} />
+      </svg>
+      {cat.label}
+    </button>
+  );
 
-      {/* 圖片 */}
-      <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 relative">
-        <Image src={trip.image} alt={trip.title} fill className="object-cover" />
-        <div className="absolute top-1 right-1 bg-black/50 rounded-md px-1.5 py-0.5 text-[10px] text-white flex items-center gap-0.5">
-          <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z" />
-          </svg>
-          {trip.member_count}/{trip.max_members}
-        </div>
-      </div>
-
-      {/* 內容 */}
-      <div className="flex flex-col justify-center flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 mb-1">
-          <span className={`w-1.5 h-1.5 rounded-full ${getCategoryColor(trip.category)}`} />
-          <span className={`text-[10px] font-bold uppercase tracking-wider ${getCategoryTextColor(trip.category)}`}>
-            {formatDate(trip.event_date)}
-          </span>
-          <span className="text-[10px] text-[#949494] ml-auto truncate max-w-[80px]">
-            {trip.location}
-          </span>
-        </div>
-        <h3 className="font-bold text-sm text-[#5C5C5C] truncate mb-1.5">
-          {trip.title}
-        </h3>
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded-full overflow-hidden ring-2 ring-white">
-            <Image
-              src={trip.organizer_avatar}
-              alt={trip.organizer_name}
-              width={20}
-              height={20}
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <span className="text-xs text-[#949494]">{trip.organizer_name}</span>
-        </div>
-      </div>
+  // 空狀態組件
+  const EmptyState = ({ compact = false }: { compact?: boolean }) => (
+    <div className={`${compact ? 'p-4' : 'p-6'} bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/50 text-center`}>
+      <svg className={`${compact ? 'w-10 h-10' : 'w-12 h-12'} text-[#B0B0B0] mx-auto ${compact ? 'mb-2' : 'mb-3'}`} fill="currentColor" viewBox="0 0 24 24">
+        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+      </svg>
+      <p className={`${compact ? 'text-sm' : ''} text-[#949494] ${compact ? 'mb-0' : 'mb-2'}`}>附近還沒有揪團</p>
+      {compact ? (
+        <button className="text-xs text-[#94A3B8] font-medium mt-2">成為第一個開團的人</button>
+      ) : (
+        <Link href="/explore/create" className="text-sm text-[#94A3B8] font-medium hover:underline">
+          成為第一個開團的人 →
+        </Link>
+      )}
     </div>
   );
 
@@ -447,7 +327,6 @@ export default function ExplorePage() {
               </nav>
             </div>
             <div className="flex items-center gap-4">
-              {/* 搜尋框 */}
               <div className="flex items-center gap-3 px-4 py-2 bg-white/60 rounded-full border border-white/40 w-64">
                 <svg className="w-5 h-5 text-[#94A3B8]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <circle cx="11" cy="11" r="8" />
@@ -485,38 +364,14 @@ export default function ExplorePage() {
           {/* 類別篩選 */}
           <div className="flex flex-wrap gap-2 p-4 bg-white/80 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg">
             {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => {
-                  setActiveCategory(cat.id);
-                  setSelectedTrip(null);
-                }}
-                className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all ${
-                  activeCategory === cat.id
-                    ? 'bg-[#94A3B8] text-white shadow-lg shadow-[#94A3B8]/30'
-                    : 'bg-white/60 text-[#5C5C5C] border border-white/50 hover:bg-white/80'
-                }`}
-              >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d={cat.icon} />
-                </svg>
-                {cat.label}
-              </button>
+              <CategoryButton key={cat.id} cat={cat} />
             ))}
           </div>
 
           {/* 揪團卡片列表 */}
           <div className="flex-1 overflow-y-auto space-y-3 pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
             {filteredTrips.length === 0 ? (
-              <div className="p-6 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/50 text-center">
-                <svg className="w-12 h-12 text-[#B0B0B0] mx-auto mb-3" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-                </svg>
-                <p className="text-[#949494] mb-2">附近還沒有揪團</p>
-                <Link href="/explore/create" className="text-sm text-[#94A3B8] font-medium hover:underline">
-                  成為第一個開團的人 →
-                </Link>
-              </div>
+              <EmptyState />
             ) : (
               filteredTrips.map((trip) => (
                 <TripCard
@@ -524,6 +379,8 @@ export default function ExplorePage() {
                   trip={trip}
                   isSelected={selectedTrip?.id === trip.id}
                   onClick={() => setSelectedTrip(trip)}
+                  onClose={handleCloseGroup}
+                  onDelete={(id) => setDeleteConfirm(id)}
                 />
               ))
             )}
@@ -544,7 +401,6 @@ export default function ExplorePage() {
       <div className="xl:hidden">
         {/* 右側浮動按鈕組 */}
         <div className="fixed right-5 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-3">
-          {/* 回到目前位置按鈕 */}
           <button
             onClick={handleBackToMyLocation}
             className="w-14 h-14 bg-white/90 backdrop-blur-xl text-[#5C5C5C] shadow-lg rounded-full flex items-center justify-center hover:bg-white active:scale-95 transition border border-white/50"
@@ -553,7 +409,6 @@ export default function ExplorePage() {
               <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
             </svg>
           </button>
-          {/* 發起揪團按鈕 */}
           <Link
             href="/explore/create"
             className="w-14 h-14 bg-[#94A3B8] text-white shadow-[0_8px_24px_rgba(148,163,184,0.4)] rounded-full flex items-center justify-center hover:bg-[#8291A6] active:scale-95 transition"
@@ -565,7 +420,6 @@ export default function ExplorePage() {
         {/* Header - 浮在地圖上 */}
         <header className="absolute top-0 left-0 right-0 z-20 px-5 pt-4 pb-3">
           <div className="flex items-center justify-between mb-4">
-            {/* 搜尋框 */}
             <div className="flex-1 mr-3 flex items-center gap-3 px-4 py-2.5 bg-white/60 backdrop-blur-xl rounded-full border border-white/50 shadow-sm">
               <svg className="w-5 h-5 text-[#94A3B8]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <circle cx="11" cy="11" r="8" />
@@ -577,7 +431,6 @@ export default function ExplorePage() {
                 type="text"
               />
             </div>
-            {/* 按鈕 */}
             <div className="flex items-center gap-2">
               <button className="w-10 h-10 bg-white/60 backdrop-blur-xl rounded-full border border-white/50 shadow-sm flex items-center justify-center text-[#949494] hover:text-[#5C5C5C] transition relative">
                 <div className="absolute top-2 right-2 w-2 h-2 bg-[#E8C4C4] rounded-full" />
@@ -598,10 +451,7 @@ export default function ExplorePage() {
             {categories.map((cat) => (
               <button
                 key={cat.id}
-                onClick={() => {
-                  setActiveCategory(cat.id);
-                  setSelectedTrip(null);
-                }}
+                onClick={() => handleCategoryChange(cat.id)}
                 className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all ${
                   activeCategory === cat.id
                     ? 'bg-[#94A3B8] text-white shadow-lg shadow-[#94A3B8]/30'
@@ -621,16 +471,8 @@ export default function ExplorePage() {
         <div className="absolute bottom-20 left-0 right-0 z-20">
           <div className={`flex overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] gap-4 px-5 py-2 ${filteredTrips.length === 0 ? 'justify-center' : ''}`}>
             {filteredTrips.length === 0 ? (
-              <div className="snap-center shrink-0 w-[280px] p-4 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/50 flex items-center justify-center">
-                <div className="text-center">
-                  <svg className="w-10 h-10 text-[#B0B0B0] mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-                  </svg>
-                  <p className="text-sm text-[#949494]">附近還沒有揪團</p>
-                  <button className="text-xs text-[#94A3B8] font-medium mt-2">
-                    成為第一個開團的人
-                  </button>
-                </div>
+              <div className="snap-center shrink-0 w-[280px]">
+                <EmptyState compact />
               </div>
             ) : (
               filteredTrips.map((trip) => {
@@ -690,7 +532,6 @@ export default function ExplorePage() {
           </div>
         </div>
 
-        {/* 底部導覽 - 只在手機版顯示 */}
         <MobileNav />
       </div>
 
