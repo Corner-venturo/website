@@ -78,13 +78,10 @@ export const useGroupStore = create<GroupState>((set, get) => ({
     set({ isLoading: true, error: null })
 
     try {
+      // 先用簡單查詢測試
       let query = supabase
         .from('groups')
-        .select(`
-          *,
-          creator:profiles!created_by(id, display_name, avatar_url),
-          tags:group_tags(tag)
-        `)
+        .select('*')
         .in('status', ['active', 'full'])
         .eq('is_private', false)
         .order('created_at', { ascending: false })
@@ -99,15 +96,11 @@ export const useGroupStore = create<GroupState>((set, get) => ({
 
       const { data, error } = await query
 
+      console.log('fetchGroups result:', data, error)
+
       if (error) throw error
 
-      // 轉換 tags 格式
-      const groups = (data || []).map((group: Group & { tags?: { tag: string }[] }) => ({
-        ...group,
-        tags: group.tags?.map((t: { tag: string }) => t.tag) || []
-      }))
-
-      set({ groups, isLoading: false })
+      set({ groups: data || [], isLoading: false })
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '載入活動失敗'
       set({ isLoading: false, error: message })
@@ -121,22 +114,15 @@ export const useGroupStore = create<GroupState>((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('groups')
-        .select(`
-          *,
-          creator:profiles!created_by(id, display_name, avatar_url),
-          tags:group_tags(tag)
-        `)
+        .select('*')
         .eq('created_by', userId)
         .order('created_at', { ascending: false })
 
+      console.log('fetchMyGroups result:', data, error)
+
       if (error) throw error
 
-      const myGroups = (data || []).map((group: Group & { tags?: { tag: string }[] }) => ({
-        ...group,
-        tags: group.tags?.map((t: { tag: string }) => t.tag) || []
-      }))
-
-      set({ myGroups, isLoading: false })
+      set({ myGroups: data || [], isLoading: false })
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '載入我的活動失敗'
       set({ isLoading: false, error: message })
@@ -147,10 +133,15 @@ export const useGroupStore = create<GroupState>((set, get) => ({
     const supabase = getSupabaseClient()
     set({ isLoading: true, error: null })
 
+    console.log('createGroup called with userId:', userId)
+    console.log('createGroup data:', data)
+
     try {
       // 檢查是否可以創建更多活動
       const { data: canCreate, error: checkError } = await supabase
         .rpc('can_create_group', { user_id: userId })
+
+      console.log('can_create_group result:', canCreate, 'error:', checkError)
 
       if (checkError) {
         console.error('Check create group error:', checkError)
@@ -163,29 +154,34 @@ export const useGroupStore = create<GroupState>((set, get) => ({
       }
 
       // 建立活動
+      const insertData = {
+        title: data.title,
+        description: data.description || null,
+        cover_image: data.cover_image || null,
+        category: data.category,
+        location_name: data.location_name || null,
+        location_address: data.location_address || null,
+        event_date: data.event_date,
+        start_time: data.start_time || null,
+        end_time: data.end_time || null,
+        max_members: data.max_members,
+        gender_limit: data.gender_limit,
+        require_approval: data.require_approval,
+        is_private: data.is_private,
+        estimated_cost: data.estimated_cost || null,
+        status: 'active',
+        created_by: userId,
+        published_at: new Date().toISOString(),
+      }
+      console.log('Inserting group data:', insertData)
+
       const { data: group, error: groupError } = await supabase
         .from('groups')
-        .insert({
-          title: data.title,
-          description: data.description || null,
-          cover_image: data.cover_image || null,
-          category: data.category,
-          location_name: data.location_name || null,
-          location_address: data.location_address || null,
-          event_date: data.event_date,
-          start_time: data.start_time || null,
-          end_time: data.end_time || null,
-          max_members: data.max_members,
-          gender_limit: data.gender_limit,
-          require_approval: data.require_approval,
-          is_private: data.is_private,
-          estimated_cost: data.estimated_cost || null,
-          status: 'active',
-          created_by: userId,
-          published_at: new Date().toISOString(),
-        })
+        .insert(insertData)
         .select()
         .single()
+
+      console.log('Insert result - group:', group, 'error:', groupError)
 
       if (groupError) throw groupError
 

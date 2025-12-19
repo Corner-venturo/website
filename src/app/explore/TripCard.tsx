@@ -60,58 +60,26 @@ interface TripCardProps {
   trip: DisplayTrip;
   isSelected: boolean;
   onClick: () => void;
+  className?: string;
   onClose?: (id: string) => void;
   onDelete?: (id: string) => void;
 }
 
-export default function TripCard({ trip, isSelected, onClick, onClose, onDelete }: TripCardProps) {
+export default function TripCard({
+  trip,
+  isSelected,
+  onClick,
+  className,
+}: TripCardProps) {
   return (
     <div
       onClick={onClick}
-      className={`p-3 backdrop-blur-xl rounded-2xl shadow-lg border flex gap-3 cursor-pointer transition-all relative ${
+      className={`snap-center shrink-0 w-[280px] p-3 backdrop-blur-xl rounded-2xl shadow-lg border flex gap-3 cursor-pointer transition-all ${
         isSelected
           ? 'bg-white/95 border-white/80 ring-2 ring-[#94A3B8]/50 shadow-xl'
-          : 'bg-white/80 border-white/50 opacity-80 hover:opacity-100'
-      } ${trip.isMyGroup ? 'ring-2 ring-[#Cfb9a5]/50' : ''}`}
+          : 'bg-white/80 border-white/50 opacity-80 scale-95'
+      } ${className || ''}`}
     >
-      {/* 我的活動管理按鈕 */}
-      {trip.isMyGroup && onClose && onDelete && (
-        <div className="absolute -top-2 right-6 flex gap-1 z-10">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onClose(trip.id);
-            }}
-            className="bg-green-500 hover:bg-green-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-0.5"
-            title="結束揪團"
-          >
-            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-            </svg>
-            結束
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(trip.id);
-            }}
-            className="bg-red-400 hover:bg-red-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-0.5"
-            title="刪除揪團"
-          >
-            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
-            </svg>
-            刪除
-          </button>
-        </div>
-      )}
-      {/* 我的活動標籤 */}
-      {trip.isMyGroup && (
-        <div className="absolute -top-2 -right-2 bg-[#Cfb9a5] text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm z-10">
-          我的活動
-        </div>
-      )}
-
       {/* 圖片 */}
       <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 relative">
         <Image src={trip.image} alt={trip.title} fill className="object-cover" />

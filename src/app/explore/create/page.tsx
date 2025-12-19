@@ -330,7 +330,7 @@ function TimeLocationStep({ formData, onChange }: TimeLocationStepProps) {
                   value={formatForInput(formData.startDateTime)}
                   min={getMinDateTime()}
                   onChange={handleStartChange}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  className="absolute inset-0 w-full h-full opacity-[0.011] cursor-pointer z-10"
                 />
                 <div className="w-full text-left rounded-2xl p-3 flex items-center justify-between group transition-all cursor-pointer" style={{ backgroundColor: '#F7F5F2' }}>
                   <div>
@@ -354,7 +354,7 @@ function TimeLocationStep({ formData, onChange }: TimeLocationStepProps) {
                   value={formatForInput(formData.endDateTime)}
                   min={formatForInput(formData.startDateTime)}
                   onChange={handleEndChange}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  className="absolute inset-0 w-full h-full opacity-[0.011] cursor-pointer z-10"
                 />
                 <div className="w-full text-left rounded-2xl p-3 flex items-center justify-between group transition-all cursor-pointer" style={{ backgroundColor: '#F7F5F2' }}>
                   <div>
@@ -619,9 +619,7 @@ export default function CreateExplorePage() {
 
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [showBadge, setShowBadge] = useState(false);
-  const [draftSaved, setDraftSaved] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // 初始化預設日期時間
@@ -685,16 +683,6 @@ export default function CreateExplorePage() {
     return '確認發布';
   }, [step]);
 
-  const handleSaveDraft = () => {
-    setIsSavingDraft(true);
-    // TODO: 實際的 API 呼叫儲存草稿
-    setTimeout(() => {
-      setIsSavingDraft(false);
-      setDraftSaved(true);
-      setTimeout(() => setDraftSaved(false), 2000);
-    }, 800);
-  };
-
   const handleNext = async () => {
     if (isLastStep) {
       // 驗證必填欄位
@@ -717,6 +705,8 @@ export default function CreateExplorePage() {
         const eventDate = formData.startDateTime.toISOString().split('T')[0];
         const startTime = formData.startDateTime.toTimeString().slice(0, 5);
         const endTime = formData.endDateTime.toTimeString().slice(0, 5);
+
+        console.log('Creating group with user:', user.id);
 
         const groupData: CreateGroupData = {
           title: formData.title,
@@ -850,15 +840,6 @@ export default function CreateExplorePage() {
                   );
                 })}
               </div>
-
-              <button
-                onClick={handleSaveDraft}
-                disabled={isSavingDraft}
-                className="w-full py-3 rounded-xl bg-white border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                <span className="material-icons-round text-lg">{draftSaved ? 'check' : 'save'}</span>
-                {isSavingDraft ? '儲存中...' : draftSaved ? '已儲存！' : '儲存草稿'}
-              </button>
             </div>
           </div>
 
@@ -909,13 +890,7 @@ export default function CreateExplorePage() {
               <span className="material-icons-round">arrow_back_ios_new</span>
             </Link>
             <h1 className="text-lg font-bold text-gray-800 tracking-wide">創立活動</h1>
-            <button
-              onClick={handleSaveDraft}
-              disabled={isSavingDraft}
-              className="px-4 py-1.5 rounded-full border border-[rgba(207,185,165,0.3)] text-[#Cfb9a5] text-sm font-medium transition-colors disabled:opacity-50"
-            >
-              {isSavingDraft ? '儲存中...' : draftSaved ? '已儲存 ✓' : '存草稿'}
-            </button>
+            <div className="w-10" />
           </div>
           <StepIndicator step={step} onChange={setStep} />
         </header>
