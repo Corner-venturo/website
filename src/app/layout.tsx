@@ -12,6 +12,17 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Venturo",
   description: "探索世界，結交旅伴",
+  openGraph: {
+    title: "Venturo",
+    description: "探索世界，結交旅伴",
+    siteName: "Venturo",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Venturo",
+    description: "探索世界，結交旅伴",
+  },
 };
 
 export default function RootLayout({
