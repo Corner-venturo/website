@@ -55,6 +55,7 @@ interface OrderData {
   image: string;
   participants: Participant[];
   schedule: DaySchedule[];
+  ownerId?: string; // 主揪的 participant id
 }
 
 // 沖繩行程資料（供 UUID 和 slug 共用）
@@ -64,6 +65,7 @@ const okinawaWinterData: OrderData = {
   dateRange: "2025/12/23 - 12/27",
   startDate: "2025-12-23",
   image: "https://images.unsplash.com/photo-1542640244-7e672d6cef4e?w=800",
+  ownerId: "1", // 主揪是「你」
   participants: [
     { id: "1", name: "你", avatar: "" },
   ],
@@ -722,6 +724,7 @@ function tripToOrderData(trip: Trip): OrderData {
     image: trip.cover_image || "",
     participants: [{ id: "1", name: "你", avatar: "" }], // 預設只有自己
     schedule,
+    ownerId: "1", // 從資料庫載入的行程，目前預設主揪是自己
   };
 }
 
@@ -734,24 +737,26 @@ export default function OrderDetailPage() {
 
   // 從資料庫載入
   const { currentTrip, isLoading, fetchTripById } = useTripStore();
-  const [dbOrder, setDbOrder] = useState<OrderData | null>(null);
+
+  // 統一使用 order state 來管理資料（不管來源是 mock 還是 db）
+  const [order, setOrder] = useState<OrderData | null>(null);
 
   useEffect(() => {
-    // 如果不是假資料的 ID，就從資料庫載入
-    if (!mockOrder && orderId) {
+    // 如果有假資料，使用假資料
+    if (mockOrder) {
+      setOrder(mockOrder);
+    } else if (orderId) {
+      // 否則從資料庫載入
       fetchTripById(orderId);
     }
   }, [orderId, mockOrder, fetchTripById]);
 
   useEffect(() => {
     // 當資料庫資料載入完成，轉換格式
-    if (currentTrip && currentTrip.id === orderId) {
-      setDbOrder(tripToOrderData(currentTrip));
+    if (currentTrip && currentTrip.id === orderId && !mockOrder) {
+      setOrder(tripToOrderData(currentTrip));
     }
-  }, [currentTrip, orderId]);
-
-  // 優先使用假資料，否則用資料庫資料
-  const order = mockOrder || dbOrder;
+  }, [currentTrip, orderId, mockOrder]);
 
   // 根據日期自動計算初始天數
   const initialDay = order ? calculateCurrentDay(order.startDate, order.schedule.length) : 1;
@@ -843,19 +848,22 @@ export default function OrderDetailPage() {
   // 取得當前用戶 ID (模擬為 "1")
   const currentUserId = "1";
 
+  // 檢查當前用戶是否為主揪
+  const isOwner = order.ownerId === currentUserId;
+
   // 刪除行程項目
   const handleDeleteItem = (item: ItineraryItem) => {
     if (!confirm(`確定要刪除「${item.title}」嗎？`)) {
       return;
     }
 
-    // 更新 dbOrder state（如果是資料庫資料）
-    if (dbOrder) {
-      const updatedSchedule = dbOrder.schedule.map((day) => ({
+    // 更新 order state
+    if (order) {
+      const updatedSchedule = order.schedule.map((day) => ({
         ...day,
         items: day.items.filter((i) => i.id !== item.id),
       }));
-      setDbOrder({ ...dbOrder, schedule: updatedSchedule });
+      setOrder({ ...order, schedule: updatedSchedule });
     }
 
     // 關閉選單
@@ -867,9 +875,9 @@ export default function OrderDetailPage() {
 
   // 發起出席詢問
   const handleInitiateInquiry = (item: ItineraryItem) => {
-    // 更新 dbOrder state（如果是資料庫資料）
-    if (dbOrder) {
-      const updatedSchedule = dbOrder.schedule.map((day) => ({
+    // 更新 order state
+    if (order) {
+      const updatedSchedule = order.schedule.map((day) => ({
         ...day,
         items: day.items.map((i) =>
           i.id === item.id
@@ -883,7 +891,7 @@ export default function OrderDetailPage() {
             : i
         ),
       }));
-      setDbOrder({ ...dbOrder, schedule: updatedSchedule });
+      setOrder({ ...order, schedule: updatedSchedule });
     }
 
     // 更新 selectedItem 以便 UI 立即反應
@@ -1098,7 +1106,7 @@ export default function OrderDetailPage() {
             );
           })}
 
-          {/* 新增行程按鈕 */}
+          {/* 新增行程按鈕 - 所有人都可以新增 */}
           <div className="flex items-start gap-3 pt-2">
             <div className="flex flex-col items-center gap-1 pt-1 opacity-40">
               <div className="w-2.5 h-2.5 rounded-full bg-gray-300" />
@@ -1116,17 +1124,18 @@ export default function OrderDetailPage() {
         </div>
       </main>
 
-      {/* 出席詢問 Modal */}
+      {/* 出席詢問 Modal - 置中懸浮 */}
       {showAttendanceModal && selectedItem && (
         <>
           {/* 背景遮罩 */}
           <div
-            className="fixed inset-0 bg-black/40 z-50"
+            className="fixed inset-0 bg-black/50 z-50"
             onClick={() => setShowAttendanceModal(false)}
           />
 
-          {/* 底部彈出面板 */}
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col animate-slide-up">
+          {/* 置中懸浮面板 */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col pointer-events-auto animate-fade-in">
             {/* 標題列 */}
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
               <div>
@@ -1267,6 +1276,7 @@ export default function OrderDetailPage() {
                 </>
               );
             })()}
+            </div>
           </div>
         </>
       )}
@@ -1326,7 +1336,7 @@ export default function OrderDetailPage() {
                   </button>
                 )}
 
-                {/* 編輯行程 */}
+                {/* 編輯行程 - 所有人都可以編輯 */}
                 <button
                   onClick={() => {
                     setShowItemMenu(false);
@@ -1350,19 +1360,21 @@ export default function OrderDetailPage() {
                   </div>
                 </button>
 
-                {/* 刪除行程 */}
-                <button
-                  onClick={() => handleDeleteItem(selectedItem)}
-                  className="w-full flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors active:scale-[0.98]"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center">
-                    <span className="material-icons-round text-red-400 text-2xl">delete</span>
-                  </div>
-                  <div className="flex-1 text-left">
-                    <div className="font-bold text-red-500">刪除行程</div>
-                    <div className="text-xs text-gray-500">移除此行程項目</div>
-                  </div>
-                </button>
+                {/* 刪除行程 - 只有主揪可以刪除 */}
+                {isOwner && (
+                  <button
+                    onClick={() => handleDeleteItem(selectedItem)}
+                    className="w-full flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors active:scale-[0.98]"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center">
+                      <span className="material-icons-round text-red-400 text-2xl">delete</span>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="font-bold text-red-500">刪除行程</div>
+                      <div className="text-xs text-gray-500">移除此行程項目</div>
+                    </div>
+                  </button>
+                )}
               </div>
 
               {/* 取消按鈕 */}
@@ -1377,102 +1389,104 @@ export default function OrderDetailPage() {
         </>
       )}
 
-      {/* 新增項目 Modal */}
+      {/* 新增項目 Modal - 置中懸浮 */}
       {showAddItemModal && (
         <>
           <div
-            className="fixed inset-0 bg-black/40 z-50"
+            className="fixed inset-0 bg-black/50 z-50"
             onClick={() => setShowAddItemModal(false)}
           />
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col animate-slide-up">
-            {/* 標題列 */}
-            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-800">新增行程項目</h2>
-              <button
-                onClick={() => setShowAddItemModal(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-              >
-                <span className="material-icons-round text-gray-500 text-[18px]">close</span>
-              </button>
-            </div>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col pointer-events-auto animate-fade-in">
+              {/* 標題列 */}
+              <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
+                <h2 className="text-lg font-bold text-gray-800">新增行程項目</h2>
+                <button
+                  onClick={() => setShowAddItemModal(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                >
+                  <span className="material-icons-round text-gray-500 text-[18px]">close</span>
+                </button>
+              </div>
 
-            {/* 表單內容 */}
-            <div className="flex-1 overflow-y-auto px-5 py-4">
-              {/* 類別選擇 */}
-              <div className="mb-4">
-                <label className="text-xs font-bold text-gray-500 mb-2 block">類別</label>
-                <div className="flex flex-wrap gap-2">
-                  {(["景點", "美食", "體驗", "住宿", "交通", "購物", "其他"] as const).map((cat) => {
-                    const style = categoryConfig[cat];
-                    const isSelected = newItem.category === cat;
-                    return (
-                      <button
-                        key={cat}
-                        onClick={() => setNewItem({ ...newItem, category: cat })}
-                        className={`px-3 py-1.5 rounded-full text-sm font-bold transition-all ${
-                          isSelected
-                            ? `${style.bg} ${style.text} ring-2 ring-offset-1 ring-current`
-                            : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    );
-                  })}
+              {/* 表單內容 */}
+              <div className="flex-1 overflow-y-auto px-5 py-4">
+                {/* 類別選擇 */}
+                <div className="mb-4">
+                  <label className="text-xs font-bold text-gray-500 mb-2 block">類別</label>
+                  <div className="flex flex-wrap gap-2">
+                    {(["景點", "美食", "體驗", "住宿", "交通", "購物", "其他"] as const).map((cat) => {
+                      const style = categoryConfig[cat];
+                      const isSelected = newItem.category === cat;
+                      return (
+                        <button
+                          key={cat}
+                          onClick={() => setNewItem({ ...newItem, category: cat })}
+                          className={`px-3 py-1.5 rounded-full text-sm font-bold transition-all ${
+                            isSelected
+                              ? `${style.bg} ${style.text} ring-2 ring-offset-1 ring-current`
+                              : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 時間 */}
+                <div className="mb-4">
+                  <label className="text-xs font-bold text-gray-500 mb-2 block">時間</label>
+                  <input
+                    type="time"
+                    value={newItem.time}
+                    onChange={(e) => setNewItem({ ...newItem, time: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#Cfb9a5] focus:ring-2 focus:ring-[#Cfb9a5]/20 outline-none transition-all text-gray-800"
+                  />
+                </div>
+
+                {/* 標題 */}
+                <div className="mb-4">
+                  <label className="text-xs font-bold text-gray-500 mb-2 block">標題</label>
+                  <input
+                    type="text"
+                    value={newItem.title}
+                    onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
+                    placeholder="例如：清水寺參拜"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#Cfb9a5] focus:ring-2 focus:ring-[#Cfb9a5]/20 outline-none transition-all text-gray-800 placeholder:text-gray-400"
+                  />
+                </div>
+
+                {/* 說明 */}
+                <div className="mb-4">
+                  <label className="text-xs font-bold text-gray-500 mb-2 block">說明 (選填)</label>
+                  <textarea
+                    value={newItem.description}
+                    onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
+                    placeholder="例如：門票 ¥500/人"
+                    rows={2}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#Cfb9a5] focus:ring-2 focus:ring-[#Cfb9a5]/20 outline-none transition-all text-gray-800 placeholder:text-gray-400 resize-none"
+                  />
                 </div>
               </div>
 
-              {/* 時間 */}
-              <div className="mb-4">
-                <label className="text-xs font-bold text-gray-500 mb-2 block">時間</label>
-                <input
-                  type="time"
-                  value={newItem.time}
-                  onChange={(e) => setNewItem({ ...newItem, time: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#Cfb9a5] focus:ring-2 focus:ring-[#Cfb9a5]/20 outline-none transition-all text-gray-800"
-                />
+              {/* 底部按鈕 */}
+              <div className="px-5 pb-5 pt-2 border-t border-gray-100 bg-white">
+                <button
+                  onClick={() => {
+                    // 這裡只是 demo，實際需要接後端 API
+                    alert(`已新增行程：${newItem.title}\n時間：${newItem.time}\n類別：${newItem.category}\n說明：${newItem.description}`);
+                    setNewItem({ time: "", title: "", description: "", category: "景點" });
+                    setShowAddItemModal(false);
+                  }}
+                  disabled={!newItem.time || !newItem.title}
+                  className="w-full py-3.5 bg-[#Cfb9a5] hover:bg-[#c0a996] disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-[#Cfb9a5]/30 disabled:shadow-none"
+                >
+                  <span className="material-icons-round text-[20px]">add</span>
+                  新增行程
+                </button>
               </div>
-
-              {/* 標題 */}
-              <div className="mb-4">
-                <label className="text-xs font-bold text-gray-500 mb-2 block">標題</label>
-                <input
-                  type="text"
-                  value={newItem.title}
-                  onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
-                  placeholder="例如：清水寺參拜"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#Cfb9a5] focus:ring-2 focus:ring-[#Cfb9a5]/20 outline-none transition-all text-gray-800 placeholder:text-gray-400"
-                />
-              </div>
-
-              {/* 說明 */}
-              <div className="mb-4">
-                <label className="text-xs font-bold text-gray-500 mb-2 block">說明 (選填)</label>
-                <textarea
-                  value={newItem.description}
-                  onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
-                  placeholder="例如：門票 ¥500/人"
-                  rows={2}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#Cfb9a5] focus:ring-2 focus:ring-[#Cfb9a5]/20 outline-none transition-all text-gray-800 placeholder:text-gray-400 resize-none"
-                />
-              </div>
-            </div>
-
-            {/* 底部按鈕 */}
-            <div className="px-5 pb-5 pt-2 border-t border-gray-100 bg-white">
-              <button
-                onClick={() => {
-                  // 這裡只是 demo，實際需要接後端 API
-                  alert(`已新增行程：${newItem.title}\n時間：${newItem.time}\n類別：${newItem.category}\n說明：${newItem.description}`);
-                  setNewItem({ time: "", title: "", description: "", category: "景點" });
-                  setShowAddItemModal(false);
-                }}
-                disabled={!newItem.time || !newItem.title}
-                className="w-full py-3.5 bg-[#Cfb9a5] hover:bg-[#c0a996] disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-[#Cfb9a5]/30 disabled:shadow-none"
-              >
-                <span className="material-icons-round text-[20px]">add</span>
-                新增行程
-              </button>
             </div>
           </div>
         </>

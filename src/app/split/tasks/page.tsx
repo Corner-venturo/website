@@ -199,7 +199,7 @@ function TaskCard({ task }: { task: Task }) {
 }
 
 export default function TasksPage() {
-  const currentPoints = 150;
+  const currentPoints = 0;
   const targetPoints = 500;
   const progress = (currentPoints / targetPoints) * 100;
 
@@ -216,15 +216,15 @@ export default function TasksPage() {
       <header className="relative z-50 px-5 pt-12 pb-4 flex items-center justify-between">
         <Link
           href="/my"
-          className="w-10 h-10 rounded-full flex items-center justify-center text-[#5C5C5C] hover:bg-black/5 transition-colors"
+          className="w-10 h-10 bg-white/70 backdrop-blur-xl border border-white/60 rounded-full shadow-sm text-gray-600 hover:text-[#Cfb9a5] transition-colors flex items-center justify-center"
         >
-          <span className="material-icons-round">arrow_back_ios_new</span>
+          <span className="material-icons-round text-xl">arrow_back</span>
         </Link>
         <h1 className="text-lg font-bold text-[#5C5C5C] tracking-tight">
           新手任務
         </h1>
-        <button className="w-10 h-10 rounded-full flex items-center justify-center text-[#5C5C5C] hover:bg-black/5 transition-colors">
-          <span className="material-icons-round">help_outline</span>
+        <button className="w-10 h-10 bg-white/70 backdrop-blur-xl border border-white/60 rounded-full shadow-sm text-gray-600 hover:text-[#Cfb9a5] transition-colors flex items-center justify-center">
+          <span className="material-icons-round text-xl">help_outline</span>
         </button>
       </header>
 
@@ -252,6 +252,7 @@ export default function TasksPage() {
               >
                 <span className="material-icons-round text-sm">storefront</span>
                 點數商店
+                <span className="material-icons-round text-sm">chevron_right</span>
               </Link>
             </div>
             <h2 className="text-2xl font-bold mb-4 tracking-wide">

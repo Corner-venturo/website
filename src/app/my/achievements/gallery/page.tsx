@@ -106,13 +106,13 @@ export default function AchievementGalleryPage() {
       <header className="absolute top-0 left-0 right-0 z-20 px-6 pt-4 pb-4 flex items-center justify-between bg-white/85 backdrop-blur-xl border-b border-white/30">
         <Link
           href="/my/achievements"
-          className="p-2 -ml-2 rounded-full text-gray-600 hover:bg-black/5 transition-colors"
+          className="w-10 h-10 bg-white/70 backdrop-blur-xl border border-white/60 rounded-full shadow-sm text-gray-600 hover:text-[#Cfb9a5] transition-colors flex items-center justify-center"
         >
-          <span className="material-icons-round text-2xl">arrow_back_ios_new</span>
+          <span className="material-icons-round text-xl">arrow_back</span>
         </Link>
         <h1 className="text-lg font-bold text-gray-800 tracking-wide">成就圖鑑</h1>
-        <button className="p-2 -mr-2 rounded-full text-gray-600 hover:bg-black/5 transition-colors">
-          <span className="material-icons-round text-2xl">filter_list</span>
+        <button className="w-10 h-10 bg-white/70 backdrop-blur-xl border border-white/60 rounded-full shadow-sm text-gray-600 hover:text-[#Cfb9a5] transition-colors flex items-center justify-center">
+          <span className="material-icons-round text-xl">filter_list</span>
         </button>
       </header>
 

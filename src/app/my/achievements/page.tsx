@@ -64,7 +64,7 @@ export default function AchievementsPage() {
       <header className="absolute top-0 left-0 right-0 z-20 px-6 pt-4 pb-2 flex items-center justify-between">
         <Link
           href="/my"
-          className="bg-white/70 backdrop-blur-xl border border-white/60 p-2.5 rounded-full shadow-sm text-gray-600 hover:text-[#Cfb9a5] transition-colors"
+          className="w-10 h-10 bg-white/70 backdrop-blur-xl border border-white/60 rounded-full shadow-sm text-gray-600 hover:text-[#Cfb9a5] transition-colors flex items-center justify-center"
         >
           <span className="material-icons-round text-xl">arrow_back</span>
         </Link>

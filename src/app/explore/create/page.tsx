@@ -861,9 +861,9 @@ function CreateExplorePageContent() {
           <div className="flex items-center justify-between mb-4">
             <Link
               href={isEditMode ? `/explore/${editGroupId}` : '/explore'}
-              className="w-10 h-10 rounded-full glass flex items-center justify-center text-gray-600 hover:text-[var(--primary)] transition-colors shadow-sm"
+              className="w-10 h-10 bg-white/70 backdrop-blur-xl border border-white/60 rounded-full shadow-sm text-gray-600 hover:text-[#Cfb9a5] transition-colors flex items-center justify-center"
             >
-              <span className="material-icons-round">arrow_back_ios_new</span>
+              <span className="material-icons-round text-xl">arrow_back</span>
             </Link>
             <h1 className="text-lg font-bold text-gray-800 tracking-wide">
               {isEditMode ? '編輯活動' : '創立活動'}
