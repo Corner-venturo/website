@@ -1,22 +1,12 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import LocationPicker, { LocationData } from '@/components/LocationPicker';
 import { useGroupStore, CreateGroupData } from '@/stores/group-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { getSupabaseClient } from '@/lib/supabase';
-
-const palette = {
-  primary: '#Cfb9a5',
-  primaryDark: '#b09b88',
-  primaryLight: '#E8DED4',
-  morandiBlue: '#A5BCCF',
-  morandiPink: '#CFA5A5',
-  morandiGreen: '#A8BFA6',
-  morandiYellow: '#E0D6A8',
-};
 
 const categories = [
   { id: 'food', label: '美食', icon: 'local_dining', color: '#Cfb9a5' },
@@ -45,67 +35,6 @@ interface FormData {
   tags: string[];
 }
 
-function StepIndicator({ step, onChange }: { step: number; onChange: (value: number) => void }) {
-  const steps = [
-    { id: 1, label: '基本資訊' },
-    { id: 2, label: '時間地點' },
-    { id: 3, label: '進階設定' },
-  ];
-
-  return (
-    <div className="mx-4 mt-6 mb-2">
-      <div className="flex items-center justify-between relative">
-        <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-0.5 bg-gray-200 -z-10" />
-        {steps.map((item) => {
-          const isActive = item.id === step;
-          const isComplete = item.id < step;
-          const circleStyle = {
-            backgroundColor: isComplete
-              ? palette.primaryLight
-              : isActive
-                ? palette.primary
-                : undefined,
-            borderColor: isComplete || isActive ? palette.primary : undefined,
-            color: isActive || isComplete ? '#ffffff' : undefined,
-            boxShadow: isActive ? '0 10px 20px rgba(207, 185, 165, 0.3)' : undefined,
-          } as const;
-
-          return (
-            <button
-              type="button"
-              key={item.id}
-              onClick={() => onChange(item.id)}
-              className={`flex flex-col items-center gap-1.5 relative z-10 group cursor-pointer ${
-                isActive ? '' : 'opacity-50'
-              } ${isComplete ? 'opacity-100' : ''}`}
-            >
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-4 border-[#F0EEE6] shadow-lg ${isActive ? 'scale-110' : ''} ${
-                  isActive || isComplete ? '' : 'bg-white border-2 border-gray-200 text-gray-400'
-                }`}
-                style={circleStyle}
-              >
-                {isComplete ? <span className="material-icons-round text-base">check</span> : item.id}
-              </div>
-              <span
-                className={`text-[10px] tracking-wider uppercase ${
-                  isActive
-                    ? 'font-bold'
-                    : isComplete
-                      ? ''
-                      : 'text-gray-500'
-                }`}
-                style={{ color: isActive || isComplete ? palette.primary : undefined }}
-              >
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 export default function EditGroupPage() {
   const router = useRouter();
@@ -115,7 +44,6 @@ export default function EditGroupPage() {
   const { user } = useAuthStore();
   const { updateGroup, deleteGroup, isLoading: isUpdating } = useGroupStore();
 
-  const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoadingGroup, setIsLoadingGroup] = useState(true);
@@ -276,7 +204,6 @@ export default function EditGroupPage() {
   const handleSave = async () => {
     if (!formData.title.trim()) {
       showError('缺少必填欄位', '請輸入活動名稱');
-      setStep(1);
       return;
     }
 
@@ -344,20 +271,6 @@ export default function EditGroupPage() {
     }
   };
 
-  const isLastStep = step === 3;
-  const nextLabel = useMemo(() => {
-    if (step === 1) return '下一步：時間地點';
-    if (step === 2) return '下一步：進階設定';
-    return '儲存修改';
-  }, [step]);
-
-  const handleNext = () => {
-    if (isLastStep) {
-      handleSave();
-    } else {
-      setStep((prev) => Math.min(prev + 1, 3));
-    }
-  };
 
   if (!user || isLoadingGroup) {
     return (
@@ -400,13 +313,10 @@ export default function EditGroupPage() {
               刪除
             </button>
           </div>
-          <StepIndicator step={step} onChange={setStep} />
         </header>
 
         <main className="relative z-10 flex-1 overflow-y-auto hide-scrollbar pb-32 px-5 pt-2">
-          {/* Step 1: 基本資訊 */}
-          {step === 1 && (
-            <div className="space-y-6">
+          <div className="space-y-6">
               {/* 活動封面 */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3 px-1">
@@ -492,12 +402,7 @@ export default function EditGroupPage() {
                   className="w-full rounded-2xl border-none bg-white py-3.5 px-4 text-sm shadow-sm placeholder-gray-300 focus:ring-2 focus:ring-[rgba(207,185,165,0.5)] text-gray-800 resize-none leading-relaxed"
                 />
               </div>
-            </div>
-          )}
 
-          {/* Step 2: 時間地點 */}
-          {step === 2 && (
-            <div className="space-y-6">
               {/* 時間設定 */}
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-2 ml-1">時間設定</label>
@@ -616,12 +521,7 @@ export default function EditGroupPage() {
                   </div>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Step 3: 進階設定 */}
-          {step === 3 && (
-            <div className="space-y-6">
               {/* 參加設定 */}
               <div className="bg-white rounded-3xl p-5 shadow-sm space-y-5">
                 <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
@@ -696,19 +596,18 @@ export default function EditGroupPage() {
                   </button>
                 </div>
               </div>
-            </div>
-          )}
+          </div>
         </main>
 
         {/* 底部按鈕 */}
         <div className="fixed bottom-0 inset-x-0 p-5 bg-gradient-to-t from-[#F0EEE6] via-[#F0EEE6] to-transparent z-50 pt-10">
           <button
-            onClick={handleNext}
+            onClick={handleSave}
             disabled={isSubmitting || isUpdating}
             className="w-full bg-[#Cfb9a5] text-white font-bold py-4 rounded-3xl shadow-[0_12px_30px_rgba(207,185,165,0.3)] flex items-center justify-center gap-2 active:scale-95 transition-transform hover:bg-[#b09b88] disabled:opacity-50"
           >
-            {isSubmitting || isUpdating ? '更新中...' : nextLabel}
-            <span className="material-icons-round text-sm">{isLastStep ? 'save' : 'arrow_forward'}</span>
+            {isSubmitting || isUpdating ? '儲存中...' : '儲存修改'}
+            <span className="material-icons-round text-sm">save</span>
           </button>
         </div>
       </div>
