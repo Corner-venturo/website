@@ -194,11 +194,20 @@ export default function TasksPage() {
             </span>
           </div>
           <div className="relative z-10 p-6 text-white">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-medium bg-white/20 px-2 py-0.5 rounded-full border border-white/20">
-                新手旅人
-              </span>
-              <span className="text-xs opacity-80">Lv.1</span>
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium bg-white/20 px-2 py-0.5 rounded-full border border-white/20">
+                  新手旅人
+                </span>
+                <span className="text-xs opacity-80">Lv.1</span>
+              </div>
+              <Link
+                href="/split/shop"
+                className="flex items-center gap-1 text-xs font-medium bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full border border-white/20 transition-colors"
+              >
+                <span className="material-icons-round text-sm">storefront</span>
+                點數商店
+              </Link>
             </div>
             <h2 className="text-2xl font-bold mb-4 tracking-wide">
               完成任務，開啟旅程
