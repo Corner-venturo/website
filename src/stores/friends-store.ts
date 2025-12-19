@@ -194,17 +194,28 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
     const supabase = getSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
 
+    if (!user?.id) {
+      return { success: false, error: '請先登入' }
+    }
+
     try {
-      const { error } = await supabase
+      // RLS 要求 auth.uid() = friend_id，所以明確加上 friend_id 條件
+      const { data, error } = await supabase
         .from('friends')
         .update({ status: 'accepted' })
         .eq('id', requestId)
+        .eq('friend_id', user.id)  // 確保是發給自己的邀請
+        .eq('status', 'pending')   // 確保是待處理狀態
+        .select()
+        .maybeSingle()
 
       if (error) throw error
 
-      if (user?.id) {
-        await get().fetchFriends(user.id)
+      if (!data) {
+        return { success: false, error: '找不到此邀請或已處理' }
       }
+
+      await get().fetchFriends(user.id)
       return { success: true }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '接受邀請失敗'
@@ -216,17 +227,27 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
     const supabase = getSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
 
+    if (!user?.id) {
+      return { success: false, error: '請先登入' }
+    }
+
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('friends')
         .update({ status: 'rejected' })
         .eq('id', requestId)
+        .eq('friend_id', user.id)
+        .eq('status', 'pending')
+        .select()
+        .maybeSingle()
 
       if (error) throw error
 
-      if (user?.id) {
-        await get().fetchFriends(user.id)
+      if (!data) {
+        return { success: false, error: '找不到此邀請或已處理' }
       }
+
+      await get().fetchFriends(user.id)
       return { success: true }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '拒絕邀請失敗'
@@ -310,11 +331,12 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
       }
 
       // 沒有現有關係，直接建立 accepted 的好友關係
+      // 注意：RLS 要求 auth.uid() = user_id，所以登入者要是 user_id
       const { error } = await supabase
         .from('friends')
         .insert({
-          user_id: inviterId,  // 邀請者
-          friend_id: userId,   // 接受邀請的人
+          user_id: userId,     // 登入者（接受邀請的人）
+          friend_id: inviterId, // 邀請者
           status: 'accepted'
         })
 
