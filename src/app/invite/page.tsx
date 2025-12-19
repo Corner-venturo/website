@@ -71,7 +71,8 @@ function InvitePageContent() {
         }
       } catch (err) {
         console.error('Invite page error:', err);
-        setError('載入失敗，請稍後再試');
+        const errorMessage = err instanceof Error ? err.message : '未知錯誤';
+        setError(`載入失敗：${errorMessage}`);
       } finally {
         setIsLoading(false);
       }

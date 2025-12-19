@@ -179,15 +179,8 @@ export default function FriendsPage() {
               </section>
             )}
 
-            {/* 已連結的旅伴 */}
+            {/* 旅伴列表 */}
             <section className="mb-6">
-              <div className="flex items-center justify-between mb-4 px-1">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  已連結的旅伴
-                </h3>
-                <span className="text-xs text-[#949494]">{friends.length} 位</span>
-              </div>
-
               {friends.length > 0 ? (
                 <div className="flex flex-col gap-4">
                   {friends.map((friend, index) => (

@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import MobileNav from "@/components/MobileNav";
-import { useTripStore, Trip } from "@/stores/trip-store";
+import { useTripStore, Trip, TripItineraryItem } from "@/stores/trip-store";
 
 // 個別參與者出席狀態
 interface ItemAttendance {
@@ -684,8 +684,34 @@ function isWithinTripDates(startDate: string, totalDays: number): boolean {
   return today >= start && today <= end;
 }
 
+// 將資料庫行程項目轉換為 UI 格式
+function dbItemToItineraryItem(dbItem: TripItineraryItem): ItineraryItem {
+  // 轉換出席記錄
+  const attendanceList: Record<string, "attending" | "not_attending" | "pending"> = {};
+  if (dbItem.attendance) {
+    dbItem.attendance.forEach((a) => {
+      attendanceList[a.user_id] = a.status;
+    });
+  }
+
+  return {
+    id: dbItem.id,
+    time: dbItem.start_time?.substring(0, 5) || "00:00", // HH:MM format
+    title: dbItem.title,
+    icon: dbItem.icon || "place",
+    description: dbItem.description || undefined,
+    paidBy: undefined, // TODO: 從 profiles 取得名稱
+    amount: dbItem.estimated_cost ? `¥${dbItem.estimated_cost}` : undefined,
+    color: (dbItem.color as "primary" | "blue" | "pink" | "green") || "primary",
+    category: dbItem.category as ItineraryItem["category"],
+    image: dbItem.image_url || undefined,
+    inquiryBy: dbItem.inquiry_by || undefined,
+    attendanceList: Object.keys(attendanceList).length > 0 ? attendanceList : undefined,
+  };
+}
+
 // 將資料庫 Trip 轉換為 OrderData 格式
-function tripToOrderData(trip: Trip): OrderData {
+function tripToOrderData(trip: Trip, dbItems: TripItineraryItem[]): OrderData {
   const startDate = trip.start_date || "";
   const endDate = trip.end_date || "";
 
@@ -701,18 +727,25 @@ function tripToOrderData(trip: Trip): OrderData {
     ? Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1
     : 1;
 
-  // 生成空白的行程表
+  // 生成行程表框架
   const schedule: DaySchedule[] = [];
   for (let i = 0; i < days; i++) {
     const date = new Date(startDate);
     date.setDate(date.getDate() + i);
     const weekdays = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
+
+    // 找出這一天的行程項目
+    const dayItems = dbItems
+      .filter((item) => item.day_number === i + 1)
+      .map(dbItemToItineraryItem)
+      .sort((a, b) => a.time.localeCompare(b.time));
+
     schedule.push({
       day: i + 1,
       date: String(date.getDate()),
       weekday: weekdays[date.getDay()],
       dateLabel: `${date.getMonth() + 1}月${date.getDate()}日`,
-      items: [], // 尚未有行程項目
+      items: dayItems,
     });
   }
 
@@ -736,7 +769,15 @@ export default function OrderDetailPage() {
   const mockOrder = ordersData[orderId];
 
   // 從資料庫載入
-  const { currentTrip, isLoading, fetchTripById } = useTripStore();
+  const {
+    currentTrip,
+    isLoading,
+    fetchTripById,
+    itineraryItems,
+    fetchTripItineraryItems,
+    createItineraryItem,
+    deleteItineraryItem,
+  } = useTripStore();
 
   // 統一使用 order state 來管理資料（不管來源是 mock 還是 db）
   const [order, setOrder] = useState<OrderData | null>(null);
@@ -748,15 +789,16 @@ export default function OrderDetailPage() {
     } else if (orderId) {
       // 否則從資料庫載入
       fetchTripById(orderId);
+      fetchTripItineraryItems(orderId);
     }
-  }, [orderId, mockOrder, fetchTripById]);
+  }, [orderId, mockOrder, fetchTripById, fetchTripItineraryItems]);
 
   useEffect(() => {
     // 當資料庫資料載入完成，轉換格式
     if (currentTrip && currentTrip.id === orderId && !mockOrder) {
-      setOrder(tripToOrderData(currentTrip));
+      setOrder(tripToOrderData(currentTrip, itineraryItems));
     }
-  }, [currentTrip, orderId, mockOrder]);
+  }, [currentTrip, orderId, mockOrder, itineraryItems]);
 
   // 根據日期自動計算初始天數
   const initialDay = order ? calculateCurrentDay(order.startDate, order.schedule.length) : 1;
@@ -852,25 +894,34 @@ export default function OrderDetailPage() {
   const isOwner = order.ownerId === currentUserId;
 
   // 刪除行程項目
-  const handleDeleteItem = (item: ItineraryItem) => {
+  const handleDeleteItem = async (item: ItineraryItem) => {
     if (!confirm(`確定要刪除「${item.title}」嗎？`)) {
       return;
     }
 
-    // 更新 order state
-    if (order) {
-      const updatedSchedule = order.schedule.map((day) => ({
-        ...day,
-        items: day.items.filter((i) => i.id !== item.id),
-      }));
-      setOrder({ ...order, schedule: updatedSchedule });
+    // 如果是資料庫項目（UUID 格式），呼叫 API 刪除
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id);
+    if (isUUID && !mockOrder) {
+      const result = await deleteItineraryItem(item.id);
+      if (!result.success) {
+        alert(result.error || '刪除失敗');
+        return;
+      }
+      // 資料庫已更新，itineraryItems 會自動更新，useEffect 會重建 order
+    } else {
+      // Mock 資料只更新本地 state
+      if (order) {
+        const updatedSchedule = order.schedule.map((day) => ({
+          ...day,
+          items: day.items.filter((i) => i.id !== item.id),
+        }));
+        setOrder({ ...order, schedule: updatedSchedule });
+      }
     }
 
     // 關閉選單
     setShowItemMenu(false);
     setSelectedItem(null);
-
-    // TODO: 如果需要持久化，這裡應該呼叫 API 更新資料庫
   };
 
   // 發起出席詢問
@@ -906,6 +957,40 @@ export default function OrderDetailPage() {
 
     // 開啟出席 modal 顯示結果
     setShowAttendanceModal(true);
+
+    // TODO: 如果需要持久化，這裡應該呼叫 API 更新資料庫
+  };
+
+  // 更新我的出席狀態
+  const handleUpdateMyAttendance = (item: ItineraryItem, status: "attending" | "not_attending") => {
+    // 更新 order state
+    if (order) {
+      const updatedSchedule = order.schedule.map((day) => ({
+        ...day,
+        items: day.items.map((i) =>
+          i.id === item.id
+            ? {
+                ...i,
+                attendanceList: {
+                  ...i.attendanceList,
+                  [currentUserId]: status,
+                },
+              }
+            : i
+        ),
+      }));
+      setOrder({ ...order, schedule: updatedSchedule });
+    }
+
+    // 更新 selectedItem 以便 UI 立即反應
+    const updatedItem = {
+      ...item,
+      attendanceList: {
+        ...item.attendanceList,
+        [currentUserId]: status,
+      },
+    };
+    setSelectedItem(updatedItem);
 
     // TODO: 如果需要持久化，這裡應該呼叫 API 更新資料庫
   };
@@ -1129,12 +1214,12 @@ export default function OrderDetailPage() {
         <>
           {/* 背景遮罩 */}
           <div
-            className="fixed inset-0 bg-black/50 z-50"
+            className="fixed inset-0 bg-black/50 z-[60]"
             onClick={() => setShowAttendanceModal(false)}
           />
 
           {/* 置中懸浮面板 */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+          <div className="fixed inset-0 z-[61] flex items-center justify-center p-4 pointer-events-none">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col pointer-events-auto animate-fade-in">
             {/* 標題列 */}
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
@@ -1165,6 +1250,7 @@ export default function OrderDetailPage() {
                     <p className="text-xs text-gray-500 mb-2 font-medium">我的回覆</p>
                     <div className="flex gap-3">
                       <button
+                        onClick={() => handleUpdateMyAttendance(selectedItem, "attending")}
                         className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
                           myStatus === "attending"
                             ? "bg-[#A8BFA6] text-white shadow-lg shadow-[#A8BFA6]/30"
@@ -1175,6 +1261,7 @@ export default function OrderDetailPage() {
                         出席
                       </button>
                       <button
+                        onClick={() => handleUpdateMyAttendance(selectedItem, "not_attending")}
                         className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
                           myStatus === "not_attending"
                             ? "bg-[#CFA5A5] text-white shadow-lg shadow-[#CFA5A5]/30"
@@ -1393,10 +1480,10 @@ export default function OrderDetailPage() {
       {showAddItemModal && (
         <>
           <div
-            className="fixed inset-0 bg-black/50 z-50"
+            className="fixed inset-0 bg-black/50 z-[60]"
             onClick={() => setShowAddItemModal(false)}
           />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+          <div className="fixed inset-0 z-[61] flex items-center justify-center p-4 pointer-events-none">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col pointer-events-auto animate-fade-in">
               {/* 標題列 */}
               <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
@@ -1474,33 +1561,62 @@ export default function OrderDetailPage() {
               {/* 底部按鈕 */}
               <div className="px-5 pb-5 pt-2 border-t border-gray-100 bg-white">
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     if (!order) return;
 
-                    // 建立新項目
-                    const newItineraryItem: ItineraryItem = {
-                      id: `item-${Date.now()}`,
-                      time: newItem.time,
-                      title: newItem.title,
-                      description: newItem.description,
-                      icon: "place",
-                      color: "primary",
-                      category: newItem.category,
-                    };
+                    // 計算當前日期
+                    const currentDaySchedule = order.schedule.find((d) => d.day === selectedDay);
+                    const itemDate = currentDaySchedule
+                      ? new Date(order.startDate)
+                      : new Date();
+                    if (currentDaySchedule) {
+                      itemDate.setDate(itemDate.getDate() + selectedDay - 1);
+                    }
 
-                    // 加入當前天數的行程
-                    const updatedSchedule = order.schedule.map((day) => {
-                      if (day.day === selectedDay) {
-                        // 按時間排序插入
-                        const newItems = [...day.items, newItineraryItem].sort((a, b) =>
-                          a.time.localeCompare(b.time)
-                        );
-                        return { ...day, items: newItems };
+                    // 如果是資料庫行程，寫入資料庫
+                    if (!mockOrder && currentTrip) {
+                      const result = await createItineraryItem({
+                        trip_id: orderId,
+                        day_number: selectedDay,
+                        item_date: itemDate.toISOString().split('T')[0],
+                        start_time: newItem.time + ':00',
+                        title: newItem.title,
+                        description: newItem.description || null,
+                        category: newItem.category,
+                        icon: 'place',
+                        color: 'primary',
+                      });
+
+                      if (!result.success) {
+                        alert(result.error || '新增失敗');
+                        return;
                       }
-                      return day;
-                    });
+                      // 資料庫已更新，itineraryItems 會自動更新
+                    } else {
+                      // Mock 資料只更新本地 state
+                      const newItineraryItem: ItineraryItem = {
+                        id: `item-${Date.now()}`,
+                        time: newItem.time,
+                        title: newItem.title,
+                        description: newItem.description,
+                        icon: "place",
+                        color: "primary",
+                        category: newItem.category,
+                      };
 
-                    setOrder({ ...order, schedule: updatedSchedule });
+                      const updatedSchedule = order.schedule.map((day) => {
+                        if (day.day === selectedDay) {
+                          const newItems = [...day.items, newItineraryItem].sort((a, b) =>
+                            a.time.localeCompare(b.time)
+                          );
+                          return { ...day, items: newItems };
+                        }
+                        return day;
+                      });
+
+                      setOrder({ ...order, schedule: updatedSchedule });
+                    }
+
                     setNewItem({ time: "", title: "", description: "", category: "景點" });
                     setShowAddItemModal(false);
                   }}

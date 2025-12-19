@@ -82,6 +82,44 @@ export interface Settlement {
   completed_at: string | null
 }
 
+// 行程項目
+export interface TripItineraryItem {
+  id: string
+  trip_id: string
+  day_number: number
+  item_date: string
+  start_time: string | null
+  end_time: string | null
+  title: string
+  description: string | null
+  category: string | null
+  location_name: string | null
+  location_address: string | null
+  location_url: string | null
+  estimated_cost: number | null
+  currency: string
+  paid_by: string | null
+  icon: string | null
+  image_url: string | null
+  color: string | null
+  sort_order: number
+  inquiry_by: string | null
+  created_at: string
+  updated_at: string
+  // 出席記錄（joined）
+  attendance?: TripItemAttendance[]
+}
+
+// 出席記錄
+export interface TripItemAttendance {
+  id: string
+  item_id: string
+  user_id: string
+  status: 'attending' | 'not_attending' | 'pending'
+  created_at: string
+  updated_at: string
+}
+
 // Calculate balance for each member in a trip
 export interface MemberBalance {
   user_id: string
@@ -98,6 +136,7 @@ interface TripState {
   members: TripMember[]
   expenses: Expense[]
   settlements: Settlement[]
+  itineraryItems: TripItineraryItem[]
   isLoading: boolean
   error: string | null
 
@@ -123,6 +162,12 @@ interface TripState {
     split_with: string[]  // user IDs to split with
   }) => Promise<{ success: boolean; expense?: Expense; error?: string }>
 
+  // Itinerary actions
+  fetchTripItineraryItems: (tripId: string) => Promise<void>
+  createItineraryItem: (data: Partial<TripItineraryItem>) => Promise<{ success: boolean; item?: TripItineraryItem; error?: string }>
+  updateItineraryItem: (itemId: string, data: Partial<TripItineraryItem>) => Promise<{ success: boolean; error?: string }>
+  deleteItineraryItem: (itemId: string) => Promise<{ success: boolean; error?: string }>
+
   // Balance calculation
   calculateBalances: (tripId: string) => MemberBalance[]
 
@@ -144,6 +189,7 @@ export const useTripStore = create<TripState>((set, get) => ({
   members: [],
   expenses: [],
   settlements: [],
+  itineraryItems: [],
   isLoading: false,
   error: null,
 
@@ -365,6 +411,106 @@ export const useTripStore = create<TripState>((set, get) => ({
     }
   },
 
+  fetchTripItineraryItems: async (tripId: string) => {
+    const supabase = getSupabaseClient()
+
+    try {
+      const { data, error } = await supabase
+        .from('trip_itinerary_items')
+        .select(`
+          *,
+          attendance:trip_item_attendance(*)
+        `)
+        .eq('trip_id', tripId)
+        .order('day_number', { ascending: true })
+        .order('sort_order', { ascending: true })
+        .order('start_time', { ascending: true })
+
+      if (error) throw error
+
+      set({ itineraryItems: data || [] })
+    } catch (error: unknown) {
+      console.error('Failed to fetch itinerary items:', error)
+    }
+  },
+
+  createItineraryItem: async (data: Partial<TripItineraryItem>) => {
+    const supabase = getSupabaseClient()
+
+    try {
+      const { data: item, error } = await supabase
+        .from('trip_itinerary_items')
+        .insert(data)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Refresh items
+      if (data.trip_id) {
+        await get().fetchTripItineraryItems(data.trip_id)
+      }
+
+      return { success: true, item }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '新增行程項目失敗'
+      return { success: false, error: message }
+    }
+  },
+
+  updateItineraryItem: async (itemId: string, data: Partial<TripItineraryItem>) => {
+    const supabase = getSupabaseClient()
+
+    try {
+      const { error } = await supabase
+        .from('trip_itinerary_items')
+        .update(data)
+        .eq('id', itemId)
+
+      if (error) throw error
+
+      // Refresh items if we have trip_id
+      const { itineraryItems } = get()
+      const item = itineraryItems.find(i => i.id === itemId)
+      if (item) {
+        await get().fetchTripItineraryItems(item.trip_id)
+      }
+
+      return { success: true }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '更新行程項目失敗'
+      return { success: false, error: message }
+    }
+  },
+
+  deleteItineraryItem: async (itemId: string) => {
+    const supabase = getSupabaseClient()
+
+    try {
+      // Get trip_id before deleting
+      const { itineraryItems } = get()
+      const item = itineraryItems.find(i => i.id === itemId)
+      const tripId = item?.trip_id
+
+      const { error } = await supabase
+        .from('trip_itinerary_items')
+        .delete()
+        .eq('id', itemId)
+
+      if (error) throw error
+
+      // Refresh items
+      if (tripId) {
+        await get().fetchTripItineraryItems(tripId)
+      }
+
+      return { success: true }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '刪除行程項目失敗'
+      return { success: false, error: message }
+    }
+  },
+
   calculateBalances: (tripId: string) => {
     const { members, expenses } = get()
 
@@ -455,6 +601,7 @@ export const useTripStore = create<TripState>((set, get) => ({
     members: [],
     expenses: [],
     settlements: [],
+    itineraryItems: [],
     error: null,
   }),
 }))
