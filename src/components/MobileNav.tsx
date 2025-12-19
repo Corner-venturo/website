@@ -21,9 +21,19 @@ const navItems: NavItem[] = [
 export default function MobileNav() {
   const pathname = usePathname();
 
+  // 不顯示漸變遮罩的頁面（首頁、探索頁、有自己底部按鈕的頁面）
+  const hideGradientPages = ['/', '/explore', '/my/footprint/record'];
+  const showGradient = !hideGradientPages.some(page => pathname === page || pathname.startsWith(page + '/'));
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 xl:hidden flex justify-center pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-      <div className="bg-white/85 backdrop-blur-xl rounded-full px-6 py-3.5 flex items-center gap-6 shadow-[0_8px_32px_rgba(0,0,0,0.18)] border border-white/40">
+    <>
+      {/* 漸變遮罩 */}
+      {showGradient && (
+        <div className="fixed bottom-0 left-0 right-0 h-44 bg-gradient-to-t from-[#F0EEE6] from-30% via-[#F0EEE6]/90 via-50% to-transparent pointer-events-none z-40 xl:hidden" />
+      )}
+
+      <nav className="fixed bottom-0 left-0 right-0 z-50 xl:hidden flex justify-center pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <div className="bg-white/85 backdrop-blur-xl rounded-full px-6 py-3.5 flex items-center gap-6 shadow-[0_8px_32px_rgba(0,0,0,0.18)] border border-white/40">
         {navItems.map((item) => {
           const isActive = pathname === item.href ||
             (item.href !== '/' && pathname.startsWith(item.href));
@@ -49,6 +59,7 @@ export default function MobileNav() {
           );
         })}
       </div>
-    </nav>
+      </nav>
+    </>
   );
 }

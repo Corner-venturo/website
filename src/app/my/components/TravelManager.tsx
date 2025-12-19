@@ -16,9 +16,9 @@ interface TravelManagerProps {
 
 // 展示用假資料
 const demoFlights: Flight[] = [
-  { id: '1', from: 'TPE', to: 'NRT', date: '2024/12/15', country: 'JP' },
-  { id: '2', from: 'NRT', to: 'TPE', date: '2024/12/20', country: 'TW' },
-  { id: '3', from: 'TPE', to: 'ICN', date: '2024/10/01', country: 'KR' },
+  { id: '1', from: 'TPE', to: 'NRT', date: '2024-12-15', country: 'JP' },
+  { id: '2', from: 'NRT', to: 'TPE', date: '2024-12-20', country: 'TW' },
+  { id: '3', from: 'TPE', to: 'ICN', date: '2024-10-01', country: 'KR' },
 ];
 
 // 從航班計算征服國家數（排除出發地台灣）
@@ -38,7 +38,7 @@ export default function TravelManager({ isLoggedIn }: TravelManagerProps) {
       {/* 標題列 */}
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-sm font-bold text-[#5C5C5C] flex items-center gap-2">
-          <span className="material-icons-round text-[#a5bccf] text-lg">flight</span>
+          <span className="material-icons-round text-[#a5bccf] text-lg leading-none">flight</span>
           旅行管家
         </h3>
         <Link
@@ -46,7 +46,7 @@ export default function TravelManager({ isLoggedIn }: TravelManagerProps) {
           className="text-xs text-[#949494] hover:text-[#cfb9a5] flex items-center transition-colors"
         >
           查看全部
-          <span className="material-icons-round text-sm">chevron_right</span>
+          <span className="material-icons-round text-sm leading-none">chevron_right</span>
         </Link>
       </div>
 
@@ -74,7 +74,7 @@ export default function TravelManager({ isLoggedIn }: TravelManagerProps) {
               </div>
               <span className="text-lg font-bold text-[#5C5C5C]">{recentFlight.to}</span>
             </div>
-            <span className="text-xs text-[#949494]">{recentFlight.date}</span>
+            <span className="text-xs text-[#949494]">{recentFlight.date.replace(/-/g, '/')}</span>
           </div>
         </div>
       ) : (
@@ -88,7 +88,7 @@ export default function TravelManager({ isLoggedIn }: TravelManagerProps) {
         href="/my/footprint/record"
         className="w-full py-3 rounded-2xl bg-[#cfb9a5] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#cfb9a5]/30 hover:bg-[#b09b88] transition active:scale-95"
       >
-        <span className="material-icons-round text-lg">add</span>
+        <span className="material-icons-round text-lg leading-none">add</span>
         記錄航班
       </Link>
     </div>

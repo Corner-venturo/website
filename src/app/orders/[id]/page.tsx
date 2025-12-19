@@ -50,6 +50,7 @@ interface OrderData {
   id: string;
   title: string;
   dateRange: string;
+  startDate: string; // 行程開始日期 YYYY-MM-DD
   image: string;
   participants: Participant[];
   schedule: DaySchedule[];
@@ -61,6 +62,7 @@ const ordersData: Record<string, OrderData> = {
     id: "kyoto-autumn",
     title: "京都秋日賞楓五日遊",
     dateRange: "2023/11/15 - 11/20",
+    startDate: "2023-11-15",
     image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAeCbTrGygE4_uzH0tj_DTbI3KKdnoQ-66HvcsNlfYVxQPtIEx94CzY2pXOnEqdq6FuX7wN-DhOHQPde4bxA4F3BCP7FN5iIfmUJNn7PT9aQFYAf9SvhzNGXL8ziV6L53mb9MeTbWDT1WJg4zcMfSvp1Mv21IiatJBbRZrilIDpDHA1o8leWHUifwEN2S4aN9duWIv9AzqngFYHlaRSfm83EjpSie_ZKPMSnOQBzWGJl5eeYSL-ryZMDgEmgNzTolv5VpqE1PnA4Ydl",
     participants: [
       { id: "1", name: "你", avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuBdWYYJ2ldikSJNzSIrJ8WHfZ_bWTBEojNa77kJR4ggJoqSpS3LoKPSDe3H-lhGy0nGJZHT7HGZa9dzYxFIjOmIuA1kH4_VWYnN7UM84eAGi66JzmJWezpvj4iwk06f5UvxgAwkq34Q7nOkmCgcbH-PeWX5n3_xoyiMxNd8pIKjF_VwyfSZhfJlU4ohY6Vfdn2Zs5aRGlhQiw94ZhCti2uyvQBer3RmcZSml2TdVB6ec--9BSUqmhPM6RoHLCjwOdfAB68_DxzQoghq" },
@@ -231,6 +233,7 @@ const ordersData: Record<string, OrderData> = {
     id: "tokyo-disney",
     title: "東京迪士尼夢幻之旅",
     dateRange: "2023/12/24 - 12/28",
+    startDate: "2023-12-24",
     image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCG3AJ90z0fRZUHbKu5cYlgYt0LZAkNc3uQYelVS-hJk9_kNA7CNAkyo4hBOCE25UqvUGwiMmQR2JEL8CE070Jx7fcBeNrNLbLY6AFWGqkW66DFMZQr3fpDGCa7oTu1wRwgqbdl812uGJyDjnUf7_BDfbts_gT17M79ShHbBgfODyTFMzxfn33oBnZLoKzkKCN5WiNwVJISRRQKf_MH6rzMsfQ2Wc8hcCu8tuHIRxOUXmUdukUK9SXVV4WsT1YiL5SgpqQJ0N9qk6za",
     participants: [
       { id: "1", name: "你", avatar: "" },
@@ -261,6 +264,7 @@ const ordersData: Record<string, OrderData> = {
     id: "okinawa-winter",
     title: "沖繩冬季五日遊",
     dateRange: "2024/12/23 - 12/27",
+    startDate: "2024-12-23",
     image: "https://images.unsplash.com/photo-1542640244-7e672d6cef4e?w=800",
     participants: [
       { id: "1", name: "你", avatar: "" },
@@ -283,6 +287,7 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "primary",
+            category: "交通",
           },
           {
             id: "ok1-2",
@@ -293,6 +298,7 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "primary",
+            category: "交通",
           },
           {
             id: "ok1-3",
@@ -303,6 +309,7 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "blue",
+            category: "交通",
           },
           {
             id: "ok1-4",
@@ -313,6 +320,8 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "green",
+            category: "住宿",
+            image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400",
           },
           {
             id: "ok1-5",
@@ -323,6 +332,7 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "pink",
+            category: "購物",
           },
           {
             id: "ok1-6",
@@ -333,6 +343,8 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "primary",
+            category: "美食",
+            image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400",
           },
         ],
       },
@@ -351,6 +363,7 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "green",
+            category: "其他",
           },
           {
             id: "ok2-2",
@@ -361,6 +374,8 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "blue",
+            category: "景點",
+            image: "https://images.unsplash.com/photo-1559494007-9f5847c49d94?w=400",
           },
           {
             id: "ok2-3",
@@ -371,6 +386,8 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "pink",
+            category: "購物",
+            image: "https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=400",
           },
           {
             id: "ok2-4",
@@ -381,6 +398,7 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "green",
+            category: "住宿",
           },
         ],
       },
@@ -399,6 +417,7 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "green",
+            category: "其他",
           },
           {
             id: "ok3-2",
@@ -409,6 +428,8 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "blue",
+            category: "景點",
+            image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400",
           },
           {
             id: "ok3-3",
@@ -419,6 +440,8 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "primary",
+            category: "美食",
+            image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400",
           },
           {
             id: "ok3-4",
@@ -429,6 +452,7 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "pink",
+            category: "購物",
           },
           {
             id: "ok3-5",
@@ -439,6 +463,8 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "green",
+            category: "景點",
+            image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400",
           },
           {
             id: "ok3-6",
@@ -449,6 +475,7 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "primary",
+            category: "美食",
           },
         ],
       },
@@ -467,6 +494,7 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "green",
+            category: "其他",
           },
           {
             id: "ok4-2",
@@ -477,6 +505,8 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "blue",
+            category: "景點",
+            image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400",
           },
           {
             id: "ok4-3",
@@ -487,6 +517,7 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "pink",
+            category: "購物",
           },
           {
             id: "ok4-4",
@@ -497,6 +528,7 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "green",
+            category: "其他",
           },
           {
             id: "ok4-5",
@@ -507,6 +539,8 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "primary",
+            category: "體驗",
+            image: "https://images.unsplash.com/photo-1528495612343-9ca9f4a4de28?w=400",
           },
         ],
       },
@@ -525,6 +559,7 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "green",
+            category: "其他",
           },
           {
             id: "ok5-2",
@@ -535,6 +570,8 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "primary",
+            category: "美食",
+            image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
           },
           {
             id: "ok5-3",
@@ -545,6 +582,7 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "blue",
+            category: "交通",
           },
           {
             id: "ok5-4",
@@ -555,6 +593,7 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "primary",
+            category: "交通",
           },
           {
             id: "ok5-5",
@@ -565,6 +604,7 @@ const ordersData: Record<string, OrderData> = {
             paidBy: "",
             amount: "",
             color: "green",
+            category: "交通",
           },
         ],
       },
@@ -601,15 +641,63 @@ const categoryConfig: Record<string, { bg: string; text: string }> = {
   "其他": { bg: "bg-gray-100", text: "text-gray-500" },
 };
 
+// 計算當前應該顯示哪一天
+function calculateCurrentDay(startDate: string, totalDays: number): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+
+  const diffTime = today.getTime() - start.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  // 出發前：顯示第一天
+  if (diffDays < 0) return 1;
+
+  // 行程中：顯示對應天數 (0 = Day 1, 1 = Day 2, ...)
+  const currentDay = diffDays + 1;
+
+  // 行程結束後：顯示最後一天
+  if (currentDay > totalDays) return totalDays;
+
+  return currentDay;
+}
+
+// 檢查是否在行程期間內
+function isWithinTripDates(startDate: string, totalDays: number): boolean {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setDate(end.getDate() + totalDays - 1);
+
+  return today >= start && today <= end;
+}
+
 export default function OrderDetailPage() {
   const params = useParams();
   const orderId = params.id as string;
   const order = ordersData[orderId];
 
-  const [selectedDay, setSelectedDay] = useState(1);
+  // 根據日期自動計算初始天數
+  const initialDay = order ? calculateCurrentDay(order.startDate, order.schedule.length) : 1;
+
+  const [selectedDay, setSelectedDay] = useState(initialDay);
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [showItemMenu, setShowItemMenu] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ItineraryItem | null>(null);
+  const [showAddItemModal, setShowAddItemModal] = useState(false);
+  const [showHeaderMenu, setShowHeaderMenu] = useState(false);
+  const [newItem, setNewItem] = useState({
+    time: "",
+    title: "",
+    description: "",
+    category: "景點" as "景點" | "美食" | "體驗" | "住宿" | "交通" | "購物" | "其他",
+  });
 
   if (!order) {
     return (
@@ -695,33 +783,42 @@ export default function OrderDetailPage() {
           </h1>
           <span className="text-[10px] text-gray-500 font-medium">{order.dateRange}</span>
         </div>
-        <button className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm hover:shadow-md transition-all active:scale-95 border border-gray-100">
+        <button
+          onClick={() => setShowHeaderMenu(true)}
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm hover:shadow-md transition-all active:scale-95 border border-gray-100"
+        >
           <span className="material-icons-round text-gray-700 text-[22px]">more_horiz</span>
         </button>
       </header>
 
       {/* 主要內容 */}
       <main className="relative z-10 w-full flex-1 flex flex-col">
-        {/* Day 選擇器 */}
-        <div className="sticky top-[72px] z-40 bg-[#F7F5F2]/98 backdrop-blur pt-2 pb-3 px-4 border-b border-gray-100">
-          <div className="flex gap-3 overflow-x-auto hide-scrollbar snap-x">
-            {order.schedule.map((day) => (
-              <button
-                key={day.day}
-                onClick={() => setSelectedDay(day.day)}
-                className={`snap-start flex-shrink-0 flex flex-col items-center justify-center min-w-[64px] h-[72px] rounded-2xl transition-all ${
-                  selectedDay === day.day
-                    ? "bg-[#Cfb9a5] text-white shadow-lg shadow-[#Cfb9a5]/30 transform scale-105"
-                    : "bg-white text-gray-400 border border-gray-100 hover:border-[#Cfb9a5]/30"
-                }`}
-              >
-                <span className="text-[10px] font-medium opacity-90">Day {day.day}</span>
-                <span className={`text-lg font-bold ${selectedDay === day.day ? "" : "text-gray-800"}`}>
-                  {day.date}
-                </span>
-                <span className="text-[10px] font-medium opacity-90">{day.weekday}</span>
-              </button>
-            ))}
+        {/* Day 選擇器 - 膠囊式 */}
+        <div className="sticky top-[72px] z-40 bg-[#F7F5F2]/98 backdrop-blur pt-3 pb-3 px-4">
+          <div className="bg-white/60 backdrop-blur-xl rounded-full p-1 flex gap-1 overflow-x-auto hide-scrollbar border border-white/50 shadow-sm">
+            {order.schedule.map((day) => {
+              // 只有在行程期間內才顯示「今天」的紅點
+              const withinTrip = isWithinTripDates(order.startDate, order.schedule.length);
+              const currentTripDay = calculateCurrentDay(order.startDate, order.schedule.length);
+              const isToday = withinTrip && currentTripDay === day.day;
+
+              return (
+                <button
+                  key={day.day}
+                  onClick={() => setSelectedDay(day.day)}
+                  className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap ${
+                    selectedDay === day.day
+                      ? "bg-[#Cfb9a5] text-white shadow-md"
+                      : "text-gray-500 hover:bg-gray-100"
+                  }`}
+                >
+                  Day {day.day}
+                  {isToday && selectedDay !== day.day && (
+                    <span className="ml-1 w-1.5 h-1.5 bg-[#CFA5A5] rounded-full inline-block" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -866,7 +963,10 @@ export default function OrderDetailPage() {
               <div className="w-2.5 h-2.5 rounded-full bg-gray-300" />
             </div>
             <div className="flex-1">
-              <button className="w-full py-3 rounded-full border border-dashed border-[#Cfb9a5]/50 text-[#Cfb9a5] bg-[#Cfb9a5]/5 hover:bg-[#Cfb9a5]/10 transition-all flex items-center justify-center gap-2 font-bold text-sm shadow-sm active:scale-[0.98]">
+              <button
+                onClick={() => setShowAddItemModal(true)}
+                className="w-full py-3 rounded-full border border-dashed border-[#Cfb9a5]/50 text-[#Cfb9a5] bg-[#Cfb9a5]/5 hover:bg-[#Cfb9a5]/10 transition-all flex items-center justify-center gap-2 font-bold text-sm shadow-sm active:scale-[0.98]"
+              >
                 <span className="material-icons-round text-[20px]">add_circle</span>
                 新增項目
               </button>
@@ -1117,6 +1217,199 @@ export default function OrderDetailPage() {
               {/* 取消按鈕 */}
               <button
                 onClick={() => setShowItemMenu(false)}
+                className="w-full mt-4 py-3.5 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-all active:scale-[0.98]"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* 新增項目 Modal */}
+      {showAddItemModal && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/40 z-50"
+            onClick={() => setShowAddItemModal(false)}
+          />
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col animate-slide-up">
+            {/* 標題列 */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
+              <h2 className="text-lg font-bold text-gray-800">新增行程項目</h2>
+              <button
+                onClick={() => setShowAddItemModal(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                <span className="material-icons-round text-gray-500 text-[18px]">close</span>
+              </button>
+            </div>
+
+            {/* 表單內容 */}
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {/* 類別選擇 */}
+              <div className="mb-4">
+                <label className="text-xs font-bold text-gray-500 mb-2 block">類別</label>
+                <div className="flex flex-wrap gap-2">
+                  {(["景點", "美食", "體驗", "住宿", "交通", "購物", "其他"] as const).map((cat) => {
+                    const style = categoryConfig[cat];
+                    const isSelected = newItem.category === cat;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setNewItem({ ...newItem, category: cat })}
+                        className={`px-3 py-1.5 rounded-full text-sm font-bold transition-all ${
+                          isSelected
+                            ? `${style.bg} ${style.text} ring-2 ring-offset-1 ring-current`
+                            : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 時間 */}
+              <div className="mb-4">
+                <label className="text-xs font-bold text-gray-500 mb-2 block">時間</label>
+                <input
+                  type="time"
+                  value={newItem.time}
+                  onChange={(e) => setNewItem({ ...newItem, time: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#Cfb9a5] focus:ring-2 focus:ring-[#Cfb9a5]/20 outline-none transition-all text-gray-800"
+                />
+              </div>
+
+              {/* 標題 */}
+              <div className="mb-4">
+                <label className="text-xs font-bold text-gray-500 mb-2 block">標題</label>
+                <input
+                  type="text"
+                  value={newItem.title}
+                  onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
+                  placeholder="例如：清水寺參拜"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#Cfb9a5] focus:ring-2 focus:ring-[#Cfb9a5]/20 outline-none transition-all text-gray-800 placeholder:text-gray-400"
+                />
+              </div>
+
+              {/* 說明 */}
+              <div className="mb-4">
+                <label className="text-xs font-bold text-gray-500 mb-2 block">說明 (選填)</label>
+                <textarea
+                  value={newItem.description}
+                  onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
+                  placeholder="例如：門票 ¥500/人"
+                  rows={2}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#Cfb9a5] focus:ring-2 focus:ring-[#Cfb9a5]/20 outline-none transition-all text-gray-800 placeholder:text-gray-400 resize-none"
+                />
+              </div>
+            </div>
+
+            {/* 底部按鈕 */}
+            <div className="px-5 pb-5 pt-2 border-t border-gray-100 bg-white">
+              <button
+                onClick={() => {
+                  // 這裡只是 demo，實際需要接後端 API
+                  alert(`已新增行程：${newItem.title}\n時間：${newItem.time}\n類別：${newItem.category}\n說明：${newItem.description}`);
+                  setNewItem({ time: "", title: "", description: "", category: "景點" });
+                  setShowAddItemModal(false);
+                }}
+                disabled={!newItem.time || !newItem.title}
+                className="w-full py-3.5 bg-[#Cfb9a5] hover:bg-[#c0a996] disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-[#Cfb9a5]/30 disabled:shadow-none"
+              >
+                <span className="material-icons-round text-[20px]">add</span>
+                新增行程
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Header 選單 Modal */}
+      {showHeaderMenu && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/40 z-50"
+            onClick={() => setShowHeaderMenu(false)}
+          />
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl animate-slide-up">
+            <div className="p-5">
+              {/* 拖曳指示器 */}
+              <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
+
+              {/* 選單項目 */}
+              <div className="space-y-2">
+                {/* 新增景點 */}
+                <button
+                  onClick={() => {
+                    setShowHeaderMenu(false);
+                    setShowAddItemModal(true);
+                  }}
+                  className="w-full flex items-center gap-4 p-4 rounded-2xl bg-[#Cfb9a5]/10 hover:bg-[#Cfb9a5]/20 transition-colors active:scale-[0.98]"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-[#Cfb9a5]/20 flex items-center justify-center">
+                    <span className="material-icons-round text-[#Cfb9a5] text-2xl">add_location</span>
+                  </div>
+                  <div className="flex-1 text-left">
+                    <div className="font-bold text-[#Cfb9a5]">新增景點</div>
+                    <div className="text-xs text-gray-500">加入新的行程項目</div>
+                  </div>
+                </button>
+
+                {/* 行程資料 */}
+                <Link
+                  href={`/orders/${orderId}/briefing`}
+                  onClick={() => setShowHeaderMenu(false)}
+                  className="w-full flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors active:scale-[0.98]"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-[#A5BCCF]/15 flex items-center justify-center">
+                    <span className="material-icons-round text-[#A5BCCF] text-2xl">description</span>
+                  </div>
+                  <div className="flex-1 text-left">
+                    <div className="font-bold text-gray-800">行程資料</div>
+                    <div className="text-xs text-gray-500">查看完整行程說明</div>
+                  </div>
+                  <span className="material-icons-round text-gray-300">chevron_right</span>
+                </Link>
+
+                {/* 常見問題 */}
+                <Link
+                  href="/faq"
+                  onClick={() => setShowHeaderMenu(false)}
+                  className="w-full flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors active:scale-[0.98]"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-[#A8BFA6]/15 flex items-center justify-center">
+                    <span className="material-icons-round text-[#A8BFA6] text-2xl">help_outline</span>
+                  </div>
+                  <div className="flex-1 text-left">
+                    <div className="font-bold text-gray-800">常見問題</div>
+                    <div className="text-xs text-gray-500">FAQ 與使用說明</div>
+                  </div>
+                  <span className="material-icons-round text-gray-300">chevron_right</span>
+                </Link>
+
+                {/* 聯絡客服 */}
+                <Link
+                  href="/contact"
+                  onClick={() => setShowHeaderMenu(false)}
+                  className="w-full flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors active:scale-[0.98]"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-[#CFA5A5]/15 flex items-center justify-center">
+                    <span className="material-icons-round text-[#CFA5A5] text-2xl">support_agent</span>
+                  </div>
+                  <div className="flex-1 text-left">
+                    <div className="font-bold text-gray-800">聯絡客服</div>
+                    <div className="text-xs text-gray-500">有問題？讓我們幫助你</div>
+                  </div>
+                  <span className="material-icons-round text-gray-300">chevron_right</span>
+                </Link>
+              </div>
+
+              {/* 取消按鈕 */}
+              <button
+                onClick={() => setShowHeaderMenu(false)}
                 className="w-full mt-4 py-3.5 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-all active:scale-[0.98]"
               >
                 取消

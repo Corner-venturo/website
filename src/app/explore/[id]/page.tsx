@@ -9,6 +9,7 @@ import { useGroupStore, Group } from '@/stores/group-store';
 import { getSupabaseClient } from '@/lib/supabase';
 import { mockTrips } from '../constants';
 import { getCategoryColor, getCategoryTextColor, formatDate } from '../TripCard';
+import ConfirmModal from '@/components/ConfirmModal';
 
 // 類別中文名稱
 const categoryNames: Record<string, string> = {
@@ -37,14 +38,28 @@ export default function GroupDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user, initialize, isInitialized } = useAuthStore();
-  const { groups, joinGroup, isLoading } = useGroupStore();
+  const { groups, joinGroup, deleteGroup, isLoading } = useGroupStore();
   const [group, setGroup] = useState<Group | null>(null);
   const [mockGroup, setMockGroup] = useState<typeof mockTrips[0] | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   const groupId = params.id as string;
+
+  // 檢查是否為主辦人
+  const isOrganizer = user && group && group.created_by === user.id;
+
+  // Debug log
+  useEffect(() => {
+    if (group) {
+      console.log('Group loaded:', group.id, 'created_by:', group.created_by);
+      console.log('Current user:', user?.id);
+      console.log('Is organizer:', isOrganizer);
+    }
+  }, [group, user, isOrganizer]);
 
   // 顯示提示
   const showNotification = (message: string) => {
@@ -62,19 +77,35 @@ export default function GroupDetailPage() {
 
   // 載入揪團資料
   useEffect(() => {
-    // 先從真實資料找
-    const realGroup = groups.find(g => g.id === groupId);
-    if (realGroup) {
-      setGroup(realGroup);
-      return;
-    }
+    const fetchGroup = async () => {
+      // 先檢查是否為 mock ID
+      const mock = mockTrips.find(t => t.id === groupId);
+      if (mock) {
+        setMockGroup(mock);
+        return;
+      }
 
-    // 否則從 mock 資料找
-    const mock = mockTrips.find(t => t.id === groupId);
-    if (mock) {
-      setMockGroup(mock);
-    }
-  }, [groupId, groups]);
+      // 從資料庫直接抓取（包含私人和任何狀態的揪團）
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase
+        .from('groups')
+        .select(`
+          *,
+          creator:profiles!created_by(id, display_name, avatar_url)
+        `)
+        .eq('id', groupId)
+        .single();
+
+      if (!error && data) {
+        setGroup(data as Group);
+      } else {
+        // 找不到，可能是無效 ID
+        console.log('Group not found:', groupId, error);
+      }
+    };
+
+    fetchGroup();
+  }, [groupId]);
 
   // 載入成員列表
   useEffect(() => {
@@ -129,8 +160,46 @@ export default function GroupDetailPage() {
   };
 
   // 處理分享
-  const handleShare = () => {
-    showNotification('此功能尚未開放');
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/explore/${groupId}`;
+    const shareTitle = group?.title || mockGroup?.title || '揪團活動';
+    const shareText = `來參加「${shareTitle}」！`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch {
+        // 用戶取消分享
+      }
+    } else {
+      // 複製到剪貼簿
+      await navigator.clipboard.writeText(shareUrl);
+      showNotification('已複製連結！');
+    }
+  };
+
+  // 處理刪除
+  const handleDelete = async () => {
+    if (!group) return;
+
+    const result = await deleteGroup(group.id);
+    if (result.success) {
+      showNotification('已刪除揪團');
+      setTimeout(() => router.push('/explore'), 1000);
+    } else {
+      showNotification(result.error || '刪除失敗');
+    }
+    setShowDeleteModal(false);
+  };
+
+  // 處理編輯
+  const handleEdit = () => {
+    router.push(`/explore/create?edit=${groupId}`);
+    setShowMoreMenu(false);
   };
 
   // Toast 元件
@@ -297,13 +366,54 @@ export default function GroupDetailPage() {
             <span className="material-icons-round">arrow_back</span>
           </button>
 
-          {/* 分享按鈕 */}
-          <button
-            onClick={handleShare}
-            className="absolute top-12 right-4 w-10 h-10 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center text-white"
-          >
-            <span className="material-icons-round">share</span>
-          </button>
+          {/* 右上角按鈕區 */}
+          <div className="absolute top-12 right-4 flex items-center gap-2">
+            {/* 分享按鈕 */}
+            <button
+              onClick={handleShare}
+              className="w-10 h-10 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center text-white"
+            >
+              <span className="material-icons-round">share</span>
+            </button>
+
+            {/* 主辦人更多選項 */}
+            {isOrganizer && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowMoreMenu(!showMoreMenu)}
+                  className="w-10 h-10 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center text-white"
+                >
+                  <span className="material-icons-round">more_vert</span>
+                </button>
+
+                {/* 下拉選單 */}
+                {showMoreMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)} />
+                    <div className="absolute top-12 right-0 bg-white rounded-2xl shadow-lg py-2 min-w-[140px] z-50">
+                      <button
+                        onClick={handleEdit}
+                        className="w-full px-4 py-3 text-left text-sm text-[#5C5C5C] hover:bg-[#F7F5F2] flex items-center gap-3"
+                      >
+                        <span className="material-icons-round text-lg text-[#a5bccf]">edit</span>
+                        編輯活動
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowMoreMenu(false);
+                          setShowDeleteModal(true);
+                        }}
+                        className="w-full px-4 py-3 text-left text-sm text-[#cfa5a5] hover:bg-[#F7F5F2] flex items-center gap-3"
+                      >
+                        <span className="material-icons-round text-lg">delete</span>
+                        刪除活動
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* 類別標籤 */}
           <div className="absolute bottom-4 left-4">
@@ -425,15 +535,47 @@ export default function GroupDetailPage() {
         {/* 底部按鈕 */}
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-xl border-t border-gray-100">
           <div className="flex gap-3">
-            <button
-              onClick={handleJoin}
-              disabled={isLoading || group.current_members >= group.max_members}
-              className="flex-1 py-3.5 bg-[#cfb9a5] text-white font-bold rounded-2xl shadow-lg shadow-[#cfb9a5]/30 active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {group.current_members >= group.max_members ? '已額滿' : '我要參加'}
-            </button>
+            {isOrganizer ? (
+              // 主辦人看到管理按鈕
+              <>
+                <button
+                  onClick={handleEdit}
+                  className="flex-1 py-3.5 bg-[#F7F5F2] text-[#5C5C5C] font-bold rounded-2xl active:scale-95 transition flex items-center justify-center gap-2"
+                >
+                  <span className="material-icons-round text-lg">edit</span>
+                  編輯活動
+                </button>
+                <button
+                  onClick={handleShare}
+                  className="flex-1 py-3.5 bg-[#cfb9a5] text-white font-bold rounded-2xl shadow-lg shadow-[#cfb9a5]/30 active:scale-95 transition flex items-center justify-center gap-2"
+                >
+                  <span className="material-icons-round text-lg">share</span>
+                  邀請朋友
+                </button>
+              </>
+            ) : (
+              // 一般用戶看到參加按鈕
+              <button
+                onClick={handleJoin}
+                disabled={isLoading || group.current_members >= group.max_members}
+                className="flex-1 py-3.5 bg-[#cfb9a5] text-white font-bold rounded-2xl shadow-lg shadow-[#cfb9a5]/30 active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {group.current_members >= group.max_members ? '已額滿' : '我要參加'}
+              </button>
+            )}
           </div>
         </div>
+
+        {/* 刪除確認 Modal */}
+        <ConfirmModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={handleDelete}
+          title="確定要刪除？"
+          description="刪除後無法恢復，所有參加者都會收到通知。"
+          confirmText="刪除"
+          variant="danger"
+        />
       </div>
     );
   }

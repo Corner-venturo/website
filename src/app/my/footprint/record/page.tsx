@@ -102,7 +102,7 @@ export default function RecordFlightPage() {
   return (
     <div className="bg-[#F0EEE6] font-sans antialiased text-[#5C5C5C] min-h-screen flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-20 px-5 pt-12 pb-4 flex items-center justify-between bg-[#F0EEE6]">
+      <header className="sticky top-0 z-20 px-5 pt-12 pb-4 flex items-center justify-between bg-[#F0EEE6]/95 backdrop-blur-md">
         <Link
           href="/my/footprint"
           className="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-[#5C5C5C] hover:text-[#cfb9a5] transition-colors"
@@ -124,7 +124,7 @@ export default function RecordFlightPage() {
               {/* 航段標題 */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="material-icons-round text-[#a5bccf] text-lg">flight</span>
+                  <span className="material-icons-round text-[#a5bccf] text-lg leading-none">flight</span>
                   <span className="text-sm font-bold text-[#5C5C5C]">航段 {index + 1}</span>
                 </div>
                 {segments.length > 1 && (
@@ -132,7 +132,7 @@ export default function RecordFlightPage() {
                     onClick={() => removeSegment(segment.id)}
                     className="w-8 h-8 rounded-full text-[#949494] hover:text-[#cfa5a5] hover:bg-[#cfa5a5]/10 flex items-center justify-center transition-colors"
                   >
-                    <span className="material-icons-round text-lg">close</span>
+                    <span className="material-icons-round text-lg leading-none">close</span>
                   </button>
                 )}
               </div>
@@ -208,7 +208,7 @@ export default function RecordFlightPage() {
           onClick={addSegment}
           className="w-full mt-4 py-3 rounded-2xl border-2 border-dashed border-[#D8D0C9] text-[#949494] hover:border-[#cfb9a5] hover:text-[#cfb9a5] flex items-center justify-center gap-2 transition-colors"
         >
-          <span className="material-icons-round">add</span>
+          <span className="material-icons-round text-lg leading-none">add</span>
           新增航段（轉機/回程）
         </button>
       </main>
@@ -301,7 +301,7 @@ export default function RecordFlightPage() {
             </>
           ) : (
             <>
-              <span className="material-icons-round">check</span>
+              <span className="material-icons-round text-xl leading-none">check</span>
               儲存航班
             </>
           )}
