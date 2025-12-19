@@ -203,7 +203,7 @@ export default function GroupDetailPage() {
 
   // 處理編輯
   const handleEdit = () => {
-    router.push(`/explore/create?edit=${groupId}`);
+    router.push(`/explore/${groupId}/edit`);
     setShowMoreMenu(false);
   };
 
