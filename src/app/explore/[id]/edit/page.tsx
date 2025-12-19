@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
+import LocationPicker, { LocationData } from '@/components/LocationPicker';
 import { useGroupStore, CreateGroupData } from '@/stores/group-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { getSupabaseClient } from '@/lib/supabase';
@@ -32,6 +33,8 @@ interface FormData {
   coverImagePreview: string;
   locationName: string;
   locationAddress: string;
+  latitude: number | null;
+  longitude: number | null;
   startDateTime: Date;
   endDateTime: Date;
   memberCount: number;
@@ -137,6 +140,8 @@ export default function EditGroupPage() {
     coverImagePreview: '',
     locationName: '',
     locationAddress: '',
+    latitude: null,
+    longitude: null,
     startDateTime: getDefaultDateTime(2),
     endDateTime: getDefaultDateTime(5),
     memberCount: 4,
@@ -206,6 +211,8 @@ export default function EditGroupPage() {
           coverImagePreview: data.cover_image || '',
           locationName: data.location_name || '',
           locationAddress: data.location_address || '',
+          latitude: data.latitude || null,
+          longitude: data.longitude || null,
           startDateTime,
           endDateTime,
           memberCount: data.max_members || 4,
@@ -291,6 +298,8 @@ export default function EditGroupPage() {
         category: formData.category,
         location_name: formData.locationName || undefined,
         location_address: formData.locationAddress || undefined,
+        latitude: formData.latitude || undefined,
+        longitude: formData.longitude || undefined,
         event_date: eventDate,
         start_time: startTime,
         end_time: endTime,
@@ -546,31 +555,24 @@ export default function EditGroupPage() {
 
               {/* 集合地點 */}
               <div>
-                <div className="flex items-center justify-between mb-2 px-1">
-                  <label className="text-xs font-bold text-gray-500">集合地點</label>
-                </div>
-                <div className="space-y-3">
-                  <div className="relative">
-                    <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">store</span>
-                    <input
-                      type="text"
-                      value={formData.locationName}
-                      onChange={(e) => updateFormData({ locationName: e.target.value })}
-                      placeholder="地點名稱（如：台北車站）"
-                      className="w-full pl-10 pr-4 py-3 rounded-2xl border-none bg-white text-sm shadow-sm placeholder-gray-300 focus:ring-2 focus:ring-[rgba(207,185,165,0.5)]"
-                    />
-                  </div>
-                  <div className="relative">
-                    <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">location_on</span>
-                    <input
-                      type="text"
-                      value={formData.locationAddress}
-                      onChange={(e) => updateFormData({ locationAddress: e.target.value })}
-                      placeholder="詳細地址"
-                      className="w-full pl-10 pr-4 py-3 rounded-2xl border-none bg-white text-sm shadow-sm placeholder-gray-300 focus:ring-2 focus:ring-[rgba(207,185,165,0.5)]"
-                    />
-                  </div>
-                </div>
+                <label className="block text-xs font-bold text-gray-500 mb-2 px-1">集合地點</label>
+                <LocationPicker
+                  value={formData.locationName && formData.latitude ? {
+                    name: formData.locationName,
+                    address: formData.locationAddress,
+                    latitude: formData.latitude,
+                    longitude: formData.longitude || 0,
+                  } : null}
+                  onChange={(location: LocationData) => {
+                    updateFormData({
+                      locationName: location.name,
+                      locationAddress: location.address,
+                      latitude: location.latitude,
+                      longitude: location.longitude,
+                    });
+                  }}
+                  placeholder="搜尋地點（如：台北車站）"
+                />
               </div>
 
               {/* 費用與人數 */}

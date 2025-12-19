@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import BadgeNotification, { BADGES } from '@/components/BadgeNotification';
+import LocationPicker, { LocationData } from '@/components/LocationPicker';
 import { useGroupStore, CreateGroupData } from '@/stores/group-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { getSupabaseClient } from '@/lib/supabase';
@@ -40,6 +41,8 @@ interface FormData {
   coverImagePreview: string;
   locationName: string;
   locationAddress: string;
+  latitude: number | null;
+  longitude: number | null;
   startDateTime: Date;
   endDateTime: Date;
   memberCount: number;
@@ -349,45 +352,23 @@ function TimeLocationStep({ formData, onChange }: TimeLocationStepProps) {
           <span className="material-icons-round text-[#A8BFA6]">place</span>
           活動地點
         </h2>
-        <div className="space-y-4">
-          {/* 地點名稱 */}
-          <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1.5 ml-1">地點名稱</label>
-            <div className="relative">
-              <span className="material-icons-round absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">store</span>
-              <input
-                type="text"
-                value={formData.locationName}
-                onChange={(e) => onChange({ locationName: e.target.value })}
-                placeholder="例如：台北 101、信義威秀"
-                className="w-full pl-11 pr-4 py-3.5 rounded-2xl border-none bg-white text-sm text-gray-800 placeholder-gray-300 shadow-sm focus:ring-2 focus:ring-[rgba(207,185,165,0.5)]"
-              />
-            </div>
-          </div>
-
-          {/* 詳細地址 */}
-          <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1.5 ml-1">詳細地址</label>
-            <div className="relative">
-              <span className="material-icons-round absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">location_on</span>
-              <input
-                type="text"
-                value={formData.locationAddress}
-                onChange={(e) => onChange({ locationAddress: e.target.value })}
-                placeholder="例如：台北市信義區信義路五段7號"
-                className="w-full pl-11 pr-4 py-3.5 rounded-2xl border-none bg-white text-sm text-gray-800 placeholder-gray-300 shadow-sm focus:ring-2 focus:ring-[rgba(207,185,165,0.5)]"
-              />
-            </div>
-          </div>
-
-          {/* 提示 */}
-          <div className="flex items-start gap-2 p-3 bg-[#A8BFA6]/10 rounded-xl">
-            <span className="material-icons-round text-[#A8BFA6] text-lg mt-0.5">info</span>
-            <p className="text-xs text-gray-500 leading-relaxed">
-              請填寫明確的集合地點，方便參加者找到位置。地圖選點功能即將推出！
-            </p>
-          </div>
-        </div>
+        <LocationPicker
+          value={formData.locationName && formData.latitude ? {
+            name: formData.locationName,
+            address: formData.locationAddress,
+            latitude: formData.latitude,
+            longitude: formData.longitude || 0,
+          } : null}
+          onChange={(location: LocationData) => {
+            onChange({
+              locationName: location.name,
+              locationAddress: location.address,
+              latitude: location.latitude,
+              longitude: location.longitude,
+            });
+          }}
+          placeholder="搜尋地點（如：台北101、信義威秀）"
+        />
       </div>
     </>
   );
@@ -622,6 +603,8 @@ function CreateExplorePageContent() {
     coverImagePreview: '',
     locationName: '',
     locationAddress: '',
+    latitude: null,
+    longitude: null,
     startDateTime: getDefaultDateTime(2),
     endDateTime: getDefaultDateTime(5),
     memberCount: 4,
@@ -687,6 +670,8 @@ function CreateExplorePageContent() {
           coverImagePreview: data.cover_image_url || '',
           locationName: data.location_name || '',
           locationAddress: data.location_address || '',
+          latitude: data.latitude || null,
+          longitude: data.longitude || null,
           startDateTime,
           endDateTime,
           memberCount: data.max_members || 4,
@@ -773,6 +758,8 @@ function CreateExplorePageContent() {
           category: formData.category,
           location_name: formData.locationName || undefined,
           location_address: formData.locationAddress || undefined,
+          latitude: formData.latitude || undefined,
+          longitude: formData.longitude || undefined,
           event_date: eventDate,
           start_time: startTime,
           end_time: endTime,
@@ -915,28 +902,23 @@ function CreateExplorePageContent() {
 
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-2 px-1">集合地點</label>
-                  <div className="space-y-3">
-                    <div className="relative">
-                      <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">store</span>
-                      <input
-                        type="text"
-                        value={formData.locationName}
-                        onChange={(e) => updateFormData({ locationName: e.target.value })}
-                        placeholder="地點名稱（如：台北車站）"
-                        className="w-full pl-10 pr-4 py-3 rounded-2xl border-none bg-white text-sm shadow-sm placeholder-gray-300 focus:ring-2 focus:ring-[rgba(207,185,165,0.5)]"
-                      />
-                    </div>
-                    <div className="relative">
-                      <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">location_on</span>
-                      <input
-                        type="text"
-                        value={formData.locationAddress}
-                        onChange={(e) => updateFormData({ locationAddress: e.target.value })}
-                        placeholder="詳細地址"
-                        className="w-full pl-10 pr-4 py-3 rounded-2xl border-none bg-white text-sm shadow-sm placeholder-gray-300 focus:ring-2 focus:ring-[rgba(207,185,165,0.5)]"
-                      />
-                    </div>
-                  </div>
+                  <LocationPicker
+                    value={formData.locationName && formData.latitude ? {
+                      name: formData.locationName,
+                      address: formData.locationAddress,
+                      latitude: formData.latitude,
+                      longitude: formData.longitude || 0,
+                    } : null}
+                    onChange={(location: LocationData) => {
+                      updateFormData({
+                        locationName: location.name,
+                        locationAddress: location.address,
+                        latitude: location.latitude,
+                        longitude: location.longitude,
+                      });
+                    }}
+                    placeholder="搜尋地點（如：台北車站）"
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

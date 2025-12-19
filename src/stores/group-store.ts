@@ -41,6 +41,8 @@ export interface CreateGroupData {
   category: string
   location_name?: string
   location_address?: string
+  latitude?: number
+  longitude?: number
   event_date: string
   start_time?: string
   end_time?: string
@@ -167,6 +169,8 @@ export const useGroupStore = create<GroupState>((set, get) => ({
         category: data.category,
         location_name: data.location_name || null,
         location_address: data.location_address || null,
+        latitude: data.latitude || null,
+        longitude: data.longitude || null,
         event_date: data.event_date,
         start_time: data.start_time || null,
         end_time: data.end_time || null,
