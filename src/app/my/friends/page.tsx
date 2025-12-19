@@ -69,9 +69,6 @@ export default function FriendsPage() {
     }
   };
 
-  const handleInvite = () => {
-    showNotification('邀請功能尚未開放');
-  };
 
   const handleChat = () => {
     showNotification('聊天功能尚未開放');
@@ -259,13 +256,13 @@ export default function FriendsPage() {
 
       {/* 底部邀請按鈕 */}
       <div className="fixed bottom-24 left-0 w-full p-6 pb-8 bg-gradient-to-t from-[#F0EEE6] via-[#F0EEE6] via-70% to-transparent z-40">
-        <button
-          onClick={handleInvite}
+        <Link
+          href="/my/friends/invite"
           className="w-full py-4 rounded-3xl bg-[#cfb9a5] hover:bg-[#b09b88] text-white font-bold text-lg shadow-lg shadow-[#cfb9a5]/30 flex items-center justify-center gap-2 transition-transform active:scale-95"
         >
           <span className="material-icons-round">person_add</span>
           邀請更多旅伴
-        </button>
+        </Link>
       </div>
 
       {/* 底部導航 */}

@@ -9,12 +9,11 @@ import {
   AchievementBadges,
   TravelBuddies,
   QuickActions,
-  TravelBudget,
+  TravelManager,
   SettingsLink,
   Achievement,
   demoAchievements,
   demoQuickActions,
-  demoFriends,
   realQuickActions,
 } from "./components";
 
@@ -85,7 +84,7 @@ export default function ProfilePage() {
           <div className="px-5 space-y-4">
             <TravelBuddies isLoggedIn={isLoggedIn} />
             <QuickActions actions={quickActions} />
-            <TravelBudget isLoggedIn={isLoggedIn} friends={demoFriends} />
+            <TravelManager isLoggedIn={isLoggedIn} />
             <SettingsLink />
           </div>
         </main>

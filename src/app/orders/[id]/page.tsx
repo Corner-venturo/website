@@ -2,178 +2,622 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import MobileNav from "@/components/MobileNav";
 
-// 模擬訂單資料
-const ordersData: Record<string, {
+// 個別參與者出席狀態
+interface ItemAttendance {
+  oderId: string;
+  status: "attending" | "not_attending" | "pending";
+}
+
+// 行程項目類型
+interface ItineraryItem {
+  id: string;
+  time: string;
+  title: string;
+  icon: string;
+  description: string;
+  paidBy: string;
+  amount: string;
+  color: "primary" | "blue" | "pink" | "green";
+  category?: "景點" | "美食" | "體驗" | "住宿" | "交通" | "購物" | "其他";
+  image?: string;
+  // 出席詢問相關
+  inquiryBy?: string; // 誰發起詢問 (participant id)
+  attendanceList?: Record<string, "attending" | "not_attending" | "pending">; // 每個參與者的出席狀態
+}
+
+// 每日行程
+interface DaySchedule {
+  day: number;
+  date: string;
+  weekday: string;
+  dateLabel: string;
+  items: ItineraryItem[];
+}
+
+// 參與者
+interface Participant {
+  id: string;
+  name: string;
+  avatar: string;
+}
+
+// 訂單資料
+interface OrderData {
   id: string;
   title: string;
   dateRange: string;
-  travelers: string;
   image: string;
-  hasBriefing: boolean;
-  briefing?: {
-    topic: string;
-    date: string;
-    time: string;
-    location: string;
-    meetingLink: string;
-    outline: string[];
-    documents: { name: string; type: string; size: string; href?: string }[];
-  };
-  faqs?: { question: string; answer: string; icon: string; color: string }[];
-  itinerary?: {
-    flight: { departure: string; arrival: string; flightNo: string };
-    hotel: { name: string; address: string; checkIn: string; checkOut: string };
-    days: { day: number; title: string; activities: string[] }[];
-  };
-}> = {
+  participants: Participant[];
+  schedule: DaySchedule[];
+}
+
+// 模擬訂單資料
+const ordersData: Record<string, OrderData> = {
   "kyoto-autumn": {
     id: "kyoto-autumn",
     title: "京都秋日賞楓五日遊",
-    dateRange: "11/15 - 11/20, 2023",
-    travelers: "2 成人, 1 兒童",
+    dateRange: "2023/11/15 - 11/20",
     image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAeCbTrGygE4_uzH0tj_DTbI3KKdnoQ-66HvcsNlfYVxQPtIEx94CzY2pXOnEqdq6FuX7wN-DhOHQPde4bxA4F3BCP7FN5iIfmUJNn7PT9aQFYAf9SvhzNGXL8ziV6L53mb9MeTbWDT1WJg4zcMfSvp1Mv21IiatJBbRZrilIDpDHA1o8leWHUifwEN2S4aN9duWIv9AzqngFYHlaRSfm83EjpSie_ZKPMSnOQBzWGJl5eeYSL-ryZMDgEmgNzTolv5VpqE1PnA4Ydl",
-    hasBriefing: true,
-    briefing: {
-      topic: "行前注意事項與行程細節確認",
-      date: "2023年 11月 10日 (週五)",
-      time: "19:30 - 20:30 (約 1 小時)",
-      location: "Google Meet 線上會議",
-      meetingLink: "https://meet.google.com/xxx-xxxx-xxx",
-      outline: [
-        "集合時間地點確認與機場報到流程",
-        "京都當地天氣預報與洋蔥式穿著建議",
-        "入境卡填寫教學與 Visit Japan Web 設定",
-        "自由活動時間推薦景點 (清水寺周邊)",
-        "Q&A 問題討論",
-      ],
-      documents: [
-        { name: "行前手冊.pdf", type: "pdf", size: "2.4 MB" },
-        { name: "常見問題 (FAQ)", type: "link", size: "外部連結", href: "#faq" },
-      ],
-    },
-    faqs: [
+    participants: [
+      { id: "1", name: "你", avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuBdWYYJ2ldikSJNzSIrJ8WHfZ_bWTBEojNa77kJR4ggJoqSpS3LoKPSDe3H-lhGy0nGJZHT7HGZa9dzYxFIjOmIuA1kH4_VWYnN7UM84eAGi66JzmJWezpvj4iwk06f5UvxgAwkq34Q7nOkmCgcbH-PeWX5n3_xoyiMxNd8pIKjF_VwyfSZhfJlU4ohY6Vfdn2Zs5aRGlhQiw94ZhCti2uyvQBer3RmcZSml2TdVB6ec--9BSUqmhPM6RoHLCjwOdfAB68_DxzQoghq" },
+      { id: "2", name: "Alice", avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuDPzzadcLTbIg8xv27Pvg-gvrPko3q98kp8FvsDFy7YrfNQzmCz_5w6u6Nf1e6nShSLqSbHQTfruXobIC_Lb8iBHxAOu2Xu4xzbxgq_Dbnb1fJ4GqSSkwyMJG1ebvsW8sTi-EqJpRffTqPJ58DftKOxMCo-EngxBgy23uJ-gHlTOPQkJ8_AIdtHvp1M7TVckOwBJcgQeHV-pgH7IBH3bqD7A4gbEYoMJ2mJpFIorWjmbBDX7wB7lzhInwEyAhIIPwg1C5Tuiu2LjqKd" },
+      { id: "3", name: "Bob", avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuDvQNq-jhI8bPHrQa9l-1RH1LWV5D7Uv4BUVhmAepBeBx3RMgUeZtPD2FeAvAcZFU7sz1Yh1qukLAkCEyzKldJhI1iOqRBvtObS8tmTsF49HrrnQy1XCQcBUCYxXrDXGAySJqbbQwprShe2_Hz-uNJxvXexme6C_HjJAc3tBIjN2oiDz5jo9yLSp7wOZhJr5jnA-K2Vs86wYAiWMSci66tVVO9a6Kf7ZZsGElKhGN9j9sohrcEOP7uqPKqfpOfCfj0HKEvDi5OiZbOs" },
+      { id: "4", name: "Carol", avatar: "" },
+      { id: "5", name: "David", avatar: "" },
+    ],
+    schedule: [
       {
-        question: "集合時間地點確認",
-        answer: "集合地點位於桃園國際機場第二航廈 3 號櫃檯（長榮航空）。請務必於起飛前 3 小時（即早上 06:30）抵達現場與領隊會合，領取登機證並辦理行李託運。",
-        icon: "flight_takeoff",
-        color: "morandi-blue",
+        day: 1,
+        date: "15",
+        weekday: "週三",
+        dateLabel: "11月15日",
+        items: [
+          {
+            id: "1-1",
+            time: "09:30",
+            title: "關西機場接機",
+            icon: "flight_land",
+            description: "MK計程車預約單號 #99281",
+            paidBy: "你",
+            amount: "¥15,000",
+            color: "primary",
+            category: "交通",
+            image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCBqTUmBLXZhqnZPcQe1nIwGuRohyZdFc47OG_sWdrh-8saBlb34Y3uBw_YSd3Ydp2nV6EPktexnXTw9wPF6eb36Rn8uQRi2rpc1GaDxQWmwktHbyyAER_xn5iJHi57wdMmjPJMAPOHV6gWVqxjjPN6x3WoQ896n7YFsHWPU3QML6BZE7hdafcgPI1Fec6SXhNEWVo_t1Q8zw0I0CXTZmbO0cZY5vS3xQ7FdyX36K86T9W5NsNVF5QEMEo3e6tavseKbCcuFdaXTaUQ",
+            // Alice 發起詢問，大家都已回覆
+            inquiryBy: "2",
+            attendanceList: {
+              "1": "attending",
+              "2": "attending",
+              "3": "attending",
+              "4": "attending",
+              "5": "attending",
+            },
+          },
+          {
+            id: "1-2",
+            time: "11:30",
+            title: "祇園午餐：湯豆腐",
+            icon: "restaurant",
+            description: "已訂位 11:30, 奧丹清水店",
+            paidBy: "Alice",
+            amount: "¥8,000",
+            color: "blue",
+            category: "美食",
+            image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCBqTUmBLXZhqnZPcQe1nIwGuRohyZdFc47OG_sWdrh-8saBlb34Y3uBw_YSd3Ydp2nV6EPktexnXTw9wPF6eb36Rn8uQRi2rpc1GaDxQWmwktHbyyAER_xn5iJHi57wdMmjPJMAPOHV6gWVqxjjPN6x3WoQ896n7YFsHWPU3QML6BZE7hdafcgPI1Fec6SXhNEWVo_t1Q8zw0I0CXTZmbO0cZY5vS3xQ7FdyX36K86T9W5NsNVF5QEMEo3e6tavseKbCcuFdaXTaUQ",
+            // 我發起詢問，部分人還沒回覆
+            inquiryBy: "1",
+            attendanceList: {
+              "1": "attending",
+              "2": "attending",
+              "3": "attending",
+              "4": "not_attending",
+              "5": "pending",
+            },
+          },
+          {
+            id: "1-3",
+            time: "14:00",
+            title: "清水寺參拜",
+            icon: "temple_buddhist",
+            description: "紅葉季人多，建議提前入場",
+            paidBy: "Bob",
+            amount: "¥2,000",
+            color: "pink",
+            category: "景點",
+            image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCBqTUmBLXZhqnZPcQe1nIwGuRohyZdFc47OG_sWdrh-8saBlb34Y3uBw_YSd3Ydp2nV6EPktexnXTw9wPF6eb36Rn8uQRi2rpc1GaDxQWmwktHbyyAER_xn5iJHi57wdMmjPJMAPOHV6gWVqxjjPN6x3WoQ896n7YFsHWPU3QML6BZE7hdafcgPI1Fec6SXhNEWVo_t1Q8zw0I0CXTZmbO0cZY5vS3xQ7FdyX36K86T9W5NsNVF5QEMEo3e6tavseKbCcuFdaXTaUQ",
+            // 尚未發起詢問
+          },
+        ],
       },
       {
-        question: "當地天氣與穿著建議",
-        answer: "京都秋季氣溫約在 10°C 至 18°C 之間，早晚溫差較大。建議採用「洋蔥式穿搭」，內層穿著舒適透氣的長袖，外層搭配防風保暖的薄外套或風衣。",
-        icon: "checkroom",
-        color: "morandi-pink",
+        day: 2,
+        date: "16",
+        weekday: "週四",
+        dateLabel: "11月16日",
+        items: [
+          {
+            id: "2-1",
+            time: "08:30",
+            title: "嵐山竹林散步",
+            icon: "forest",
+            description: "建議早起避開人潮",
+            paidBy: "你",
+            amount: "免費",
+            color: "green",
+          },
+          {
+            id: "2-2",
+            time: "12:00",
+            title: "嵐山午餐",
+            icon: "restaurant",
+            description: "鯛匠 HANANA 鯛魚茶泡飯",
+            paidBy: "Carol",
+            amount: "¥6,000",
+            color: "blue",
+          },
+        ],
       },
       {
-        question: "網卡與 Wi-Fi 設定",
-        answer: "本次行程已包含每人一張 5GB 流量的日本上網 SIM 卡。領隊將於機場集合時統一發放，請於抵達日本後再插入手機使用。若需要 eSIM，請提前聯繫客服更換。",
-        icon: "wifi",
-        color: "morandi-green",
+        day: 3,
+        date: "17",
+        weekday: "週五",
+        dateLabel: "11月17日",
+        items: [
+          {
+            id: "3-1",
+            time: "09:00",
+            title: "伏見稻荷大社",
+            icon: "temple_buddhist",
+            description: "千本鳥居，預計步行2小時",
+            paidBy: "你",
+            amount: "免費",
+            color: "primary",
+          },
+        ],
       },
       {
-        question: "入境卡填寫教學",
-        answer: "建議您在出發前下載 Visit Japan Web 並完成註冊。填寫時請參考行前手冊第 5 頁的範例。若不會操作，領隊會在機場協助教學。",
-        icon: "description",
-        color: "morandi-yellow",
+        day: 4,
+        date: "18",
+        weekday: "週六",
+        dateLabel: "11月18日",
+        items: [
+          {
+            id: "4-1",
+            time: "10:00",
+            title: "金閣寺",
+            icon: "temple_buddhist",
+            description: "世界遺產，門票 ¥500/人",
+            paidBy: "Alice",
+            amount: "¥2,500",
+            color: "blue",
+          },
+        ],
       },
       {
-        question: "當地貨幣兌換",
-        answer: "建議在台灣先行兌換日幣，匯率通常較佳。大部分商店可使用信用卡（Visa/Master/JCB），但部分小吃攤與神社僅收現金，建議每人準備約 3-5 萬日幣現金。",
-        icon: "currency_exchange",
-        color: "gray",
+        day: 5,
+        date: "19",
+        weekday: "週日",
+        dateLabel: "11月19日",
+        items: [
+          {
+            id: "5-1",
+            time: "10:00",
+            title: "京都車站購物",
+            icon: "shopping_bag",
+            description: "伴手禮採買",
+            paidBy: "",
+            amount: "",
+            color: "green",
+          },
+          {
+            id: "5-2",
+            time: "14:00",
+            title: "關西機場",
+            icon: "flight_takeoff",
+            description: "HARUKA 特急，約75分鐘",
+            paidBy: "你",
+            amount: "¥3,000",
+            color: "primary",
+          },
+        ],
       },
     ],
-    itinerary: {
-      flight: {
-        departure: "桃園 TPE 09:30",
-        arrival: "關西 KIX 13:15",
-        flightNo: "BR132",
-      },
-      hotel: {
-        name: "京都格蘭比亞酒店",
-        address: "京都市下京區烏丸通塩小路下ル",
-        checkIn: "11/15 15:00",
-        checkOut: "11/20 11:00",
-      },
-      days: [
-        {
-          day: 1,
-          title: "抵達京都",
-          activities: ["關西機場入境", "HARUKA 特急前往京都", "酒店 Check-in", "祇園花見小路散策"],
-        },
-        {
-          day: 2,
-          title: "嵐山一日遊",
-          activities: ["嵐山竹林小徑", "天龍寺", "渡月橋", "嵯峨野觀光小火車"],
-        },
-        {
-          day: 3,
-          title: "東山區經典路線",
-          activities: ["清水寺", "二年坂・三年坂", "八坂神社", "花見小路晚餐"],
-        },
-        {
-          day: 4,
-          title: "自由活動日",
-          activities: ["推薦：伏見稻荷大社", "推薦：金閣寺", "推薦：錦市場"],
-        },
-        {
-          day: 5,
-          title: "返程",
-          activities: ["酒店 Check-out", "京都車站購物", "HARUKA 前往關西機場", "返回台灣"],
-        },
-      ],
-    },
   },
   "tokyo-disney": {
     id: "tokyo-disney",
     title: "東京迪士尼夢幻之旅",
-    dateRange: "12/24 - 12/28, 2023",
-    travelers: "2 成人",
+    dateRange: "2023/12/24 - 12/28",
     image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCG3AJ90z0fRZUHbKu5cYlgYt0LZAkNc3uQYelVS-hJk9_kNA7CNAkyo4hBOCE25UqvUGwiMmQR2JEL8CE070Jx7fcBeNrNLbLY6AFWGqkW66DFMZQr3fpDGCa7oTu1wRwgqbdl812uGJyDjnUf7_BDfbts_gT17M79ShHbBgfODyTFMzxfn33oBnZLoKzkKCN5WiNwVJISRRQKf_MH6rzMsfQ2Wc8hcCu8tuHIRxOUXmUdukUK9SXVV4WsT1YiL5SgpqQJ0N9qk6za",
-    hasBriefing: false,
-    itinerary: {
-      flight: {
-        departure: "桃園 TPE 08:00",
-        arrival: "成田 NRT 12:30",
-        flightNo: "CI100",
+    participants: [
+      { id: "1", name: "你", avatar: "" },
+      { id: "2", name: "伴侶", avatar: "" },
+    ],
+    schedule: [
+      {
+        day: 1,
+        date: "24",
+        weekday: "週日",
+        dateLabel: "12月24日",
+        items: [
+          {
+            id: "d1-1",
+            time: "12:30",
+            title: "成田機場入境",
+            icon: "flight_land",
+            description: "CI100 航班抵達",
+            paidBy: "你",
+            amount: "",
+            color: "primary",
+          },
+        ],
       },
-      hotel: {
-        name: "東京迪士尼大使大飯店",
-        address: "千葉県浦安市舞浜2-11",
-        checkIn: "12/24 15:00",
-        checkOut: "12/28 12:00",
+    ],
+  },
+  "okinawa-winter": {
+    id: "okinawa-winter",
+    title: "沖繩冬季五日遊",
+    dateRange: "2024/12/23 - 12/27",
+    image: "https://images.unsplash.com/photo-1542640244-7e672d6cef4e?w=800",
+    participants: [
+      { id: "1", name: "你", avatar: "" },
+      { id: "2", name: "旅伴A", avatar: "" },
+      { id: "3", name: "旅伴B", avatar: "" },
+    ],
+    schedule: [
+      {
+        day: 1,
+        date: "23",
+        weekday: "週二",
+        dateLabel: "12月23日",
+        items: [
+          {
+            id: "ok1-1",
+            time: "12:00",
+            title: "桃園機場集合",
+            icon: "groups",
+            description: "T1 泰越捷航空櫃檯集合",
+            paidBy: "",
+            amount: "",
+            color: "primary",
+          },
+          {
+            id: "ok1-2",
+            time: "14:45",
+            title: "桃園機場出發",
+            icon: "flight_takeoff",
+            description: "泰越捷航空 VZ568",
+            paidBy: "",
+            amount: "",
+            color: "primary",
+          },
+          {
+            id: "ok1-3",
+            time: "17:10",
+            title: "抵達那霸機場",
+            icon: "flight_land",
+            description: "搭乘單軌電車前往牧志站，約20分鐘",
+            paidBy: "",
+            amount: "",
+            color: "blue",
+          },
+          {
+            id: "ok1-4",
+            time: "18:00",
+            title: "飯店入住",
+            icon: "hotel",
+            description: "琉球Orion那霸國際通飯店",
+            paidBy: "",
+            amount: "",
+            color: "green",
+          },
+          {
+            id: "ok1-5",
+            time: "19:00",
+            title: "國際通散策",
+            icon: "storefront",
+            description: "逛街購物、感受沖繩夜晚",
+            paidBy: "",
+            amount: "",
+            color: "pink",
+          },
+          {
+            id: "ok1-6",
+            time: "20:30",
+            title: "七輪燒肉晚餐",
+            icon: "restaurant",
+            description: "沖繩和牛燒肉",
+            paidBy: "",
+            amount: "",
+            color: "primary",
+          },
+        ],
       },
-      days: [
-        { day: 1, title: "抵達東京", activities: ["成田機場入境", "利木津巴士前往迪士尼", "飯店 Check-in"] },
-        { day: 2, title: "迪士尼樂園", activities: ["東京迪士尼樂園全日遊玩", "聖誕特別遊行", "煙火秀"] },
-        { day: 3, title: "迪士尼海洋", activities: ["東京迪士尼海洋全日遊玩", "聖誕港灣秀"] },
-        { day: 4, title: "自由活動", activities: ["推薦：IKSPIARI 購物", "推薦：再訪樂園"] },
-        { day: 5, title: "返程", activities: ["飯店 Check-out", "利木津巴士前往成田", "返回台灣"] },
-      ],
-    },
+      {
+        day: 2,
+        date: "24",
+        weekday: "週三",
+        dateLabel: "12月24日",
+        items: [
+          {
+            id: "ok2-1",
+            time: "08:00",
+            title: "晨喚出發",
+            icon: "wb_sunny",
+            description: "準備前往北部",
+            paidBy: "",
+            amount: "",
+            color: "green",
+          },
+          {
+            id: "ok2-2",
+            time: "10:00",
+            title: "沖繩美麗海水族館",
+            icon: "water",
+            description: "黑潮之海、鯨鯊、魟魚",
+            paidBy: "",
+            amount: "",
+            color: "blue",
+          },
+          {
+            id: "ok2-3",
+            time: "15:00",
+            title: "美國村",
+            icon: "shopping_bag",
+            description: "購物、美食、摩天輪",
+            paidBy: "",
+            amount: "",
+            color: "pink",
+          },
+          {
+            id: "ok2-4",
+            time: "20:00",
+            title: "返回飯店",
+            icon: "hotel",
+            description: "休息準備明天行程",
+            paidBy: "",
+            amount: "",
+            color: "green",
+          },
+        ],
+      },
+      {
+        day: 3,
+        date: "25",
+        weekday: "週四",
+        dateLabel: "12月25日",
+        items: [
+          {
+            id: "ok3-1",
+            time: "08:00",
+            title: "晨喚出發",
+            icon: "wb_sunny",
+            description: "聖誕節快樂！",
+            paidBy: "",
+            amount: "",
+            color: "green",
+          },
+          {
+            id: "ok3-2",
+            time: "09:30",
+            title: "殘波岬",
+            icon: "landscape",
+            description: "沖繩西海岸最大海岬",
+            paidBy: "",
+            amount: "",
+            color: "blue",
+          },
+          {
+            id: "ok3-3",
+            time: "11:00",
+            title: "BANTA CAFE",
+            icon: "local_cafe",
+            description: "絕景海景咖啡廳",
+            paidBy: "",
+            amount: "",
+            color: "primary",
+          },
+          {
+            id: "ok3-4",
+            time: "14:00",
+            title: "AEON MALL Okinawa Rycom",
+            icon: "shopping_cart",
+            description: "寶可夢中心、購物",
+            paidBy: "",
+            amount: "",
+            color: "pink",
+          },
+          {
+            id: "ok3-5",
+            time: "17:00",
+            title: "東南植物樂園",
+            icon: "park",
+            description: "熱帶植物園、燈飾",
+            paidBy: "",
+            amount: "",
+            color: "green",
+          },
+          {
+            id: "ok3-6",
+            time: "20:00",
+            title: "國際通無菜單料理",
+            icon: "restaurant",
+            description: "主廚特製晚餐",
+            paidBy: "",
+            amount: "",
+            color: "primary",
+          },
+        ],
+      },
+      {
+        day: 4,
+        date: "26",
+        weekday: "週五",
+        dateLabel: "12月26日",
+        items: [
+          {
+            id: "ok4-1",
+            time: "08:00",
+            title: "晨喚出發",
+            icon: "wb_sunny",
+            description: "前往南部區域",
+            paidBy: "",
+            amount: "",
+            color: "green",
+          },
+          {
+            id: "ok4-2",
+            time: "10:00",
+            title: "DMM Kariyushi水族館",
+            icon: "water",
+            description: "結合科技的新型水族館",
+            paidBy: "",
+            amount: "",
+            color: "blue",
+          },
+          {
+            id: "ok4-3",
+            time: "13:00",
+            title: "iias 沖繩豐崎",
+            icon: "shopping_bag",
+            description: "購物中心、午餐",
+            paidBy: "",
+            amount: "",
+            color: "pink",
+          },
+          {
+            id: "ok4-4",
+            time: "15:00",
+            title: "自由活動",
+            icon: "explore",
+            description: "自由探索或休息",
+            paidBy: "",
+            amount: "",
+            color: "green",
+          },
+          {
+            id: "ok4-5",
+            time: "19:00",
+            title: "Churasun 6 沖繩",
+            icon: "celebration",
+            description: "傳統表演晚餐秀",
+            paidBy: "",
+            amount: "",
+            color: "primary",
+          },
+        ],
+      },
+      {
+        day: 5,
+        date: "27",
+        weekday: "週六",
+        dateLabel: "12月27日",
+        items: [
+          {
+            id: "ok5-1",
+            time: "08:00",
+            title: "晨喚",
+            icon: "wb_sunny",
+            description: "收拾行李、退房",
+            paidBy: "",
+            amount: "",
+            color: "green",
+          },
+          {
+            id: "ok5-2",
+            time: "11:00",
+            title: "敘敘苑燒肉 歌町店",
+            icon: "restaurant",
+            description: "最後的沖繩美食",
+            paidBy: "",
+            amount: "",
+            color: "primary",
+          },
+          {
+            id: "ok5-3",
+            time: "15:00",
+            title: "前往那霸機場",
+            icon: "airport_shuttle",
+            description: "辦理登機手續",
+            paidBy: "",
+            amount: "",
+            color: "blue",
+          },
+          {
+            id: "ok5-4",
+            time: "18:05",
+            title: "那霸機場出發",
+            icon: "flight_takeoff",
+            description: "泰越捷航空 VZ569",
+            paidBy: "",
+            amount: "",
+            color: "primary",
+          },
+          {
+            id: "ok5-5",
+            time: "18:45",
+            title: "抵達桃園機場",
+            icon: "flight_land",
+            description: "結束美好的沖繩之旅",
+            paidBy: "",
+            amount: "",
+            color: "green",
+          },
+        ],
+      },
+    ],
   },
 };
 
-type TabType = "itinerary" | "briefing";
+const colorConfig = {
+  primary: {
+    dot: "bg-[#Cfb9a5]",
+    tag: "bg-[#Cfb9a5]/10 text-[#Cfb9a5] border-[#Cfb9a5]/20",
+  },
+  blue: {
+    dot: "bg-[#A5BCCF]",
+    tag: "bg-[#A5BCCF]/10 text-[#A5BCCF] border-[#A5BCCF]/20",
+  },
+  pink: {
+    dot: "bg-[#CFA5A5]",
+    tag: "bg-[#CFA5A5]/10 text-[#CFA5A5] border-[#CFA5A5]/20",
+  },
+  green: {
+    dot: "bg-[#A8BFA6]",
+    tag: "bg-[#A8BFA6]/10 text-[#A8BFA6] border-[#A8BFA6]/20",
+  },
+};
+
+const categoryConfig: Record<string, { bg: string; text: string }> = {
+  "景點": { bg: "bg-[#A5BCCF]/15", text: "text-[#A5BCCF]" },
+  "美食": { bg: "bg-[#CFA5A5]/15", text: "text-[#CFA5A5]" },
+  "體驗": { bg: "bg-[#Cfb9a5]/15", text: "text-[#Cfb9a5]" },
+  "住宿": { bg: "bg-[#A8BFA6]/15", text: "text-[#A8BFA6]" },
+  "交通": { bg: "bg-[#94A3B8]/15", text: "text-[#94A3B8]" },
+  "購物": { bg: "bg-[#CFA5A5]/15", text: "text-[#CFA5A5]" },
+  "其他": { bg: "bg-gray-100", text: "text-gray-500" },
+};
 
 export default function OrderDetailPage() {
   const params = useParams();
   const orderId = params.id as string;
   const order = ordersData[orderId];
 
-  const [activeTab, setActiveTab] = useState<TabType>("itinerary");
-  const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
+  const [selectedDay, setSelectedDay] = useState(1);
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [showItemMenu, setShowItemMenu] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<ItineraryItem | null>(null);
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-[#F5F4F0] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F7F5F2] flex items-center justify-center">
         <div className="text-center">
-          <span className="material-icons-outlined text-[#D8D0C9] text-6xl mb-4">error_outline</span>
-          <p className="text-[#949494]">找不到此訂單</p>
-          <Link href="/orders" className="mt-4 inline-block text-[#94A3B8] font-medium">
+          <span className="material-icons-round text-gray-300 text-6xl mb-4">error_outline</span>
+          <p className="text-gray-500">找不到此訂單</p>
+          <Link href="/orders" className="mt-4 inline-block text-[#Cfb9a5] font-medium">
             返回訂單列表
           </Link>
         </div>
@@ -181,344 +625,506 @@ export default function OrderDetailPage() {
     );
   }
 
-  const getColorClass = (color: string) => {
-    const colors: Record<string, { bg: string; text: string }> = {
-      "morandi-blue": { bg: "bg-[#A5BCCF]/20", text: "text-[#A5BCCF]" },
-      "morandi-pink": { bg: "bg-[#CFA5A5]/20", text: "text-[#CFA5A5]" },
-      "morandi-green": { bg: "bg-[#A8BFA6]/20", text: "text-[#A8BFA6]" },
-      "morandi-yellow": { bg: "bg-[#E0D6A8]/20", text: "text-[#B8A065]" },
-      gray: { bg: "bg-gray-200", text: "text-gray-500" },
-    };
-    return colors[color] || colors.gray;
+  const currentDaySchedule = order.schedule.find((d) => d.day === selectedDay);
+
+  // 計算某項目的出席統計
+  const getItemAttendanceStats = (item: ItineraryItem) => {
+    if (!item.attendanceList) {
+      return { attending: 0, notAttending: 0, pending: order.participants.length };
+    }
+    const attending = Object.values(item.attendanceList).filter((s) => s === "attending").length;
+    const notAttending = Object.values(item.attendanceList).filter((s) => s === "not_attending").length;
+    const pending = order.participants.length - attending - notAttending;
+    return { attending, notAttending, pending };
   };
 
+  // 取得項目的出席人數顯示
+  const getItemAttendanceDisplay = (item: ItineraryItem) => {
+    if (!item.inquiryBy) {
+      return null; // 尚未發起詢問
+    }
+    const stats = getItemAttendanceStats(item);
+    return {
+      present: stats.attending,
+      total: order.participants.length,
+      hasPending: stats.pending > 0,
+    };
+  };
+
+  // 取得發起詢問者名稱
+  const getInquiryByName = (item: ItineraryItem) => {
+    if (!item.inquiryBy) return null;
+    const inquirer = order.participants.find((p) => p.id === item.inquiryBy);
+    return inquirer?.name || "未知";
+  };
+
+  // 開啟出席 modal
+  const handleOpenAttendance = (item: ItineraryItem) => {
+    setSelectedItem(item);
+    setShowAttendanceModal(true);
+  };
+
+  // 開啟項目選單
+  const handleOpenItemMenu = (item: ItineraryItem) => {
+    setSelectedItem(item);
+    setShowItemMenu(true);
+  };
+
+  // 取得當前用戶 ID (模擬為 "1")
+  const currentUserId = "1";
+
   return (
-    <div className="bg-[#F5F4F0] font-sans antialiased text-[#5C5C5C] min-h-screen flex flex-col">
-      {/* 背景光暈 */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div className="absolute -top-[5%] -left-[15%] w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-[#D8D0C9] opacity-40 blur-[90px] rounded-full" />
-        <div className="absolute -bottom-[10%] -right-[10%] w-[250px] sm:w-[450px] h-[250px] sm:h-[450px] bg-[#C8D6D3] opacity-40 blur-[90px] rounded-full" />
-        <div className="absolute top-[40%] left-[20%] w-[200px] sm:w-[300px] h-[200px] sm:h-[300px] bg-[#E6DFDA] opacity-30 blur-[70px] rounded-full" />
+    <div className="bg-[#F7F5F2] font-sans antialiased text-gray-900 min-h-screen flex flex-col pb-28">
+      {/* 背景紋理 */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-5">
+        <div className="absolute -top-[10%] -left-[10%] w-96 h-96 bg-[#Cfb9a5]/30 rounded-full blur-3xl" />
+        <div className="absolute bottom-[20%] -right-[10%] w-80 h-80 bg-[#A5BCCF]/30 rounded-full blur-3xl" />
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 px-4 sm:px-6 pt-6 pb-4 flex items-center gap-3">
-
-        {/* 切換標籤放在中間 */}
-        {order.hasBriefing ? (
-          <div className="flex-1 flex gap-2 p-1 bg-white/60 backdrop-blur-xl rounded-full border border-white/50">
-            <button
-              onClick={() => setActiveTab("itinerary")}
-              className={`flex-1 py-2.5 rounded-full text-sm font-medium transition-all flex items-center justify-center gap-2 ${
-                activeTab === "itinerary"
-                  ? "bg-[#94A3B8] text-white shadow-lg shadow-[#94A3B8]/30"
-                  : "text-[#949494] hover:text-[#5C5C5C]"
-              }`}
-            >
-              <span className="material-icons-round text-lg">map</span>
-              行程資訊
-            </button>
-            <button
-              onClick={() => setActiveTab("briefing")}
-              className={`flex-1 py-2.5 rounded-full text-sm font-medium transition-all flex items-center justify-center gap-2 ${
-                activeTab === "briefing"
-                  ? "bg-[#E0D6A8] text-white shadow-lg shadow-[#E0D6A8]/30"
-                  : "text-[#949494] hover:text-[#5C5C5C]"
-              }`}
-            >
-              <span className="material-icons-round text-lg">groups</span>
-              說明會
-            </button>
-          </div>
-        ) : (
-          <div className="flex-1" />
-        )}
-
-        <button className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-xl border border-white/50 shadow-sm text-[#5C5C5C] hover:text-[#94A3B8] transition-colors">
-          <span className="material-icons-round text-xl">more_vert</span>
+      <header className="sticky top-0 z-50 px-5 py-4 bg-[#F7F5F2]/95 backdrop-blur-md flex items-center justify-between shadow-sm">
+        <Link
+          href="/orders"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm hover:shadow-md transition-all active:scale-95 border border-gray-100"
+        >
+          <span className="material-icons-round text-gray-700 text-[22px]">arrow_back</span>
+        </Link>
+        <div className="flex flex-col items-center max-w-[60%]">
+          <h1 className="text-base font-bold text-gray-800 tracking-wide truncate w-full text-center">
+            {order.title}
+          </h1>
+          <span className="text-[10px] text-gray-500 font-medium">{order.dateRange}</span>
+        </div>
+        <button className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm hover:shadow-md transition-all active:scale-95 border border-gray-100">
+          <span className="material-icons-round text-gray-700 text-[22px]">more_horiz</span>
         </button>
       </header>
 
       {/* 主要內容 */}
-      <main className="flex-1 w-full overflow-y-auto pb-24">
+      <main className="relative z-10 w-full flex-1 flex flex-col">
+        {/* Day 選擇器 */}
+        <div className="sticky top-[72px] z-40 bg-[#F7F5F2]/98 backdrop-blur pt-2 pb-3 px-4 border-b border-gray-100">
+          <div className="flex gap-3 overflow-x-auto hide-scrollbar snap-x">
+            {order.schedule.map((day) => (
+              <button
+                key={day.day}
+                onClick={() => setSelectedDay(day.day)}
+                className={`snap-start flex-shrink-0 flex flex-col items-center justify-center min-w-[64px] h-[72px] rounded-2xl transition-all ${
+                  selectedDay === day.day
+                    ? "bg-[#Cfb9a5] text-white shadow-lg shadow-[#Cfb9a5]/30 transform scale-105"
+                    : "bg-white text-gray-400 border border-gray-100 hover:border-[#Cfb9a5]/30"
+                }`}
+              >
+                <span className="text-[10px] font-medium opacity-90">Day {day.day}</span>
+                <span className={`text-lg font-bold ${selectedDay === day.day ? "" : "text-gray-800"}`}>
+                  {day.date}
+                </span>
+                <span className="text-[10px] font-medium opacity-90">{day.weekday}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
-        {/* 行程封面圖 */}
-        <div className="px-4 sm:px-6 mb-4">
-          <div className="relative w-full h-48 rounded-2xl overflow-hidden shadow-lg group">
-            <img
-              src={order.image}
-              alt={order.title}
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4">
-              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/20 backdrop-blur-sm border border-white/30 text-[10px] text-white font-medium mb-2">
-                <span className="material-icons-round text-[12px]">flight_takeoff</span>
-                即將出發
+        {/* 時間軸內容 */}
+        <div className="px-5 pt-6 pb-4 flex flex-col relative">
+          {/* 日期標題和參與者 */}
+          <div className="flex items-end justify-between mb-4 pl-2">
+            <h2 className="text-xl font-bold text-gray-800">
+              {currentDaySchedule?.dateLabel}{" "}
+              <span className="text-sm font-normal text-gray-500 ml-2">第{selectedDay}天</span>
+            </h2>
+            <div className="flex -space-x-2">
+              {order.participants.slice(0, 3).map((p) => (
+                <div key={p.id} className="relative">
+                  {p.avatar ? (
+                    <Image
+                      src={p.avatar}
+                      alt={p.name}
+                      width={24}
+                      height={24}
+                      className="w-6 h-6 rounded-full border-2 border-[#F7F5F2] object-cover"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full border-2 border-[#F7F5F2] bg-gray-200 flex items-center justify-center text-[8px] text-gray-500 font-bold">
+                      {p.name[0]}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {order.participants.length > 3 && (
+                <div className="w-6 h-6 rounded-full border-2 border-[#F7F5F2] bg-gray-200 flex items-center justify-center text-[8px] text-gray-500 font-bold">
+                  +{order.participants.length - 3}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 時間軸項目 */}
+          {currentDaySchedule?.items.map((item, index) => {
+            const colors = colorConfig[item.color];
+            const isLast = index === currentDaySchedule.items.length - 1;
+            const categoryStyle = item.category ? categoryConfig[item.category] : null;
+
+            return (
+              <div key={item.id} className="flex items-start gap-3 group">
+                {/* 時間軸：圓點 + 連接線 */}
+                <div className="flex flex-col items-center gap-1 pt-3">
+                  <div className={`w-3 h-3 rounded-full ${colors.dot} ring-4 ring-[#F7F5F2] shadow-sm z-10`} />
+                  {!isLast && <div className="w-0.5 flex-1 bg-gray-200 min-h-[3rem]" />}
+                </div>
+
+                {/* 卡片內容 */}
+                <div className="flex-1 bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex gap-3 relative transition-all hover:shadow-md hover:-translate-y-0.5 mb-3">
+                  {/* 圖片 */}
+                  {item.image ? (
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      width={64}
+                      height={64}
+                      className="w-16 h-16 rounded-xl object-cover bg-gray-100 shadow-sm shrink-0"
+                    />
+                  ) : (
+                    <div className={`w-16 h-16 rounded-xl ${colors.dot}/10 flex items-center justify-center shrink-0`}>
+                      <span className={`material-icons-round text-2xl ${colors.dot.replace('bg-', 'text-').replace('/10', '')}`}>{item.icon}</span>
+                    </div>
+                  )}
+
+                  {/* 內容區 */}
+                  <div className="flex-1 flex flex-col justify-center gap-0.5 min-w-0">
+                    {/* 標籤列：類別 + 時間 */}
+                    <div className="flex items-center gap-2">
+                      {categoryStyle && (
+                        <span className={`px-1.5 py-0.5 rounded-md ${categoryStyle.bg} text-[10px] ${categoryStyle.text} font-bold`}>
+                          {item.category}
+                        </span>
+                      )}
+                      <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
+                        <span className="material-icons-round text-[10px]">schedule</span>
+                        {item.time}
+                      </span>
+                    </div>
+                    {/* 標題 */}
+                    <h4 className="text-sm font-bold text-gray-800 truncate">{item.title}</h4>
+                    {/* 描述 */}
+                    <p className="text-[10px] text-gray-400 line-clamp-1">{item.description}</p>
+
+                    {/* 墊付和出席資訊 */}
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      {item.paidBy && item.amount && (
+                        <div
+                          className={`flex items-center gap-1 px-2 py-1 rounded-md ${colors.tag} border cursor-pointer active:scale-95 transition-transform`}
+                        >
+                          <span className="material-icons-round text-[12px]">account_balance_wallet</span>
+                          <span className="text-[10px] font-bold">
+                            {item.paidBy} {item.amount}
+                          </span>
+                        </div>
+                      )}
+                      {(() => {
+                        const attendanceDisplay = getItemAttendanceDisplay(item);
+                        if (attendanceDisplay) {
+                          return (
+                            <button
+                              onClick={() => handleOpenAttendance(item)}
+                              className={`flex items-center gap-1 px-2 py-1 rounded-md border transition-colors relative ${
+                                attendanceDisplay.hasPending
+                                  ? `${colors.tag} hover:opacity-80`
+                                  : "bg-gray-50 text-gray-500 border-gray-100 hover:bg-gray-100"
+                              }`}
+                            >
+                              <span className="material-icons-round text-[12px]">group</span>
+                              <span className="text-[10px] font-bold">
+                                {attendanceDisplay.present}/{attendanceDisplay.total}
+                              </span>
+                              {attendanceDisplay.hasPending && (
+                                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-400 rounded-full border border-white" />
+                              )}
+                            </button>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* 右上角選單按鈕 */}
+                  <button
+                    onClick={() => handleOpenItemMenu(item)}
+                    className="absolute top-2 right-2 bg-gray-50 rounded-full p-1.5 shadow-sm text-gray-400 hover:text-[#Cfb9a5] transition-colors"
+                  >
+                    <span className="material-icons-round text-[16px]">more_vert</span>
+                  </button>
+                </div>
               </div>
-              <h2 className="text-xl font-bold text-white tracking-wide">{order.title}</h2>
-              <p className="text-white/80 text-sm mt-1">{order.dateRange} · {order.travelers}</p>
+            );
+          })}
+
+          {/* 新增行程按鈕 */}
+          <div className="flex items-start gap-3 pt-2">
+            <div className="flex flex-col items-center gap-1 pt-1 opacity-40">
+              <div className="w-2.5 h-2.5 rounded-full bg-gray-300" />
+            </div>
+            <div className="flex-1">
+              <button className="w-full py-3 rounded-full border border-dashed border-[#Cfb9a5]/50 text-[#Cfb9a5] bg-[#Cfb9a5]/5 hover:bg-[#Cfb9a5]/10 transition-all flex items-center justify-center gap-2 font-bold text-sm shadow-sm active:scale-[0.98]">
+                <span className="material-icons-round text-[20px]">add_circle</span>
+                新增項目
+              </button>
             </div>
           </div>
         </div>
-
-        {/* 快捷按鈕 - 放在照片下方 */}
-        <div className="px-4 sm:px-6 mb-4">
-          <div className="flex gap-3">
-            {activeTab === "briefing" && order.briefing ? (
-              <>
-                <button className="flex-1 py-3 rounded-xl border border-[#C5B6AF]/50 text-[#C5B6AF] font-bold text-sm bg-white/60 backdrop-blur-xl hover:bg-white/80 transition-colors flex items-center justify-center gap-2">
-                  <span className="material-icons-round text-lg">edit_calendar</span>
-                  加入行事曆
-                </button>
-                <button className="flex-1 py-3 rounded-xl bg-[#C5B6AF] hover:bg-[#B5A69F] text-white font-bold text-sm shadow-lg shadow-[#C5B6AF]/30 transition-all flex items-center justify-center gap-2">
-                  <span className="material-icons-round text-lg">video_call</span>
-                  進入會議
-                </button>
-              </>
-            ) : (
-              <>
-                <button className="flex-1 py-3 rounded-xl border border-[#94A3B8]/50 text-[#94A3B8] font-bold text-sm bg-white/60 backdrop-blur-xl hover:bg-white/80 transition-colors flex items-center justify-center gap-2">
-                  <span className="material-icons-round text-lg">support_agent</span>
-                  聯繫客服
-                </button>
-                <button className="flex-1 py-3 rounded-xl bg-[#94A3B8] hover:bg-[#8291A6] text-white font-bold text-sm shadow-lg shadow-[#94A3B8]/30 transition-all flex items-center justify-center gap-2">
-                  <span className="material-icons-round text-lg">share</span>
-                  分享行程
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* 內容區域 */}
-        <div className="px-4 sm:px-6 space-y-4">
-          {/* ========== 行程資訊 Tab ========== */}
-          {activeTab === "itinerary" && order.itinerary && (
-            <>
-              {/* 航班資訊 */}
-              <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 p-5 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-1 h-5 bg-[#94A3B8] rounded-full" />
-                  <h3 className="font-bold text-[#5C5C5C]">航班資訊</h3>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex-1 text-center">
-                    <p className="text-xs text-[#949494] mb-1">出發</p>
-                    <p className="font-bold text-[#5C5C5C]">{order.itinerary.flight.departure.split(" ")[0]}</p>
-                    <p className="text-sm text-[#949494]">{order.itinerary.flight.departure.split(" ")[1]}</p>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs text-[#949494] mb-1">{order.itinerary.flight.flightNo}</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-[#94A3B8]" />
-                      <div className="w-16 h-0.5 bg-[#E8E2DD]" />
-                      <span className="material-icons-round text-[#94A3B8] text-lg">flight</span>
-                      <div className="w-16 h-0.5 bg-[#E8E2DD]" />
-                      <div className="w-2 h-2 rounded-full bg-[#94A3B8]" />
-                    </div>
-                  </div>
-                  <div className="flex-1 text-center">
-                    <p className="text-xs text-[#949494] mb-1">抵達</p>
-                    <p className="font-bold text-[#5C5C5C]">{order.itinerary.flight.arrival.split(" ")[0]}</p>
-                    <p className="text-sm text-[#949494]">{order.itinerary.flight.arrival.split(" ")[1]}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* 住宿資訊 */}
-              <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 p-5 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-1 h-5 bg-[#CFA5A5] rounded-full" />
-                  <h3 className="font-bold text-[#5C5C5C]">住宿資訊</h3>
-                </div>
-                <div className="flex gap-4">
-                  <div className="w-10 h-10 rounded-full bg-[#CFA5A5]/20 flex items-center justify-center shrink-0">
-                    <span className="material-icons-round text-[#CFA5A5]">hotel</span>
-                  </div>
-                  <div>
-                    <p className="font-bold text-[#5C5C5C]">{order.itinerary.hotel.name}</p>
-                    <p className="text-xs text-[#949494] mt-1">{order.itinerary.hotel.address}</p>
-                    <div className="flex gap-4 mt-2 text-xs">
-                      <span className="text-[#949494]">入住：{order.itinerary.hotel.checkIn}</span>
-                      <span className="text-[#949494]">退房：{order.itinerary.hotel.checkOut}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 每日行程 */}
-              <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 p-5 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-1 h-5 bg-[#A8BFA6] rounded-full" />
-                  <h3 className="font-bold text-[#5C5C5C]">每日行程</h3>
-                </div>
-                <div className="space-y-4">
-                  {order.itinerary.days.map((day, index) => (
-                    <div key={day.day} className="relative pl-6">
-                      {index < order.itinerary!.days.length - 1 && (
-                        <div className="absolute left-[7px] top-6 w-0.5 h-[calc(100%+8px)] bg-[#E8E2DD]" />
-                      )}
-                      <div className="absolute left-0 top-0 w-4 h-4 rounded-full bg-[#A8BFA6] flex items-center justify-center">
-                        <span className="text-[8px] font-bold text-white">{day.day}</span>
-                      </div>
-                      <div className="pb-4">
-                        <p className="font-bold text-[#5C5C5C] text-sm">{day.title}</p>
-                        <ul className="mt-2 space-y-1">
-                          {day.activities.map((activity, i) => (
-                            <li key={i} className="text-xs text-[#949494] flex items-start gap-1.5">
-                              <span className="material-icons-round text-[10px] mt-0.5 text-[#C5B6AF]">circle</span>
-                              {activity}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* ========== 說明會 Tab ========== */}
-          {activeTab === "briefing" && order.briefing && (
-            <>
-              {/* 說明會資訊 */}
-              <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 p-5 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-1 h-5 bg-[#E0D6A8] rounded-full" />
-                  <h3 className="font-bold text-[#5C5C5C]">說明會資訊</h3>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex gap-4">
-                    <div className="w-10 h-10 rounded-full bg-[#E0D6A8]/20 flex items-center justify-center shrink-0">
-                      <span className="material-icons-round text-[#B8A065]">topic</span>
-                    </div>
-                    <div>
-                      <p className="text-xs text-[#949494] mb-0.5">說明會主題</p>
-                      <p className="font-medium text-[#5C5C5C]">{order.briefing.topic}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="w-10 h-10 rounded-full bg-[#C5B6AF]/20 flex items-center justify-center shrink-0">
-                      <span className="material-icons-round text-[#C5B6AF]">event</span>
-                    </div>
-                    <div>
-                      <p className="text-xs text-[#949494] mb-0.5">時間與日期</p>
-                      <p className="font-medium text-[#5C5C5C]">{order.briefing.date}</p>
-                      <p className="text-sm text-[#949494]">{order.briefing.time}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="w-10 h-10 rounded-full bg-[#A5BCCF]/20 flex items-center justify-center shrink-0">
-                      <span className="material-icons-round text-[#A5BCCF]">videocam</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-[#949494] mb-0.5">地點 / 連結</p>
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-[#5C5C5C]">{order.briefing.location}</span>
-                        <button className="p-1.5 rounded-full hover:bg-[#94A3B8]/10 text-[#A5BCCF] transition-colors">
-                          <span className="material-icons-round text-lg">open_in_new</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 內容大綱 */}
-              <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 p-5 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-1 h-5 bg-[#A8BFA6] rounded-full" />
-                  <h3 className="font-bold text-[#5C5C5C]">內容大綱</h3>
-                </div>
-                <ul className="space-y-3 pl-1">
-                  {order.briefing.outline.map((item, index) => (
-                    <li key={index} className="flex gap-3 text-sm text-[#5C5C5C] items-start">
-                      <span className="text-[#A8BFA6] font-bold text-xs mt-0.5 bg-[#A8BFA6]/10 px-1.5 py-0.5 rounded">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* 相關文件 */}
-              <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 p-5 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-1 h-5 bg-[#A5BCCF] rounded-full" />
-                  <h3 className="font-bold text-[#5C5C5C]">相關文件與連結</h3>
-                </div>
-                <div className="grid gap-3">
-                  {order.briefing.documents.map((doc, index) => (
-                    <button
-                      key={index}
-                      className="flex items-center justify-between p-3 rounded-xl bg-white/60 border border-white/50 hover:bg-white/90 transition-all group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform ${
-                          doc.type === "pdf" ? "bg-red-50 text-red-500" : "bg-blue-50 text-blue-500"
-                        }`}>
-                          <span className="material-icons-round">
-                            {doc.type === "pdf" ? "picture_as_pdf" : "help_outline"}
-                          </span>
-                        </div>
-                        <div className="text-left">
-                          <div className="text-sm font-bold text-[#5C5C5C]">{doc.name}</div>
-                          <div className="text-[10px] text-[#949494]">{doc.size}</div>
-                        </div>
-                      </div>
-                      <span className="material-icons-round text-[#949494] group-hover:text-[#5C5C5C]">
-                        {doc.type === "pdf" ? "download" : "chevron_right"}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 常見問題 FAQ */}
-              {order.faqs && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 px-1">
-                    <span className="material-icons-round text-[#949494]">help_outline</span>
-                    <h3 className="font-bold text-[#5C5C5C]">常見問題</h3>
-                  </div>
-                  {order.faqs.map((faq, index) => {
-                    const colorClass = getColorClass(faq.color);
-                    return (
-                      <div
-                        key={index}
-                        className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm overflow-hidden"
-                      >
-                        <button
-                          onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
-                          className="w-full flex items-center justify-between p-4 hover:bg-white/40 transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full ${colorClass.bg} ${colorClass.text} flex items-center justify-center shrink-0`}>
-                              <span className="material-icons-round text-lg">{faq.icon}</span>
-                            </div>
-                            <span className="font-bold text-[#5C5C5C] text-[15px] text-left">{faq.question}</span>
-                          </div>
-                          <span className={`material-icons-round text-[#949494] transition-transform duration-300 ${expandedFaq === index ? "rotate-180" : ""}`}>
-                            expand_more
-                          </span>
-                        </button>
-                        {expandedFaq === index && (
-                          <div className="px-4 pb-4 pt-0 text-sm text-[#5C5C5C] leading-relaxed border-t border-[#E8E2DD] mx-4 pt-3">
-                            {faq.answer}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </>
-          )}
-        </div>
       </main>
+
+      {/* 出席詢問 Modal */}
+      {showAttendanceModal && selectedItem && (
+        <>
+          {/* 背景遮罩 */}
+          <div
+            className="fixed inset-0 bg-black/40 z-50"
+            onClick={() => setShowAttendanceModal(false)}
+          />
+
+          {/* 底部彈出面板 */}
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col animate-slide-up">
+            {/* 標題列 */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-3">
+              <div>
+                <h2 className="text-lg font-bold text-gray-800">{selectedItem.title}</h2>
+                {selectedItem.inquiryBy && (
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    由 {getInquiryByName(selectedItem)} 發起詢問
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => setShowAttendanceModal(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                <span className="material-icons-round text-gray-500 text-[18px]">close</span>
+              </button>
+            </div>
+
+            {(() => {
+              const stats = getItemAttendanceStats(selectedItem);
+              const myStatus = selectedItem.attendanceList?.[currentUserId];
+
+              return (
+                <>
+                  {/* 我的回應按鈕 */}
+                  <div className="px-5 pb-4">
+                    <p className="text-xs text-gray-500 mb-2 font-medium">我的回覆</p>
+                    <div className="flex gap-3">
+                      <button
+                        className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
+                          myStatus === "attending"
+                            ? "bg-[#A8BFA6] text-white shadow-lg shadow-[#A8BFA6]/30"
+                            : "bg-[#A8BFA6]/10 text-[#A8BFA6] border border-[#A8BFA6]/30 hover:bg-[#A8BFA6]/20"
+                        }`}
+                      >
+                        <span className="material-icons-round text-[20px]">check_circle</span>
+                        出席
+                      </button>
+                      <button
+                        className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
+                          myStatus === "not_attending"
+                            ? "bg-[#CFA5A5] text-white shadow-lg shadow-[#CFA5A5]/30"
+                            : "bg-[#CFA5A5]/10 text-[#CFA5A5] border border-[#CFA5A5]/30 hover:bg-[#CFA5A5]/20"
+                        }`}
+                      >
+                        <span className="material-icons-round text-[20px]">cancel</span>
+                        不出席
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 統計區塊 */}
+                  <div className="px-5 pb-4">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-[#A8BFA6]/10 rounded-xl p-3 text-center border border-[#A8BFA6]/20">
+                        <div className="text-2xl font-bold text-[#A8BFA6]">{stats.attending}</div>
+                        <div className="text-xs text-gray-500 font-medium mt-0.5">出席</div>
+                      </div>
+                      <div className="bg-[#CFA5A5]/10 rounded-xl p-3 text-center border border-[#CFA5A5]/20">
+                        <div className="text-2xl font-bold text-[#CFA5A5]">{stats.notAttending}</div>
+                        <div className="text-xs text-gray-500 font-medium mt-0.5">不出席</div>
+                      </div>
+                      <div className="bg-gray-100 rounded-xl p-3 text-center border border-gray-200">
+                        <div className="text-2xl font-bold text-gray-400">{stats.pending}</div>
+                        <div className="text-xs text-gray-500 font-medium mt-0.5">未定</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 參與者列表 */}
+                  <div className="flex-1 overflow-y-auto px-5 pb-5">
+                    <div className="space-y-2">
+                      {order.participants.map((participant) => {
+                        const status = selectedItem.attendanceList?.[participant.id] || "pending";
+                        const isMe = participant.id === currentUserId;
+
+                        return (
+                          <div
+                            key={participant.id}
+                            className={`flex items-center gap-3 p-3 rounded-xl border ${
+                              isMe ? "bg-[#Cfb9a5]/5 border-[#Cfb9a5]/20" : "bg-gray-50 border-gray-100"
+                            }`}
+                          >
+                            {/* 頭像 */}
+                            {participant.avatar ? (
+                              <Image
+                                src={participant.avatar}
+                                alt={participant.name}
+                                width={40}
+                                height={40}
+                                className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm text-gray-500 font-bold border-2 border-white shadow-sm">
+                                {participant.name[0]}
+                              </div>
+                            )}
+
+                            {/* 名稱 */}
+                            <div className="flex-1">
+                              <div className="font-medium text-gray-800">
+                                {participant.name}
+                                {isMe && <span className="text-xs text-[#Cfb9a5] ml-1">(我)</span>}
+                              </div>
+                            </div>
+
+                            {/* 狀態標籤 */}
+                            <div
+                              className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                status === "attending"
+                                  ? "bg-[#A8BFA6]/15 text-[#A8BFA6] border border-[#A8BFA6]/30"
+                                  : status === "not_attending"
+                                  ? "bg-[#CFA5A5]/15 text-[#CFA5A5] border border-[#CFA5A5]/30"
+                                  : "bg-gray-100 text-gray-400 border border-gray-200"
+                              }`}
+                            >
+                              {status === "attending"
+                                ? "出席"
+                                : status === "not_attending"
+                                ? "不出席"
+                                : "未回覆"}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 底部按鈕 */}
+                  {stats.pending > 0 && (
+                    <div className="px-5 pb-5 pt-2 border-t border-gray-100 bg-white">
+                      <button className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98]">
+                        <span className="material-icons-round text-[18px]">notifications</span>
+                        提醒未選擇者 ({stats.pending}人)
+                      </button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+        </>
+      )}
+
+      {/* 項目選單 Modal */}
+      {showItemMenu && selectedItem && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/40 z-50"
+            onClick={() => setShowItemMenu(false)}
+          />
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl animate-slide-up">
+            <div className="p-5">
+              {/* 拖曳指示器 */}
+              <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
+
+              {/* 標題 */}
+              <h3 className="font-bold text-gray-800 mb-4">{selectedItem.title}</h3>
+
+              {/* 選單項目 */}
+              <div className="space-y-2">
+                {/* 發起出席詢問 - 只有尚未發起時才顯示 */}
+                {!selectedItem.inquiryBy && (
+                  <button
+                    onClick={() => {
+                      setShowItemMenu(false);
+                      // TODO: 實作發起詢問功能
+                    }}
+                    className="w-full flex items-center gap-4 p-4 rounded-2xl bg-[#CFA5A5]/10 hover:bg-[#CFA5A5]/20 transition-colors active:scale-[0.98]"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-[#CFA5A5]/20 flex items-center justify-center">
+                      <span className="material-icons-round text-[#CFA5A5] text-2xl">campaign</span>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="font-bold text-[#CFA5A5]">發起出席詢問</div>
+                      <div className="text-xs text-gray-500">詢問大家是否參加此行程</div>
+                    </div>
+                  </button>
+                )}
+
+                {/* 查看出席狀況 - 只有已發起時才顯示 */}
+                {selectedItem.inquiryBy && (
+                  <button
+                    onClick={() => {
+                      setShowItemMenu(false);
+                      handleOpenAttendance(selectedItem);
+                    }}
+                    className="w-full flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors active:scale-[0.98]"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-[#A8BFA6]/15 flex items-center justify-center">
+                      <span className="material-icons-round text-[#A8BFA6] text-2xl">how_to_reg</span>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="font-bold text-gray-800">查看出席狀況</div>
+                      <div className="text-xs text-gray-500">查看並回覆出席詢問</div>
+                    </div>
+                  </button>
+                )}
+
+                {/* 編輯行程 */}
+                <button
+                  onClick={() => setShowItemMenu(false)}
+                  className="w-full flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors active:scale-[0.98]"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-[#A5BCCF]/15 flex items-center justify-center">
+                    <span className="material-icons-round text-[#A5BCCF] text-2xl">edit</span>
+                  </div>
+                  <div className="flex-1 text-left">
+                    <div className="font-bold text-gray-800">編輯行程</div>
+                    <div className="text-xs text-gray-500">修改時間、地點等資訊</div>
+                  </div>
+                </button>
+
+                {/* 刪除行程 */}
+                <button
+                  onClick={() => setShowItemMenu(false)}
+                  className="w-full flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors active:scale-[0.98]"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+                    <span className="material-icons-round text-gray-400 text-2xl">delete</span>
+                  </div>
+                  <div className="flex-1 text-left">
+                    <div className="font-bold text-gray-600">刪除行程</div>
+                    <div className="text-xs text-gray-500">移除此行程項目</div>
+                  </div>
+                </button>
+              </div>
+
+              {/* 取消按鈕 */}
+              <button
+                onClick={() => setShowItemMenu(false)}
+                className="w-full mt-4 py-3.5 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-all active:scale-[0.98]"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* 底部導航 */}
       <MobileNav />
@@ -530,6 +1136,19 @@ export default function OrderDetailPage() {
         .hide-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;
+        }
+        @keyframes slide-up {
+          from {
+            transform: translateY(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+        .animate-slide-up {
+          animation: slide-up 0.3s ease-out;
         }
       `}</style>
     </div>

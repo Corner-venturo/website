@@ -2,17 +2,20 @@
 
 import { useState, useEffect } from "react";
 import MobileNav from "@/components/MobileNav";
-import SideDrawer from "@/components/SideDrawer";
-import { DrawerItem } from "@/types/wishlist.types";
 import { getSupabaseClient } from "@/lib/supabase";
 import {
   ChatHeader,
   UserMessage,
   AIMessage,
   ChatInput,
+  JourneyBuilder,
+  SuggestionDatabase,
   Message,
+  JourneyItem,
+  SuggestionItem,
   recommendedTrips,
   kyotoItinerary,
+  kyotoSuggestions,
   typeConfig,
   autoReplies,
   WILLIAM_USER_ID,
@@ -29,9 +32,13 @@ export default function AIPlannerPage() {
         "嗨！我是威廉的AI替身 ✨\n\n想去哪裡玩呢？告訴我你想去的國家或城市，我來幫你規劃一趟完美的旅程！",
     },
   ]);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [addedItems, setAddedItems] = useState<DrawerItem[]>([]);
   const [williamAvatar, setWilliamAvatar] = useState<string>(WILLIAM_DEFAULT_AVATAR);
+
+  // 行程相關狀態
+  const [journeyItems, setJourneyItems] = useState<JourneyItem[]>([]);
+  const [isSuggestionOpen, setIsSuggestionOpen] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
 
   // 取得 William 的頭像
   useEffect(() => {
@@ -53,15 +60,71 @@ export default function AIPlannerPage() {
     fetchWilliamProfile();
   }, []);
 
-  const handleAddItem = (item: DrawerItem) => {
-    setAddedItems([...addedItems, item]);
+  const showNotification = (message: string) => {
+    setToastMessage(message);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000);
+  };
+
+  // 新增項目到行程
+  const handleAddSuggestion = (item: SuggestionItem) => {
+    const newItem: JourneyItem = {
+      id: `j-${Date.now()}`,
+      day: 1,
+      time: getNextTime(journeyItems),
+      title: item.title,
+      type: item.type,
+      description: item.description,
+      image: item.image,
+    };
+    setJourneyItems([...journeyItems, newItem]);
+    setIsSuggestionOpen(false);
+    showNotification(`已將「${item.title}」加入行程！`);
+
+    // 加入 AI 回覆
     const aiResponse: Message = {
       id: Date.now(),
       type: "ai",
-      content: `已將「${item.name}」加入行程！${item.description}`,
+      content: `太棒了！已將「${item.title}」加入你的行程 🎉\n${item.description}`,
     };
     setMessages((prev) => [...prev, aiResponse]);
-    setIsDrawerOpen(false);
+  };
+
+  // 移除行程項目
+  const handleRemoveItem = (id: string) => {
+    const item = journeyItems.find((i) => i.id === id);
+    setJourneyItems(journeyItems.filter((i) => i.id !== id));
+    if (item) {
+      showNotification(`已移除「${item.title}」`);
+    }
+  };
+
+  // 自動生成行程
+  const handleAutoGenerate = () => {
+    // 使用預設的京都行程資料生成
+    const generatedItems: JourneyItem[] = kyotoItinerary
+      .slice(0, 2) // 只取前兩天
+      .flatMap((day) =>
+        day.items.map((item, index) => ({
+          id: `auto-${day.day}-${index}`,
+          day: day.day,
+          time: item.time,
+          title: item.title,
+          type: item.type as JourneyItem["type"],
+          description: item.description,
+        }))
+      );
+
+    setJourneyItems(generatedItems);
+    showNotification("已為你自動生成行程！");
+
+    const aiResponse: Message = {
+      id: Date.now(),
+      type: "ai",
+      content:
+        "好的！我已經幫你自動生成了京都兩天的精彩行程 ✨\n\n包含清水寺、和服體驗、伏見稻荷大社等經典景點，你可以自由調整順序或新增其他項目！",
+    };
+    setMessages((prev) => [...prev, aiResponse]);
   };
 
   const handleSendMessage = () => {
@@ -111,6 +174,13 @@ export default function AIPlannerPage() {
 
   return (
     <div className="bg-[#F7F5F2] font-sans antialiased text-gray-900 min-h-screen flex flex-col">
+      {/* Toast */}
+      {showToast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 bg-black/80 text-white text-sm rounded-full backdrop-blur-sm">
+          {toastMessage}
+        </div>
+      )}
+
       {/* 背景紋理 */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-5">
         <img
@@ -124,42 +194,52 @@ export default function AIPlannerPage() {
       <ChatHeader avatarUrl={williamAvatar} />
 
       {/* 主要內容 */}
-      <main className="relative z-10 w-full flex-1 flex flex-col pb-40 overflow-hidden">
+      <main className="relative z-10 w-full flex-1 flex flex-col pb-28 overflow-hidden">
         {/* 對話區域 */}
-        {messages.length > 0 && (
-          <section className="px-5 pt-2 pb-2 flex flex-col gap-4 overflow-y-auto hide-scrollbar flex-1">
-            {messages.map((message) => (
-              <div key={message.id}>
-                {message.type === "user" ? (
-                  <UserMessage content={message.content} />
-                ) : (
-                  <AIMessage
-                    message={message}
-                    avatarUrl={williamAvatar}
-                    recommendedTrips={recommendedTrips}
-                    itinerary={kyotoItinerary}
-                    typeConfig={typeConfig}
-                    onTripClick={handleTripClick}
-                    onAddToItinerary={() => setIsDrawerOpen(true)}
-                  />
-                )}
-              </div>
-            ))}
-          </section>
-        )}
-      </main>
+        <section className="px-5 pt-2 pb-2 flex flex-col gap-4 max-h-[40vh] overflow-y-auto hide-scrollbar">
+          {messages.map((message) => (
+            <div key={message.id}>
+              {message.type === "user" ? (
+                <UserMessage content={message.content} />
+              ) : (
+                <AIMessage
+                  message={message}
+                  avatarUrl={williamAvatar}
+                  recommendedTrips={recommendedTrips}
+                  itinerary={kyotoItinerary}
+                  typeConfig={typeConfig}
+                  onTripClick={handleTripClick}
+                  onAddToItinerary={() => setIsSuggestionOpen(true)}
+                />
+              )}
+            </div>
+          ))}
+        </section>
 
-      {/* 底部輸入框 */}
-      <ChatInput value={inputValue} onChange={setInputValue} onSend={handleSendMessage} />
+        {/* 輸入框 */}
+        <div className="px-5 py-2 z-20 sticky top-0">
+          <ChatInput value={inputValue} onChange={setInputValue} onSend={handleSendMessage} />
+        </div>
+
+        {/* 拼湊你的旅程 */}
+        <JourneyBuilder
+          items={journeyItems}
+          onAddClick={() => setIsSuggestionOpen(true)}
+          onRemoveItem={handleRemoveItem}
+          onAutoGenerate={handleAutoGenerate}
+        />
+      </main>
 
       {/* 底部導航 */}
       <MobileNav />
 
-      {/* 新增景點抽屜 */}
-      <SideDrawer
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        onSelectItem={handleAddItem}
+      {/* 建議資料庫 */}
+      <SuggestionDatabase
+        isOpen={isSuggestionOpen}
+        onClose={() => setIsSuggestionOpen(false)}
+        onAddItem={handleAddSuggestion}
+        suggestions={kyotoSuggestions}
+        destination="京都"
       />
 
       <style jsx>{`
@@ -186,4 +266,11 @@ export default function AIPlannerPage() {
       `}</style>
     </div>
   );
+}
+
+// 取得下一個時間（簡單遞增）
+function getNextTime(items: JourneyItem[]): string {
+  const times = ["09:00", "10:30", "12:00", "14:00", "15:30", "17:00", "18:30", "20:00"];
+  const usedTimes = items.filter((i) => i.day === 1).map((i) => i.time);
+  return times.find((t) => !usedTimes.includes(t)) || "21:00";
 }

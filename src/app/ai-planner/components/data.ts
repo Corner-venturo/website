@@ -1,4 +1,4 @@
-import { RecommendedTrip, ItineraryDay, TypeConfig, AutoReply } from "./types";
+import { RecommendedTrip, ItineraryDay, TypeConfig, AutoReply, SuggestionItem } from "./types";
 
 export const recommendedTrips: RecommendedTrip[] = [
   {
@@ -157,3 +157,75 @@ export const autoReplies: AutoReply[] = [
 export const WILLIAM_USER_ID = process.env.NEXT_PUBLIC_WILLIAM_USER_ID || "";
 export const WILLIAM_DEFAULT_AVATAR =
   "https://lh3.googleusercontent.com/a/ACg8ocI7lQb0xdCXh7lMBj07f2YhAY0p3X0XgqXP8rqYQHXu1uRBYuI=s96-c";
+
+export const kyotoSuggestions: SuggestionItem[] = [
+  {
+    id: "s1",
+    title: "伏見稻荷大社",
+    type: "attraction",
+    description: "千本鳥居聞名遐邇",
+    image: "https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=400&h=300&fit=crop",
+  },
+  {
+    id: "s2",
+    title: "南禪寺 順正湯豆腐",
+    type: "food",
+    description: "百年老字號料理",
+    image: "https://images.unsplash.com/photo-1540648639573-8c848de23f0a?w=400&h=300&fit=crop",
+  },
+  {
+    id: "s3",
+    title: "嵐山竹林小徑",
+    type: "attraction",
+    description: "充滿禪意的散步道",
+    image: "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=400&h=300&fit=crop",
+  },
+  {
+    id: "s4",
+    title: "京都陶藝教室",
+    type: "experience",
+    description: "手作獨一無二紀念品",
+  },
+  {
+    id: "s5",
+    title: "清水寺",
+    type: "attraction",
+    description: "京都最著名的古寺",
+    image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400&h=300&fit=crop",
+  },
+  {
+    id: "s6",
+    title: "一蘭拉麵",
+    type: "food",
+    description: "獨特的單人座位體驗",
+    image: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&h=300&fit=crop",
+  },
+  {
+    id: "s7",
+    title: "金閣寺",
+    type: "attraction",
+    description: "金碧輝煌的世界遺產",
+    image: "https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?w=400&h=300&fit=crop",
+  },
+  {
+    id: "s8",
+    title: "和服租借體驗",
+    type: "experience",
+    description: "穿著和服漫步古都",
+    image: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&h=300&fit=crop",
+  },
+  {
+    id: "s9",
+    title: "京都威斯汀酒店",
+    type: "hotel",
+    description: "五星級奢華住宿",
+    image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop",
+  },
+  {
+    id: "s10",
+    title: "祇園白川",
+    type: "attraction",
+    description: "傳統花街風情",
+    image: "https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=400&h=300&fit=crop",
+  },
+];

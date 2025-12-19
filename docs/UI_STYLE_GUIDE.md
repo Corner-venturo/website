@@ -185,6 +185,26 @@
 
 ---
 
+## 方向箭頭指示器
+
+用於顯示航班、行程等方向關係時，統一使用圓圈背景樣式：
+
+### 列表/卡片展示用（較小）
+```jsx
+<div className="w-8 h-8 rounded-full bg-[#cfb9a5] flex items-center justify-center shrink-0">
+  <span className="material-icons-round text-white text-sm leading-none">arrow_forward</span>
+</div>
+```
+
+### 表單/輸入區用（較大）
+```jsx
+<div className="w-10 h-10 rounded-full bg-[#cfb9a5] flex items-center justify-center shrink-0">
+  <span className="material-icons-round text-white leading-none">arrow_forward</span>
+</div>
+```
+
+---
+
 ## 動畫
 
 ### 常用 Transition

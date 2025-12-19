@@ -23,8 +23,19 @@ const beginnerTasks = [
     title: "記錄第一筆支出",
     description: "體驗記帳功能",
     points: 50,
-    status: "claimable",
+    status: "todo",
     href: "/split/record",
+  },
+  {
+    id: "add-friend",
+    icon: "person_add",
+    iconBg: "bg-[#CFA5A5]/20",
+    iconColor: "text-[#CFA5A5]",
+    title: "新增第一位旅伴",
+    description: "邀請好友一起旅行",
+    points: 30,
+    status: "todo",
+    href: "/my/friends",
   },
 ];
 
@@ -39,6 +50,17 @@ const exploreTasks = [
     points: 100,
     status: "todo",
     href: "/explore/create",
+  },
+  {
+    id: "join-trip",
+    icon: "group_add",
+    iconBg: "bg-[#A5BCCF]/20",
+    iconColor: "text-[#A5BCCF]",
+    title: "加入一個揪團",
+    description: "探索並加入有趣的行程",
+    points: 80,
+    status: "todo",
+    href: "/explore",
   },
   {
     id: "first-login",
@@ -62,6 +84,28 @@ const advancedTasks = [
     title: "分享你的旅程",
     description: "將回憶分享到社群媒體",
     points: 80,
+    status: "todo",
+    href: null,
+  },
+  {
+    id: "ai-planner",
+    icon: "auto_awesome",
+    iconBg: "bg-[#E0D6A8]/20",
+    iconColor: "text-[#C5B078]",
+    title: "使用 AI 規劃行程",
+    description: "讓 AI 幫你規劃完美旅程",
+    points: 100,
+    status: "todo",
+    href: "/ai-planner",
+  },
+  {
+    id: "complete-trip",
+    icon: "verified",
+    iconBg: "bg-[#A8BFA6]/20",
+    iconColor: "text-[#A8BFA6]",
+    title: "完成一趟旅程",
+    description: "從出發到結束的完整體驗",
+    points: 200,
     status: "todo",
     href: null,
   },
@@ -146,7 +190,8 @@ function TaskCard({ task }: { task: Task }) {
     </div>
   );
 
-  if (task.href && !isCompleted) {
+  // 只有「去完成」狀態才有連結，「領取獎勵」和「已完成」不需要連結
+  if (task.href && !isCompleted && !isClaimable) {
     return <Link href={task.href}>{content}</Link>;
   }
 

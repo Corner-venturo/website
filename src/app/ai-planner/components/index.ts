@@ -4,5 +4,7 @@ export { default as AIMessage } from "./AIMessage";
 export { default as TripCard } from "./TripCard";
 export { default as DayItinerary } from "./DayItinerary";
 export { default as ChatInput } from "./ChatInput";
+export { default as JourneyBuilder } from "./JourneyBuilder";
+export { default as SuggestionDatabase } from "./SuggestionDatabase";
 export * from "./types";
 export * from "./data";

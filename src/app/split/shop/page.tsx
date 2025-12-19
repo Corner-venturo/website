@@ -6,6 +6,17 @@ import { useState } from "react";
 // 商品資料
 const products = [
   {
+    id: 0,
+    title: "威廉晚餐約會",
+    description: "與創辦人共進浪漫晚餐",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDVdglSshQhNr8FIYHvVdGMHDhLIW8GgU0hd1KbmGFKb0dqNuNQi2U3eHc4AHSIz-cqKVLhLdXvWP_UOp_6Y2-TubC9kTWqXkSgOfuRBBMWz10nzl_D_BxKFCnPbJaF6sS5sNLcMTDDx-OXe1aQxHYu_p1nNlH2Pw7HWmSfz1_ZD4u3H_8OsB-30U9oWnZp93u2yL5gXvCVJsqIvJKdFP1rDxVZA7G_w3d2qMLb6k8YKk8CuBlQ9m6wFXqFEsZ6WKdMxLnCfHlq2Bk",
+    points: 100000,
+    stock: 1,
+    tag: "超限量",
+    tagColor: "bg-gradient-to-r from-[#FFD700] to-[#FFA500]",
+    available: true,
+  },
+  {
     id: 1,
     title: "東京來回機票 $2000 折抵券",
     description: "適用於全日空、日本航空",
@@ -84,9 +95,6 @@ interface Product {
 }
 
 function ProductCard({ product }: { product: Product }) {
-  const currentPoints = 2450;
-  const canAfford = currentPoints >= product.points;
-
   return (
     <div
       className={`bg-white/60 backdrop-blur-xl border border-white/50 rounded-xl overflow-hidden group flex flex-col h-full hover:shadow-lg transition-all duration-300 ${
@@ -129,11 +137,7 @@ function ProductCard({ product }: { product: Product }) {
           <div className="flex items-center justify-between mb-2">
             <span
               className={`text-base font-bold ${
-                product.available
-                  ? canAfford
-                    ? "text-[#Cfb9a5]"
-                    : "text-[#CFA5A5]"
-                  : "text-[#949494]"
+                product.available ? "text-[#Cfb9a5]" : "text-[#949494]"
               }`}
             >
               {product.points.toLocaleString()}{" "}
@@ -144,13 +148,7 @@ function ProductCard({ product }: { product: Product }) {
             </span>
           </div>
           {product.available ? (
-            <button
-              className={`w-full text-xs font-bold py-2 rounded-lg transition-colors flex items-center justify-center ${
-                canAfford
-                  ? "bg-[#Cfb9a5] hover:bg-[#c0aa96] text-white"
-                  : "bg-white border border-[#Cfb9a5] text-[#Cfb9a5] hover:bg-[#Cfb9a5]/5"
-              }`}
-            >
+            <button className="w-full bg-[#Cfb9a5] hover:bg-[#c0aa96] text-white text-xs font-bold py-2 rounded-lg transition-colors flex items-center justify-center">
               立即兌換
             </button>
           ) : (

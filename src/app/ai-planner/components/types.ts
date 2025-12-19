@@ -41,3 +41,21 @@ export interface AutoReply {
   response: string;
   showRecommendations?: boolean;
 }
+
+export interface JourneyItem {
+  id: string;
+  day: number;
+  time?: string;
+  title: string;
+  type: 'attraction' | 'food' | 'experience' | 'hotel';
+  description: string;
+  image?: string;
+}
+
+export interface SuggestionItem {
+  id: string;
+  title: string;
+  type: 'attraction' | 'food' | 'experience' | 'hotel';
+  description: string;
+  image?: string;
+}

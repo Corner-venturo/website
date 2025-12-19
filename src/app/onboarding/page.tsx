@@ -23,6 +23,7 @@ export default function OnboardingPage() {
   const [formData, setFormData] = useState<FormData>({
     full_name: '',
     display_name: '',
+    username: '',
     phone: '',
     location: '',
     bio: '',
@@ -31,6 +32,7 @@ export default function OnboardingPage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [hasCustomAvatar, setHasCustomAvatar] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [isUsernameValid, setIsUsernameValid] = useState(false);
 
   // 初始化
   useEffect(() => {
@@ -64,10 +66,14 @@ export default function OnboardingPage() {
       setFormData({
         full_name: profile.full_name || '',
         display_name: profile.display_name || '',
+        username: profile.username || '',
         phone: profile.phone || '',
         location: profile.location || '',
         bio: profile.bio || '',
       });
+      if (profile.username) {
+        setIsUsernameValid(true);
+      }
       if (profile.avatar_url) {
         setAvatarPreview(profile.avatar_url);
         setHasCustomAvatar(true);
@@ -113,6 +119,10 @@ export default function OnboardingPage() {
       newErrors.display_name = '請輸入顯示名稱';
     } else if (formData.display_name.length < 2) {
       newErrors.display_name = '顯示名稱至少需要 2 個字元';
+    }
+    // username 是選填，但如果有填就要驗證
+    if (formData.username && !isUsernameValid) {
+      newErrors.username = '請輸入有效的用戶名';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -160,6 +170,7 @@ export default function OnboardingPage() {
     const result = await completeProfile(user.id, {
       full_name: formData.full_name,
       display_name: formData.display_name,
+      username: formData.username || undefined,
       phone: formData.phone,
       location: formData.location || undefined,
       bio: formData.bio || undefined,
@@ -203,6 +214,7 @@ export default function OnboardingPage() {
                 avatarPreview={avatarPreview}
                 onFormChange={handleFormChange}
                 onAvatarChange={handleAvatarChange}
+                onUsernameValidChange={setIsUsernameValid}
               />
             )}
 

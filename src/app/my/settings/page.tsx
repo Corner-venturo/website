@@ -89,10 +89,10 @@ export default function SettingsPage() {
         {/* Logout Button */}
         <button
           onClick={() => setShowLogoutModal(true)}
-          className="w-full mt-6 bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm p-4 flex items-center justify-center gap-2 text-[#C5B6AF] hover:text-[#94A3B8] transition-colors"
+          className="w-full mt-6 bg-[#CFA5A5]/10 backdrop-blur-xl rounded-2xl border border-[#CFA5A5]/20 shadow-sm p-4 flex items-center justify-center gap-2 text-[#CFA5A5] hover:bg-[#CFA5A5]/20 transition-all active:scale-[0.98]"
         >
-          <span className="material-icons-round">logout</span>
-          <span className="font-bold text-sm">登出帳號</span>
+          <span className="material-icons-round text-xl">logout</span>
+          <span className="font-bold">登出帳號</span>
         </button>
 
         {/* Logout Confirm Modal */}
