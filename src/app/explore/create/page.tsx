@@ -7,34 +7,6 @@ import BadgeNotification, { BADGES } from '@/components/BadgeNotification';
 import { useGroupStore, CreateGroupData } from '@/stores/group-store';
 import { useAuthStore } from '@/stores/auth-store';
 
-// 桌面版 Header 組件
-function DesktopHeader() {
-  return (
-    <header className="flex-shrink-0 flex items-center justify-between py-4 px-8 bg-white/80 backdrop-blur-2xl rounded-2xl border border-white/50 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.06)] mb-6">
-      <div className="flex items-center gap-6">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#D6CDC8] text-white font-bold flex items-center justify-center">V</div>
-          <span className="text-xl font-bold text-[#5C5C5C]">VENTURO</span>
-        </Link>
-        <nav className="flex items-center gap-8 ml-12">
-          <Link href="/" className="text-[#949494] hover:text-[#5C5C5C] transition">首頁</Link>
-          <Link href="/explore" className="text-[#94A3B8] font-medium border-b-2 border-[#94A3B8] pb-1">探索</Link>
-          <Link href="/orders" className="text-[#949494] hover:text-[#5C5C5C] transition">訂單</Link>
-          <Link href="/wishlist" className="text-[#949494] hover:text-[#5C5C5C] transition">收藏</Link>
-        </nav>
-      </div>
-      <div className="flex items-center gap-4">
-        <Link href="/my" className="flex items-center gap-3 px-4 py-2 bg-white/60 rounded-full border border-white/40 hover:bg-white/80 transition">
-          <div className="w-8 h-8 rounded-full bg-[#D6CDC8] text-white font-bold text-sm flex items-center justify-center">
-            旅
-          </div>
-          <span className="text-sm font-medium text-[#5C5C5C]">我的</span>
-        </Link>
-      </div>
-    </header>
-  );
-}
-
 const palette = {
   primary: '#Cfb9a5',
   primaryDark: '#b09b88',
@@ -788,102 +760,8 @@ export default function CreateExplorePage() {
         <div className="absolute top-[40%] left-[-10%] w-56 h-56 rounded-full blur-3xl" style={{ backgroundColor: 'rgba(224,214,168,0.2)' }} />
       </div>
 
-      {/* ========== 電腦版佈局 ========== */}
-      <div className="hidden xl:flex relative z-10 min-h-screen flex-col p-6">
-        <DesktopHeader />
-
-        <div className="flex-1 grid grid-cols-12 gap-6">
-          {/* 左側 - 步驟指示 + 預覽 */}
-          <div className="col-span-4 space-y-5">
-            <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-lg border border-white/50 sticky top-6">
-              <div className="flex items-center gap-3 mb-6">
-                <Link
-                  href="/explore"
-                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:text-primary transition-colors"
-                >
-                  <span className="material-icons-round text-xl">arrow_back</span>
-                </Link>
-                <h1 className="text-2xl font-bold text-gray-800">創立活動</h1>
-              </div>
-
-              {/* 步驟指示器 - 垂直版 */}
-              <div className="space-y-4 mb-6">
-                {[
-                  { id: 1, label: '基本資訊', desc: '活動名稱與描述' },
-                  { id: 2, label: '時間地點', desc: '設定活動時間與地點' },
-                  { id: 3, label: '進階設定', desc: '人數限制與其他設定' },
-                ].map((item) => {
-                  const isActive = item.id === step;
-                  const isComplete = item.id < step;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => setStep(item.id)}
-                      className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-left ${
-                        isActive
-                          ? 'bg-primary/10 border-2 border-primary/30'
-                          : isComplete
-                            ? 'bg-green-50 border border-green-200'
-                            : 'bg-gray-50 border border-transparent hover:border-gray-200'
-                      }`}
-                    >
-                      <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
-                          isActive
-                            ? 'bg-primary text-white'
-                            : isComplete
-                              ? 'bg-green-500 text-white'
-                              : 'bg-gray-200 text-gray-500'
-                        }`}
-                      >
-                        {isComplete ? <span className="material-icons-round text-lg">check</span> : item.id}
-                      </div>
-                      <div>
-                        <div className={`font-bold ${isActive ? 'text-primary' : isComplete ? 'text-green-700' : 'text-gray-600'}`}>
-                          {item.label}
-                        </div>
-                        <div className="text-xs text-gray-400">{item.desc}</div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* 右側 - 表單內容 */}
-          <div className="col-span-8">
-            <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-lg border border-white/50 min-h-[calc(100vh-180px)]">
-              <div className="max-w-2xl mx-auto">
-                {stepContent}
-              </div>
-
-              {/* 底部按鈕 */}
-              <div className="max-w-2xl mx-auto mt-8 pt-6 border-t border-gray-100 flex justify-between items-center">
-                <button
-                  onClick={() => setStep((prev) => Math.max(prev - 1, 1))}
-                  className={`px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition flex items-center gap-2 ${step === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  disabled={step === 1}
-                >
-                  <span className="material-icons-round text-lg">arrow_back</span>
-                  上一步
-                </button>
-                <button
-                  onClick={handleNext}
-                  disabled={isSubmitting || isCreating}
-                  className="px-8 py-3 bg-[#Cfb9a5] text-white font-bold rounded-xl shadow-lg shadow-[#Cfb9a5]/30 flex items-center gap-2 hover:bg-[#b09b88] transition disabled:opacity-50"
-                >
-                  {isSubmitting || isCreating ? '發布中...' : nextLabel}
-                  <span className="material-icons-round text-lg">{isLastStep ? 'check_circle' : 'arrow_forward'}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ========== 手機版佈局 ========== */}
-      <div className="xl:hidden h-[100dvh] overflow-hidden flex flex-col relative z-10">
+      {/* 手機版佈局 */}
+      <div className="h-[100dvh] overflow-hidden flex flex-col relative z-10">
         <header className="relative z-50 px-5 pt-12 pb-2">
           <div className="flex items-center justify-between mb-4">
             <Link href="/explore" className="w-10 h-10 rounded-full glass flex items-center justify-center text-gray-600 hover:text-[var(--primary)] transition-colors shadow-sm">

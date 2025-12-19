@@ -198,3 +198,91 @@ body {
 .shadow-soft {
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
 }
+
+/* iPhone 模擬器內強制手機版佈局 */
+.iphone-simulator .xl\:hidden {
+  display: flex !important;
+}
+
+.iphone-simulator .hidden.xl\:flex,
+.iphone-simulator .xl\:flex:not(.xl\:hidden) {
+  display: none !important;
+}
+
+/* 強制隱藏 xl:block 等 */
+.iphone-simulator .xl\:block {
+  display: none !important;
+}
+
+.iphone-simulator .xl\:grid {
+  display: none !important;
+}
+
+/* 確保 lg:hidden 內容在模擬器內顯示 */
+.iphone-simulator .lg\:hidden {
+  display: block !important;
+}
+
+.iphone-simulator .lg\:flex {
+  display: none !important;
+}
+
+.iphone-simulator .lg\:block {
+  display: none !important;
+}
+
+/* iPhone 模擬器內修正高度 */
+.iphone-simulator {
+  container-name: iphone;
+}
+
+.iphone-simulator > * {
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 100% !important;
+}
+
+/* 強制 dvh/vh 轉換為容器百分比 */
+.iphone-simulator .h-\[100dvh\],
+.iphone-simulator .h-screen,
+.iphone-simulator .min-h-screen {
+  height: 100% !important;
+  min-height: 100% !important;
+}
+
+.iphone-simulator .max-h-\[100dvh\] {
+  max-height: 100% !important;
+}
+
+/* iPhone 模擬器內容容器 */
+.iphone-simulator > div:first-child {
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+/* 在 iPhone 模擬器內，底部導覽固定在底部 */
+.iphone-simulator nav.fixed {
+  position: absolute !important;
+  bottom: 8px !important;
+  left: 0 !important;
+  right: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* 在 iPhone 模擬器內，頂部 header 往下移 (避開狀態列) */
+.iphone-simulator header.absolute {
+  top: 40px !important;
+}
+
+
+/* 確保地圖不溢出 */
+.iphone-simulator .leaflet-container {
+  height: 100% !important;
+}
+
+/* Leaflet 歸屬文字調整 */
+.iphone-simulator .leaflet-control-attribution {
+  display: none !important;
+}

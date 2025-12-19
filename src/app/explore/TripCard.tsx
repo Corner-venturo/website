@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 
 // DisplayTrip 介面 - 統一顯示格式
 export interface DisplayTrip {
@@ -71,9 +72,15 @@ export default function TripCard({
   onClick,
   className,
 }: TripCardProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    // 先觸發 onClick（選中地圖上的點）
+    onClick();
+  };
+
   return (
-    <div
-      onClick={onClick}
+    <Link
+      href={`/explore/${trip.id}`}
+      onClick={handleClick}
       className={`snap-center shrink-0 w-[280px] p-3 backdrop-blur-xl rounded-2xl shadow-lg border flex gap-3 cursor-pointer transition-all ${
         isSelected
           ? 'bg-white/95 border-white/80 ring-2 ring-[#94A3B8]/50 shadow-xl'
@@ -118,6 +125,6 @@ export default function TripCard({
           <span className="text-xs text-[#949494]">{trip.organizer_name}</span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

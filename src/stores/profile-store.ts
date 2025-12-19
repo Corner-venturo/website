@@ -8,6 +8,7 @@ const FORCE_REFRESH_DURATION = 30 * 60 * 1000 // 30 分鐘後強制更新
 
 export interface Profile {
   id: string
+  username: string | null          // 唯一用戶名 (@username)
   full_name: string | null
   display_name: string | null
   avatar_url: string | null        // 用戶自訂頭像（優先顯示）
@@ -52,7 +53,10 @@ interface ProfileState {
     location?: string
     bio?: string
     avatar_url?: string
+    username?: string
   }) => Promise<{ success: boolean; error?: string }>
+  checkUsernameAvailable: (username: string) => Promise<boolean>
+  updateUsername: (userId: string, username: string) => Promise<{ success: boolean; error?: string }>
   clearProfile: () => void
   invalidateCache: () => void // 強制清除快取
 }
@@ -195,6 +199,56 @@ export const useProfileStore = create<ProfileState>()(
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '完成個人資料失敗'
       set({ isLoading: false, error: message })
+      return { success: false, error: message }
+    }
+  },
+
+  checkUsernameAvailable: async (username: string) => {
+    const supabase = getSupabaseClient()
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', username.toLowerCase())
+        .maybeSingle()
+
+      if (error) throw error
+      return !data // 如果沒有找到，表示可用
+    } catch {
+      return false
+    }
+  },
+
+  updateUsername: async (userId: string, username: string) => {
+    const supabase = getSupabaseClient()
+    const normalizedUsername = username.toLowerCase().trim()
+
+    // 驗證格式
+    if (!/^[a-z0-9_]{3,20}$/.test(normalizedUsername)) {
+      return { success: false, error: '用戶名需要 3-20 字元，只能使用小寫字母、數字和底線' }
+    }
+
+    try {
+      // 檢查是否可用
+      const isAvailable = await get().checkUsernameAvailable(normalizedUsername)
+      if (!isAvailable) {
+        return { success: false, error: '此用戶名已被使用' }
+      }
+
+      const { data: updated, error } = await supabase
+        .from('profiles')
+        .update({ username: normalizedUsername })
+        .eq('id', userId)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      set({ profile: updated, lastFetchedAt: Date.now() })
+      return { success: true }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '更新用戶名失敗'
       return { success: false, error: message }
     }
   },

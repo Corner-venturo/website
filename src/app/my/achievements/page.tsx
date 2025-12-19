@@ -1,26 +1,56 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import MobileNav from '@/components/MobileNav';
-
-const earnedAchievements = [
-  { icon: 'hiking', label: '百岳挑戰', color: 'bg-[#A8BFA6]', rotate: 'rotate-3', level: 3, date: '2023.10.12' },
-  { icon: 'photo_camera', label: '攝影大師', color: 'bg-[#A5BCCF]', rotate: '-rotate-2', level: 5, date: '2023.09.28' },
-  { icon: 'restaurant', label: '在地美食家', color: 'bg-[#CFA5A5]', rotate: 'rotate-6', date: '2023.08.15' },
-  { icon: 'flight_takeoff', label: '飛行常客', color: 'bg-[#E0D6A8]', rotate: '-rotate-3', level: 2, date: '2023.07.02' },
-  { icon: 'group', label: '社交達人', color: 'bg-[#Cfb9a5]', rotate: 'rotate-1', date: '2023.06.20' },
-  { icon: 'location_city', label: '城市漫遊', color: 'bg-[#D1D1D6]', rotate: '-rotate-2', date: '2023.05.11' },
-];
-
-const inProgressAchievements = [
-  { icon: 'scuba_diving', label: '深海探險', progress: 40, progressText: '2 / 5 次潛水' },
-  { icon: 'camping', label: '野外露營', progress: 20, progressText: '1 / 5 晚', useSymbol: true },
-  { icon: 'history_edu', label: '文化學者', progress: 80, progressText: '4 / 5 個古蹟' },
-  { icon: 'ac_unit', label: '極地征服', progress: 10, progressText: '0 / 1 次極地' },
-  { icon: 'train', label: '鐵道迷', progress: 65, progressText: '650 / 1000 km' },
-];
+import { useAuthStore } from '@/stores/auth-store';
+import { useProfileStore } from '@/stores/profile-store';
 
 export default function AchievementsPage() {
+  const { user, initialize, isInitialized } = useAuthStore();
+  const { profile, fetchProfile } = useProfileStore();
+
+  useEffect(() => {
+    if (!isInitialized) {
+      initialize();
+    }
+  }, [initialize, isInitialized]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchProfile(user.id);
+    }
+  }, [user?.id, fetchProfile]);
+
+  // 真實獲得的徽章
+  const earnedAchievements = [];
+
+  // 如果是創始會員，加入徽章
+  if (profile?.is_founding_member) {
+    earnedAchievements.push({
+      icon: 'workspace_premium',
+      label: '創始會員',
+      color: 'bg-gradient-to-br from-[#FFD700] to-[#FFA500]',
+      rotate: 'rotate-0',
+      description: '早期加入的珍貴夥伴',
+      memberNumber: profile.member_number,
+      date: profile.created_at ? new Date(profile.created_at).toLocaleDateString('zh-TW') : '',
+    });
+  }
+
+  // 未來可獲得的徽章（尚未開放）
+  const lockedAchievements = [
+    { icon: 'diversity_3', label: '揪團小白', description: '成功發起第一次揪團' },
+    { icon: 'emoji_events', label: '揪團達人', description: '成功完成 5 次揪團' },
+    { icon: 'star', label: '人氣王', description: '揪團滿員達 3 次' },
+    { icon: 'hiking', label: '百岳挑戰', description: '參加 10 次戶外活動' },
+    { icon: 'photo_camera', label: '攝影大師', description: '參加 5 次攝影揪團' },
+    { icon: 'restaurant', label: '在地美食家', description: '參加 10 次美食揪團' },
+  ];
+
+  const totalAchievements = earnedAchievements.length + lockedAchievements.length;
+  const progressPercent = totalAchievements > 0 ? Math.round((earnedAchievements.length / totalAchievements) * 100) : 0;
+
   return (
     <div className="bg-[#F0EEE6] font-sans antialiased text-gray-900 min-h-screen flex flex-col overflow-hidden">
       {/* 背景光暈 */}
@@ -39,12 +69,7 @@ export default function AchievementsPage() {
           <span className="material-icons-round text-xl">arrow_back</span>
         </Link>
         <h1 className="text-lg font-bold text-gray-800 tracking-wide">成就勳章</h1>
-        <Link
-          href="/my/achievements/settings"
-          className="bg-white/70 backdrop-blur-xl border border-white/60 p-2.5 rounded-full shadow-sm text-gray-600 hover:text-[#Cfb9a5] transition-colors"
-        >
-          <span className="material-icons-round text-xl">settings</span>
-        </Link>
+        <div className="w-10" /> {/* Spacer */}
       </header>
 
       {/* Main Content */}
@@ -75,131 +100,91 @@ export default function AchievementsPage() {
                   r="36"
                   stroke="currentColor"
                   strokeDasharray="226"
-                  strokeDashoffset="140"
+                  strokeDashoffset={226 - (226 * progressPercent) / 100}
                   strokeLinecap="round"
                   strokeWidth="6"
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-xs text-gray-400 font-medium">進度</span>
-                <span className="text-lg font-bold text-gray-800">38%</span>
+                <span className="text-lg font-bold text-gray-800">{progressPercent}%</span>
               </div>
             </div>
             <div className="flex-1 relative z-10">
-              <h2 className="text-xl font-bold text-gray-800 mb-1">數位遊牧者</h2>
+              <h2 className="text-xl font-bold text-gray-800 mb-1">
+                {profile?.display_name || profile?.full_name || '探險家'}
+              </h2>
               <div className="flex items-center gap-2 mb-2">
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#A5BCCF] text-white">LV. 12</span>
-                <span className="text-xs text-gray-500">尚有 8 個挑戰進行中</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#A5BCCF] text-white">
+                  {earnedAchievements.length} / {totalAchievements} 徽章
+                </span>
               </div>
-              <p className="text-xs text-gray-400 leading-tight">持續探索世界，解鎖更多專屬徽章！</p>
+              <p className="text-xs text-gray-400 leading-tight">持續探索，解鎖更多專屬徽章！</p>
             </div>
-          </div>
-        </div>
-
-        {/* Tab 切換 */}
-        <div className="sticky top-0 z-40 bg-[#F0EEE6]/95 backdrop-blur-sm px-6 py-4 mt-2">
-          <div className="flex p-1.5 bg-white rounded-2xl shadow-inner">
-            <button className="flex-1 py-2 rounded-xl text-sm font-bold bg-[#Cfb9a5] text-white shadow-sm transition-all duration-300">
-              全部
-            </button>
-            <button className="flex-1 py-2 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors">
-              已獲得
-            </button>
-            <button className="flex-1 py-2 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors">
-              未獲得
-            </button>
           </div>
         </div>
 
         <div className="px-6 pb-20">
-          {/* 最新獲得 */}
-          <div className="flex items-center gap-2 mb-4 mt-2">
-            <span className="w-1 h-4 bg-[#A8BFA6] rounded-full" />
-            <h3 className="text-sm font-bold text-gray-700">最新獲得</h3>
-            <Link href="/my/achievements/gallery" className="ml-auto text-xs text-[#94A3B8] font-medium flex items-center hover:underline">
-              查看全部 <span className="material-icons-round text-sm">chevron_right</span>
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-3 gap-y-8 gap-x-4 mb-8">
-            {earnedAchievements.map((item) => (
-              <div key={item.label} className="flex flex-col items-center gap-2 group cursor-pointer">
-                <div
-                  className={`relative w-20 h-20 rounded-full ${item.color} shadow-[2px_4px_6px_rgba(0,0,0,0.15),inset_0_0_0_2px_rgba(255,255,255,0.2)] flex items-center justify-center transform group-hover:scale-105 transition-transform border-2 border-dashed border-white/30 ${item.rotate}`}
-                >
-                  <span className="material-icons-round text-white text-3xl drop-shadow-md">{item.icon}</span>
-                  {item.level && (
-                    <div className="absolute -bottom-1 bg-white px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm border" style={{ color: item.color.replace('bg-[', '').replace(']', ''), borderColor: `${item.color.replace('bg-[', '').replace(']', '')}30` }}>
-                      Lv.{item.level}
-                    </div>
-                  )}
-                </div>
-                <div className="text-center">
-                  <div className="text-xs font-bold text-gray-700">{item.label}</div>
-                  <div className="text-[10px] text-gray-400 mt-0.5">{item.date}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* 挑戰進行中 */}
+          {/* 已獲得徽章 */}
           <div className="flex items-center gap-2 mb-4 mt-6">
+            <span className="w-1 h-4 bg-[#FFD700] rounded-full" />
+            <h3 className="text-sm font-bold text-gray-700">已獲得 ({earnedAchievements.length})</h3>
+          </div>
+
+          {earnedAchievements.length > 0 ? (
+            <div className="grid grid-cols-3 gap-y-8 gap-x-4 mb-8">
+              {earnedAchievements.map((item) => (
+                <div key={item.label} className="flex flex-col items-center gap-2 group cursor-pointer">
+                  <div
+                    className={`relative w-20 h-20 rounded-full ${item.color} shadow-[2px_4px_6px_rgba(0,0,0,0.15),inset_0_0_0_2px_rgba(255,255,255,0.3)] flex items-center justify-center transform group-hover:scale-105 transition-transform border-2 border-dashed border-white/40 ${item.rotate}`}
+                  >
+                    <span className="material-icons-round text-white text-3xl drop-shadow-md">{item.icon}</span>
+                    {item.memberNumber && (
+                      <div className="absolute -bottom-1 bg-white px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm border border-amber-200 text-amber-600">
+                        #{item.memberNumber}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xs font-bold text-gray-700">{item.label}</div>
+                    <div className="text-[10px] text-gray-400 mt-0.5">{item.date}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-400 text-sm mb-8">
+              尚未獲得任何徽章，快去參加揪團吧！
+            </div>
+          )}
+
+          {/* 尚未開放的徽章 */}
+          <div className="flex items-center gap-2 mb-4 mt-2">
             <span className="w-1 h-4 bg-gray-300 rounded-full" />
-            <h3 className="text-sm font-bold text-gray-500">挑戰進行中</h3>
-            <Link href="/my/achievements/journey" className="ml-auto text-xs text-[#94A3B8] font-medium flex items-center hover:underline">
-              成就旅途 <span className="material-icons-round text-sm">chevron_right</span>
-            </Link>
+            <h3 className="text-sm font-bold text-gray-500">尚未獲得</h3>
           </div>
 
           <div className="grid grid-cols-3 gap-y-8 gap-x-4">
-            {inProgressAchievements.map((item) => (
-              <div key={item.label} className="flex flex-col items-center gap-2 group opacity-60">
+            {lockedAchievements.map((item) => (
+              <div key={item.label} className="flex flex-col items-center gap-2 group opacity-50">
                 <div className="relative w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] border border-white/20">
-                  {item.useSymbol ? (
-                    <span className="material-symbols-outlined text-gray-400 text-3xl">{item.icon}</span>
-                  ) : (
-                    <span className="material-icons-round text-gray-400 text-3xl">{item.icon}</span>
-                  )}
-                </div>
-                <div className="text-center w-full px-2">
-                  <div className="text-xs font-bold text-gray-500 mb-1">{item.label}</div>
-                  <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-[#A5BCCF]"
-                      style={{ width: `${item.progress}%` }}
-                    />
+                  <span className="material-icons-round text-gray-400 text-3xl">{item.icon}</span>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/10 rounded-full">
+                    <span className="material-icons-round text-gray-500 text-lg">lock</span>
                   </div>
-                  <div className="text-[9px] text-gray-400 mt-1">{item.progressText}</div>
+                </div>
+                <div className="text-center w-full px-1">
+                  <div className="text-xs font-bold text-gray-500 mb-0.5">{item.label}</div>
+                  <div className="text-[9px] text-gray-400 leading-tight">{item.description}</div>
                 </div>
               </div>
             ))}
-
-            {/* 神秘成就 */}
-            <div className="flex flex-col items-center gap-2 group opacity-40">
-              <div className="relative w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] border border-white/10">
-                <span className="material-icons-round text-gray-300 text-3xl">lock</span>
-              </div>
-              <div className="text-center w-full px-2">
-                <div className="text-xs font-bold text-gray-400 mb-1">神秘成就</div>
-                <div className="text-[9px] text-gray-300 mt-1">???</div>
-              </div>
-            </div>
           </div>
         </div>
       </main>
 
       {/* 底部導航 */}
       <MobileNav />
-
-      <style jsx>{`
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .hide-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
     </div>
   );
 }

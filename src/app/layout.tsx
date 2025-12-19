@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "@/components/AuthProvider";
+import DesktopWrapper from "@/components/DesktopWrapper";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -33,7 +34,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} antialiased`}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <DesktopWrapper>{children}</DesktopWrapper>
+        </AuthProvider>
       </body>
     </html>
   );
