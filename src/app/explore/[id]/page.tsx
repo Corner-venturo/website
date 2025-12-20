@@ -42,6 +42,7 @@ export default function GroupDetailPage() {
   const [group, setGroup] = useState<Group | null>(null);
   const [mockGroup, setMockGroup] = useState<typeof mockTrips[0] | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -117,6 +118,7 @@ export default function GroupDetailPage() {
     const fetchMembers = async () => {
       if (!group) return;
 
+      setIsLoadingMembers(true);
       const supabase = getSupabaseClient();
       const { data, error } = await supabase
         .from('group_members')
@@ -134,6 +136,7 @@ export default function GroupDetailPage() {
       if (!error && data) {
         setMembers(data as Member[]);
       }
+      setIsLoadingMembers(false);
     };
 
     fetchMembers();
@@ -494,7 +497,15 @@ export default function GroupDetailPage() {
           <div className="mb-24">
             <h2 className="font-bold text-[#5C5C5C] mb-3">參加者 ({members.length || group.current_members})</h2>
             <div className="flex flex-wrap gap-3">
-              {members.length > 0 ? (
+              {isLoadingMembers ? (
+                // 載入中顯示骨架
+                Array.from({ length: Math.min(group.current_members || 1, 5) }).map((_, i) => (
+                  <div key={i} className="flex flex-col items-center gap-1">
+                    <div className="w-12 h-12 rounded-full bg-gray-200 animate-pulse" />
+                    <div className="w-10 h-3 bg-gray-200 rounded animate-pulse" />
+                  </div>
+                ))
+              ) : members.length > 0 ? (
                 members.map((member) => (
                   <div key={member.id} className="flex flex-col items-center gap-1">
                     <div className={`w-12 h-12 rounded-full overflow-hidden ring-2 ${member.role === 'organizer' ? 'ring-[#cfb9a5]' : 'ring-white'}`}>
@@ -519,7 +530,7 @@ export default function GroupDetailPage() {
                   </div>
                 ))
               ) : (
-                // 載入中或無資料時顯示主辦人
+                // 無成員時顯示主辦人
                 <div className="flex flex-col items-center gap-1">
                   <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-[#cfb9a5]">
                     <Image
