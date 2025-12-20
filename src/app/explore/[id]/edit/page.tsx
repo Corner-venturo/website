@@ -219,14 +219,15 @@ export default function EditGroupPage() {
       const startTime = formData.startDateTime.toTimeString().slice(0, 5);
       const endTime = formData.endDateTime.toTimeString().slice(0, 5);
 
-      const groupData: Partial<CreateGroupData> = {
+      // 注意：不傳 undefined，改用 null 或省略
+      const groupData: Record<string, unknown> = {
         title: formData.title,
-        description: formData.description || undefined,
+        description: formData.description || null,
         category: formData.category,
-        location_name: formData.locationName || undefined,
-        location_address: formData.locationAddress || undefined,
-        latitude: formData.latitude || undefined,
-        longitude: formData.longitude || undefined,
+        location_name: formData.locationName || null,
+        location_address: formData.locationAddress || null,
+        latitude: formData.latitude || null,
+        longitude: formData.longitude || null,
         event_date: eventDate,
         start_time: startTime,
         end_time: endTime,
@@ -234,8 +235,8 @@ export default function EditGroupPage() {
         gender_limit: formData.genderLimit,
         require_approval: formData.requireApproval,
         is_private: formData.isPrivate,
-        estimated_cost: formData.estimatedCost ? parseFloat(formData.estimatedCost) : undefined,
-        tags: formData.tags,
+        estimated_cost: formData.estimatedCost ? parseFloat(formData.estimatedCost) : null,
+        // tags 是獨立的表，不在這裡更新
       };
 
       const result = await updateGroup(groupId, groupData);
