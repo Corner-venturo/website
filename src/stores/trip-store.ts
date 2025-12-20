@@ -194,45 +194,18 @@ export const useTripStore = create<TripState>((set, get) => ({
   error: null,
 
   fetchMyTrips: async (userId: string) => {
-    const supabase = getSupabaseClient()
     set({ isLoading: true, error: null })
 
     try {
-      // Get trips where user is a member
-      const { data: memberTrips, error: memberError } = await supabase
-        .from('trip_members')
-        .select('trip_id')
-        .eq('user_id', userId)
+      // 使用 API 取得行程（繞過 RLS）
+      const response = await fetch(`/api/my-trips?userId=${userId}`)
+      const data = await response.json()
 
-      if (memberError) throw memberError
-
-      const tripIds = memberTrips?.map((m: { trip_id: string }) => m.trip_id) || []
-
-      // Also get trips created by user
-      const { data: createdTrips, error: createdError } = await supabase
-        .from('trips')
-        .select('*')
-        .eq('created_by', userId)
-
-      if (createdError) throw createdError
-
-      // Merge and dedupe
-      const allTripIds = [...new Set([...tripIds, ...(createdTrips?.map((t: { id: string }) => t.id) || [])])]
-
-      if (allTripIds.length === 0) {
-        set({ trips: [], isLoading: false })
-        return
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || '載入旅程失敗')
       }
 
-      const { data: trips, error: tripsError } = await supabase
-        .from('trips')
-        .select('*')
-        .in('id', allTripIds)
-        .order('created_at', { ascending: false })
-
-      if (tripsError) throw tripsError
-
-      set({ trips: trips || [], isLoading: false })
+      set({ trips: data.data || [], isLoading: false })
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '載入旅程失敗'
       set({ isLoading: false, error: message })
@@ -240,19 +213,18 @@ export const useTripStore = create<TripState>((set, get) => ({
   },
 
   fetchTripById: async (tripId: string) => {
-    const supabase = getSupabaseClient()
     set({ isLoading: true, error: null })
 
     try {
-      const { data, error } = await supabase
-        .from('trips')
-        .select('*')
-        .eq('id', tripId)
-        .single()
+      // 使用 API 取得行程（繞過 RLS）
+      const response = await fetch(`/api/my-trips?tripId=${tripId}`)
+      const data = await response.json()
 
-      if (error) throw error
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || '載入旅程失敗')
+      }
 
-      set({ currentTrip: data, isLoading: false })
+      set({ currentTrip: data.data, isLoading: false })
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '載入旅程失敗'
       set({ isLoading: false, error: message })
@@ -298,20 +270,16 @@ export const useTripStore = create<TripState>((set, get) => ({
   },
 
   fetchTripMembers: async (tripId: string) => {
-    const supabase = getSupabaseClient()
-
     try {
-      const { data, error } = await supabase
-        .from('trip_members')
-        .select(`
-          *,
-          profile:profiles(display_name, avatar_url)
-        `)
-        .eq('trip_id', tripId)
+      // 使用 API 取得成員（繞過 RLS）
+      const response = await fetch(`/api/trips/${tripId}/members`)
+      const data = await response.json()
 
-      if (error) throw error
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || '載入成員失敗')
+      }
 
-      set({ members: data || [] })
+      set({ members: data.data || [] })
     } catch (error: unknown) {
       console.error('Failed to fetch trip members:', error)
     }
@@ -412,23 +380,16 @@ export const useTripStore = create<TripState>((set, get) => ({
   },
 
   fetchTripItineraryItems: async (tripId: string) => {
-    const supabase = getSupabaseClient()
-
     try {
-      const { data, error } = await supabase
-        .from('trip_itinerary_items')
-        .select(`
-          *,
-          attendance:trip_item_attendance(*)
-        `)
-        .eq('trip_id', tripId)
-        .order('day_number', { ascending: true })
-        .order('sort_order', { ascending: true })
-        .order('start_time', { ascending: true })
+      // 使用 API 取得行程項目（繞過 RLS）
+      const response = await fetch(`/api/trips/${tripId}/itinerary`)
+      const data = await response.json()
 
-      if (error) throw error
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || '載入行程項目失敗')
+      }
 
-      set({ itineraryItems: data || [] })
+      set({ itineraryItems: data.data || [] })
     } catch (error: unknown) {
       console.error('Failed to fetch itinerary items:', error)
     }

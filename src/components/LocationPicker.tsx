@@ -39,9 +39,9 @@ async function searchPlaces(query: string): Promise<SearchResult[]> {
   if (!query.trim() || query.length < 2) return [];
 
   try {
-    // 使用 Photon API，偏好台灣地區
+    // 使用 Photon API，偏好台灣地區（不設 lang，讓 API 自動處理）
     const response = await fetch(
-      `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=zh&lat=25.0330&lon=121.5654`
+      `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lat=25.0330&lon=121.5654`
     );
 
     if (!response.ok) return [];

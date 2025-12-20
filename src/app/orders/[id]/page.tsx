@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 import MobileNav from "@/components/MobileNav";
 import { useTripStore, Trip, TripItineraryItem } from "@/stores/trip-store";
+import { useAuthStore } from "@/stores/auth-store";
 
 // 個別參與者出席狀態
 interface ItemAttendance {
@@ -779,6 +780,10 @@ export default function OrderDetailPage() {
     deleteItineraryItem,
   } = useTripStore();
 
+  // 取得領隊資訊（如果有的話）
+  const { leaderInfo } = useAuthStore();
+  const isLeader = !!leaderInfo;
+
   // 統一使用 order state 來管理資料（不管來源是 mock 還是 db）
   const [order, setOrder] = useState<OrderData | null>(null);
 
@@ -815,6 +820,84 @@ export default function OrderDetailPage() {
     description: "",
     category: "景點" as "景點" | "美食" | "體驗" | "住宿" | "交通" | "購物" | "其他",
   });
+
+  // 費用記錄相關 state
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [expenseItem, setExpenseItem] = useState<ItineraryItem | null>(null);
+  const [expenseData, setExpenseData] = useState({
+    companyPaid: "", // 公司支出金額（領隊用）
+    paidBy: "", // 誰付款
+    splitWith: [] as string[], // 分攤對象
+    amount: "", // 金額
+    note: "", // 備註
+  });
+
+  // 開啟費用 Modal
+  const handleOpenExpense = (item: ItineraryItem) => {
+    setExpenseItem(item);
+    setExpenseData({
+      companyPaid: "",
+      paidBy: "",
+      splitWith: [],
+      amount: "",
+      note: "",
+    });
+    setShowExpenseModal(true);
+  };
+
+  // 儲存費用記錄狀態
+  const [isSavingExpense, setIsSavingExpense] = useState(false);
+
+  // 儲存費用記錄
+  const handleSaveExpense = async () => {
+    if (!order) return;
+
+    setIsSavingExpense(true);
+    try {
+      const response = await fetch('/api/expenses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tripId: order.id,
+          title: expenseItem?.title || (isLeader ? '公司支出' : '費用'),
+          description: expenseData.note || undefined,
+          category: expenseItem?.category ? mapCategoryToExpense(expenseItem.category) : 'other',
+          amount: isLeader ? expenseData.companyPaid : expenseData.amount,
+          paidBy: isLeader ? 'company' : expenseData.paidBy, // TODO: 改成實際 user_id
+          splitWith: expenseData.splitWith,
+          itineraryItemId: expenseItem?.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // 成功：關閉 Modal 並顯示成功訊息
+        setShowExpenseModal(false);
+        // TODO: 更新本地狀態或重新載入
+      } else {
+        alert(data.error || '儲存失敗');
+      }
+    } catch (error) {
+      console.error('Save expense error:', error);
+      alert('儲存失敗，請稍後再試');
+    } finally {
+      setIsSavingExpense(false);
+    }
+  };
+
+  // 將行程類別對應到費用類別
+  const mapCategoryToExpense = (category: string): string => {
+    const mapping: Record<string, string> = {
+      '景點': 'ticket',
+      '美食': 'food',
+      '交通': 'transport',
+      '住宿': 'accommodation',
+      '體驗': 'ticket',
+      '購物': 'shopping',
+    };
+    return mapping[category] || 'other';
+  };
 
   // 載入中
   if (isLoading && !mockOrder) {
@@ -1140,10 +1223,12 @@ export default function OrderDetailPage() {
                     {/* 描述 */}
                     <p className="text-[10px] text-gray-400 line-clamp-1">{item.description}</p>
 
-                    {/* 墊付和出席資訊 */}
+                    {/* 墊付、費用和出席資訊 */}
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      {/* 已記錄的費用顯示 */}
                       {item.paidBy && item.amount && (
                         <div
+                          onClick={() => handleOpenExpense(item)}
                           className={`flex items-center gap-1 px-2 py-1 rounded-md ${colors.tag} border cursor-pointer active:scale-95 transition-transform`}
                         >
                           <span className="material-icons-round text-[12px]">account_balance_wallet</span>
@@ -1152,6 +1237,7 @@ export default function OrderDetailPage() {
                           </span>
                         </div>
                       )}
+
                       {(() => {
                         const attendanceDisplay = getItemAttendanceDisplay(item);
                         if (attendanceDisplay) {
@@ -1368,20 +1454,28 @@ export default function OrderDetailPage() {
         </>
       )}
 
-      {/* 項目選單 Modal */}
+      {/* 項目選單 Modal - 置中懸浮 */}
       {showItemMenu && selectedItem && (
         <>
           <div
-            className="fixed inset-0 bg-black/40 z-50"
+            className="fixed inset-0 bg-black/50 z-[60]"
             onClick={() => setShowItemMenu(false)}
           />
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl animate-slide-up">
-            <div className="p-5">
-              {/* 拖曳指示器 */}
-              <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
+          <div className="fixed inset-0 z-[61] flex items-center justify-center p-4 pointer-events-none">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col pointer-events-auto animate-fade-in">
+              {/* 標題列 */}
+              <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
+                <h3 className="text-lg font-bold text-gray-800">{selectedItem.title}</h3>
+                <button
+                  onClick={() => setShowItemMenu(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                >
+                  <span className="material-icons-round text-gray-500 text-[18px]">close</span>
+                </button>
+              </div>
 
-              {/* 標題 */}
-              <h3 className="font-bold text-gray-800 mb-4">{selectedItem.title}</h3>
+              {/* 選單內容 */}
+              <div className="p-5">
 
               {/* 選單項目 */}
               <div className="space-y-2">
@@ -1423,6 +1517,37 @@ export default function OrderDetailPage() {
                   </button>
                 )}
 
+                {/* 分帳/公司支出 */}
+                <button
+                  onClick={() => {
+                    setShowItemMenu(false);
+                    handleOpenExpense(selectedItem);
+                  }}
+                  className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-colors active:scale-[0.98] ${
+                    isLeader
+                      ? "bg-amber-50 hover:bg-amber-100"
+                      : "bg-[#Cfb9a5]/10 hover:bg-[#Cfb9a5]/20"
+                  }`}
+                >
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    isLeader ? "bg-amber-100" : "bg-[#Cfb9a5]/20"
+                  }`}>
+                    <span className={`material-icons-round text-2xl ${
+                      isLeader ? "text-amber-600" : "text-[#Cfb9a5]"
+                    }`}>
+                      {isLeader ? "receipt_long" : "group_add"}
+                    </span>
+                  </div>
+                  <div className="flex-1 text-left">
+                    <div className={`font-bold ${isLeader ? "text-amber-700" : "text-[#Cfb9a5]"}`}>
+                      {isLeader ? "公司支出" : "分帳"}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {isLeader ? "記錄公司支出金額" : "記錄誰付款與分帳"}
+                    </div>
+                  </div>
+                </button>
+
                 {/* 編輯行程 - 所有人都可以編輯 */}
                 <button
                   onClick={() => {
@@ -1463,14 +1588,7 @@ export default function OrderDetailPage() {
                   </button>
                 )}
               </div>
-
-              {/* 取消按鈕 */}
-              <button
-                onClick={() => setShowItemMenu(false)}
-                className="w-full mt-4 py-3.5 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-all active:scale-[0.98]"
-              >
-                取消
-              </button>
+              </div>
             </div>
           </div>
         </>
@@ -1632,20 +1750,29 @@ export default function OrderDetailPage() {
         </>
       )}
 
-      {/* Header 選單 Modal */}
+      {/* Header 選單 Modal - 置中懸浮 */}
       {showHeaderMenu && (
         <>
           <div
-            className="fixed inset-0 bg-black/40 z-50"
+            className="fixed inset-0 bg-black/50 z-[60]"
             onClick={() => setShowHeaderMenu(false)}
           />
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl animate-slide-up">
-            <div className="p-5">
-              {/* 拖曳指示器 */}
-              <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
+          <div className="fixed inset-0 z-[61] flex items-center justify-center p-4 pointer-events-none">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col pointer-events-auto animate-fade-in">
+              {/* 標題列 */}
+              <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
+                <h3 className="text-lg font-bold text-gray-800">選單</h3>
+                <button
+                  onClick={() => setShowHeaderMenu(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                >
+                  <span className="material-icons-round text-gray-500 text-[18px]">close</span>
+                </button>
+              </div>
 
-              {/* 選單項目 */}
-              <div className="space-y-2">
+              {/* 選單內容 */}
+              <div className="flex-1 overflow-y-auto p-5">
+                <div className="space-y-2">
                 {/* 新增景點 */}
                 <button
                   onClick={() => {
@@ -1662,6 +1789,48 @@ export default function OrderDetailPage() {
                     <div className="text-xs text-gray-500">加入新的行程項目</div>
                   </div>
                 </button>
+
+                {/* 邀請旅伴 */}
+                <Link
+                  href={`/invite/${orderId}`}
+                  onClick={() => setShowHeaderMenu(false)}
+                  className="w-full flex items-center gap-4 p-4 rounded-2xl bg-[#A5BCCF]/10 hover:bg-[#A5BCCF]/20 transition-colors active:scale-[0.98]"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-[#A5BCCF]/20 flex items-center justify-center">
+                    <span className="material-icons-round text-[#A5BCCF] text-2xl">person_add</span>
+                  </div>
+                  <div className="flex-1 text-left">
+                    <div className="font-bold text-[#A5BCCF]">邀請旅伴</div>
+                    <div className="text-xs text-gray-500">邀請朋友加入這趟旅程</div>
+                  </div>
+                </Link>
+
+                {/* 特殊出帳 - 只有領隊可見 */}
+                {isLeader && (
+                  <button
+                    onClick={() => {
+                      setShowHeaderMenu(false);
+                      setExpenseItem(null); // 不針對特定項目
+                      setExpenseData({
+                        companyPaid: "",
+                        paidBy: "",
+                        splitWith: [],
+                        amount: "",
+                        note: "",
+                      });
+                      setShowExpenseModal(true);
+                    }}
+                    className="w-full flex items-center gap-4 p-4 rounded-2xl bg-amber-50 hover:bg-amber-100 transition-colors active:scale-[0.98]"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+                      <span className="material-icons-round text-amber-600 text-2xl">receipt_long</span>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="font-bold text-amber-700">特殊出帳</div>
+                      <div className="text-xs text-gray-500">記錄公司額外支出</div>
+                    </div>
+                  </button>
+                )}
 
                 {/* 行程資料 */}
                 <Link
@@ -1710,15 +1879,171 @@ export default function OrderDetailPage() {
                   </div>
                   <span className="material-icons-round text-gray-300">chevron_right</span>
                 </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* 費用記錄 Modal */}
+      {showExpenseModal && (
+        <>
+          {/* 背景遮罩 */}
+          <div
+            className="fixed inset-0 bg-black/50 z-[60]"
+            onClick={() => setShowExpenseModal(false)}
+          />
+
+          {/* 置中懸浮面板 */}
+          <div className="fixed inset-0 z-[61] flex items-center justify-center p-4 pointer-events-none">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col pointer-events-auto animate-fade-in">
+              {/* 標題列 */}
+              <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-800">
+                    {expenseItem ? `${expenseItem.title} - 費用` : "特殊出帳"}
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {isLeader ? "記錄公司支出" : "記錄誰付款與分帳"}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowExpenseModal(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                >
+                  <span className="material-icons-round text-gray-500 text-[18px]">close</span>
+                </button>
               </div>
 
-              {/* 取消按鈕 */}
-              <button
-                onClick={() => setShowHeaderMenu(false)}
-                className="w-full mt-4 py-3.5 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-all active:scale-[0.98]"
-              >
-                取消
-              </button>
+              {/* 內容區 */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                {/* 領隊專用：公司支出 */}
+                {isLeader && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      <span className="material-icons-round text-[14px] mr-1 align-middle">business</span>
+                      公司支出金額
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">¥</span>
+                      <input
+                        type="number"
+                        value={expenseData.companyPaid}
+                        onChange={(e) => setExpenseData({ ...expenseData, companyPaid: e.target.value })}
+                        placeholder="0"
+                        className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-lg font-bold"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* 一般用戶：誰付款 */}
+                {!isLeader && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        <span className="material-icons-round text-[14px] mr-1 align-middle">person</span>
+                        誰付款
+                      </label>
+                      <select
+                        value={expenseData.paidBy}
+                        onChange={(e) => setExpenseData({ ...expenseData, paidBy: e.target.value })}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#Cfb9a5]/20 focus:border-[#Cfb9a5] transition-all"
+                      >
+                        <option value="">選擇付款人</option>
+                        {order?.participants.map((p) => (
+                          <option key={p.id} value={p.name}>{p.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        <span className="material-icons-round text-[14px] mr-1 align-middle">payments</span>
+                        金額
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">¥</span>
+                        <input
+                          type="number"
+                          value={expenseData.amount}
+                          onChange={(e) => setExpenseData({ ...expenseData, amount: e.target.value })}
+                          placeholder="0"
+                          className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#Cfb9a5]/20 focus:border-[#Cfb9a5] transition-all text-lg font-bold"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        <span className="material-icons-round text-[14px] mr-1 align-middle">group</span>
+                        分帳對象
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {order?.participants.map((p) => (
+                          <button
+                            key={p.id}
+                            onClick={() => {
+                              const newSplitWith = expenseData.splitWith.includes(p.id)
+                                ? expenseData.splitWith.filter((id) => id !== p.id)
+                                : [...expenseData.splitWith, p.id];
+                              setExpenseData({ ...expenseData, splitWith: newSplitWith });
+                            }}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                              expenseData.splitWith.includes(p.id)
+                                ? "bg-[#Cfb9a5] text-white"
+                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            }`}
+                          >
+                            {p.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* 備註 */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    <span className="material-icons-round text-[14px] mr-1 align-middle">notes</span>
+                    備註
+                  </label>
+                  <textarea
+                    value={expenseData.note}
+                    onChange={(e) => setExpenseData({ ...expenseData, note: e.target.value })}
+                    placeholder="輸入備註..."
+                    rows={2}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#Cfb9a5]/20 focus:border-[#Cfb9a5] transition-all resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* 底部按鈕 */}
+              <div className="px-5 pb-5 pt-3 border-t border-gray-100">
+                <button
+                  onClick={handleSaveExpense}
+                  disabled={isSavingExpense || (isLeader ? !expenseData.companyPaid : (!expenseData.paidBy || !expenseData.amount))}
+                  className={`w-full py-3.5 font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg disabled:shadow-none ${
+                    isLeader
+                      ? "bg-amber-500 hover:bg-amber-600 disabled:bg-gray-200 disabled:text-gray-400 text-white shadow-amber-500/30"
+                      : "bg-[#Cfb9a5] hover:bg-[#c0a996] disabled:bg-gray-200 disabled:text-gray-400 text-white shadow-[#Cfb9a5]/30"
+                  }`}
+                >
+                  {isSavingExpense ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      儲存中...
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-icons-round text-[20px]">save</span>
+                      儲存
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </>

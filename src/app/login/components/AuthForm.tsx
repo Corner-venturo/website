@@ -5,11 +5,13 @@ interface AuthFormProps {
   email: string;
   password: string;
   name: string;
+  nationalId: string;
   showPassword: boolean;
   isLoading: boolean;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onNameChange: (value: string) => void;
+  onNationalIdChange: (value: string) => void;
   onTogglePassword: () => void;
   onSubmit: (e: React.FormEvent) => void;
   onForgotPassword: () => void;
@@ -20,11 +22,13 @@ export default function AuthForm({
   email,
   password,
   name,
+  nationalId,
   showPassword,
   isLoading,
   onEmailChange,
   onPasswordChange,
   onNameChange,
+  onNationalIdChange,
   onTogglePassword,
   onSubmit,
   onForgotPassword,
@@ -47,21 +51,43 @@ export default function AuthForm({
         </div>
       )}
 
-      <div>
-        <label className="block text-sm font-medium text-[#5C5C5C] mb-2">
-          電子信箱
-        </label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => onEmailChange(e.target.value)}
-          placeholder="your@email.com"
-          autoComplete="email"
-          data-form-type="other"
-          className="w-full px-4 py-3 bg-white/80 backdrop-blur-xl rounded-xl border border-white/50 text-[#5C5C5C] placeholder-[#949494] focus:outline-none focus:ring-2 focus:ring-[#cfb9a5]/50 transition"
-          required
-        />
-      </div>
+      {/* 領隊登入：身份證字號 */}
+      {mode === "leader" && (
+        <div>
+          <label className="block text-sm font-medium text-[#5C5C5C] mb-2">
+            身份證字號
+          </label>
+          <input
+            type="text"
+            value={nationalId}
+            onChange={(e) => onNationalIdChange(e.target.value.toUpperCase())}
+            placeholder="A123456789"
+            autoComplete="off"
+            className="w-full px-4 py-3 bg-white/80 backdrop-blur-xl rounded-xl border border-white/50 text-[#5C5C5C] placeholder-[#949494] focus:outline-none focus:ring-2 focus:ring-[#cfb9a5]/50 transition uppercase"
+            required
+            maxLength={10}
+          />
+        </div>
+      )}
+
+      {/* 一般登入：電子信箱 */}
+      {mode !== "leader" && (
+        <div>
+          <label className="block text-sm font-medium text-[#5C5C5C] mb-2">
+            電子信箱
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => onEmailChange(e.target.value)}
+            placeholder="your@email.com"
+            autoComplete="email"
+            data-form-type="other"
+            className="w-full px-4 py-3 bg-white/80 backdrop-blur-xl rounded-xl border border-white/50 text-[#5C5C5C] placeholder-[#949494] focus:outline-none focus:ring-2 focus:ring-[#cfb9a5]/50 transition"
+            required
+          />
+        </div>
+      )}
 
       {mode !== "forgot" && (
         <div>
@@ -154,6 +180,7 @@ export default function AuthForm({
             {mode === "login" && "登入"}
             {mode === "register" && "建立帳號"}
             {mode === "forgot" && "發送重設連結"}
+            {mode === "leader" && "領隊登入"}
           </>
         )}
       </button>

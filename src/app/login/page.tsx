@@ -48,6 +48,7 @@ export default function LoginPage() {
     initialize,
     signUp,
     signIn,
+    signInAsLeader,
     signInWithGoogle,
     resetPassword,
     clearError,
@@ -57,6 +58,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [nationalId, setNationalId] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [isWebView, setIsWebView] = useState(false);
@@ -147,6 +149,7 @@ export default function LoginPage() {
         // 檢查是否有待跳轉頁面
         const redirectUrl = localStorage.getItem('redirect_after_login');
         if (redirectUrl) {
+          localStorage.removeItem('redirect_after_login');
           router.push(redirectUrl);
         } else {
           router.push('/');
@@ -162,6 +165,18 @@ export default function LoginPage() {
       const result = await resetPassword(email);
       if (result.success) {
         setSuccessMessage('重設連結已發送至您的信箱！');
+      }
+    } else if (mode === 'leader') {
+      const result = await signInAsLeader(nationalId, password);
+      if (result.success) {
+        // 領隊登入成功，直接跳轉到領隊專區
+        const redirectUrl = localStorage.getItem('redirect_after_login');
+        if (redirectUrl) {
+          localStorage.removeItem('redirect_after_login');
+          router.push(redirectUrl);
+        } else {
+          router.push('/my'); // 領隊預設跳轉到我的頁面
+        }
       }
     }
   };
@@ -253,18 +268,20 @@ export default function LoginPage() {
             email={email}
             password={password}
             name={name}
+            nationalId={nationalId}
             showPassword={showPassword}
             isLoading={isLoading}
             onEmailChange={setEmail}
             onPasswordChange={setPassword}
             onNameChange={setName}
+            onNationalIdChange={setNationalId}
             onTogglePassword={() => setShowPassword(!showPassword)}
             onSubmit={handleSubmit}
             onForgotPassword={() => setMode('forgot')}
           />
 
-          {/* Social Login - 在 WebView 中隱藏 */}
-          {mode !== 'forgot' && !isWebView && (
+          {/* Social Login - 在 WebView 中隱藏，領隊模式也不顯示 */}
+          {mode !== 'forgot' && mode !== 'leader' && !isWebView && (
             <SocialLogin isLoading={isLoading} onGoogleLogin={handleGoogleLogin} />
           )}
 

@@ -7,6 +7,9 @@ import { OrderCard, FilterTabs, FilterType, Order } from "./components";
 import { useAuthStore } from "@/stores/auth-store";
 import { useTripStore, Trip } from "@/stores/trip-store";
 
+// 加入行程的步驟
+type JoinStep = 'input' | 'confirm' | 'success';
+
 // 將 Trip 轉換為 Order 格式
 function tripToOrder(trip: Trip): Order {
   const now = new Date();
@@ -103,9 +106,95 @@ function tripToOrder(trip: Trip): Order {
 export default function OrdersPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [showMenu, setShowMenu] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [joinStep, setJoinStep] = useState<JoinStep>('input');
+  const [tourCode, setTourCode] = useState('');
+  const [idNumber, setIdNumber] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState('');
+  const [travelerInfo, setTravelerInfo] = useState<{ name: string; tripId: string; tripTitle: string } | null>(null);
 
   const { user, isInitialized } = useAuthStore();
   const { trips, isLoading, fetchMyTrips } = useTripStore();
+
+  const hasTrips = trips.length > 0;
+
+  // 驗證團號+身分證
+  const handleVerify = async () => {
+    if (!tourCode.trim() || !idNumber.trim()) {
+      setVerifyError('請輸入團號和身分證字號');
+      return;
+    }
+
+    setIsVerifying(true);
+    setVerifyError('');
+
+    try {
+      const response = await fetch('/api/verify-traveler', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tourCode: tourCode.trim().toUpperCase(), idNumber: idNumber.trim().toUpperCase() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        setVerifyError(data.error || '驗證失敗，請確認團號和身分證字號');
+        return;
+      }
+
+      // 驗證成功，進入確認步驟
+      setTravelerInfo({
+        name: data.data.name,
+        tripId: data.data.tripId,
+        tripTitle: data.data.tripTitle,
+      });
+      setJoinStep('confirm');
+    } catch {
+      setVerifyError('網路錯誤，請稍後再試');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // 確認加入行程
+  const handleConfirmJoin = async () => {
+    if (!travelerInfo || !user?.id) return;
+
+    setIsVerifying(true);
+    try {
+      const response = await fetch(`/api/trips/${travelerInfo.tripId}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, role: 'member', nickname: travelerInfo.name }),
+      });
+
+      if (response.ok) {
+        setJoinStep('success');
+        // 重新載入行程
+        fetchMyTrips(user.id);
+      } else {
+        const data = await response.json();
+        setVerifyError(data.error || '加入失敗');
+        setJoinStep('input');
+      }
+    } catch {
+      setVerifyError('網路錯誤');
+      setJoinStep('input');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // 關閉加入行程 Modal
+  const closeJoinModal = () => {
+    setShowJoinModal(false);
+    setJoinStep('input');
+    setTourCode('');
+    setIdNumber('');
+    setVerifyError('');
+    setTravelerInfo(null);
+  };
 
   // 取得用戶的行程
   useEffect(() => {
@@ -210,58 +299,218 @@ export default function OrdersPage() {
             className="fixed inset-0 bg-black/40 z-50"
             onClick={() => setShowMenu(false)}
           />
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl animate-slide-up">
-            <div className="p-5">
-              {/* 拖曳指示器 */}
-              <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-5" />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
+            <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl animate-scale-in">
+              <div className="p-5">
+                {/* 選單項目 */}
+                <div className="space-y-2">
+                  {/* 加入行程 - 總是顯示 */}
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      setShowJoinModal(true);
+                    }}
+                    className="w-full flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors active:scale-[0.98]"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-[#Cfb9a5]/15 flex items-center justify-center">
+                      <span className="material-icons-round text-[#Cfb9a5] text-2xl">add_circle</span>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="font-bold text-gray-800">加入行程</div>
+                      <div className="text-xs text-gray-500">輸入團號加入您的行程</div>
+                    </div>
+                    <span className="material-icons-round text-gray-300">chevron_right</span>
+                  </button>
 
-              {/* 選單項目 */}
-              <div className="space-y-2">
-                <Link
-                  href="/my/friends/invite"
-                  onClick={() => setShowMenu(false)}
-                  className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors active:scale-[0.98]"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-[#A5BCCF]/15 flex items-center justify-center">
-                    <span className="material-icons-round text-[#A5BCCF] text-2xl">person_add</span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-bold text-gray-800">邀請旅伴</div>
-                    <div className="text-xs text-gray-500">分享連結或 QR Code 邀請好友</div>
-                  </div>
-                  <span className="material-icons-round text-gray-300">chevron_right</span>
-                </Link>
+                  {/* 有行程時才顯示的選項 */}
+                  {hasTrips && (
+                    <>
+                      <Link
+                        href="/my/friends/invite"
+                        onClick={() => setShowMenu(false)}
+                        className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors active:scale-[0.98]"
+                      >
+                        <div className="w-12 h-12 rounded-xl bg-[#A5BCCF]/15 flex items-center justify-center">
+                          <span className="material-icons-round text-[#A5BCCF] text-2xl">person_add</span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-bold text-gray-800">邀請旅伴</div>
+                          <div className="text-xs text-gray-500">分享連結或 QR Code 邀請好友</div>
+                        </div>
+                        <span className="material-icons-round text-gray-300">chevron_right</span>
+                      </Link>
 
-                <Link
-                  href="/split"
+                      <Link
+                        href="/split"
+                        onClick={() => setShowMenu(false)}
+                        className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors active:scale-[0.98]"
+                      >
+                        <div className="w-12 h-12 rounded-xl bg-[#A8BFA6]/15 flex items-center justify-center">
+                          <span className="material-icons-round text-[#A8BFA6] text-2xl">account_balance_wallet</span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-bold text-gray-800">記帳</div>
+                          <div className="text-xs text-gray-500">記錄旅途中的花費</div>
+                        </div>
+                        <span className="material-icons-round text-gray-300">chevron_right</span>
+                      </Link>
+                    </>
+                  )}
+                </div>
+
+                {/* 取消按鈕 */}
+                <button
                   onClick={() => setShowMenu(false)}
-                  className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors active:scale-[0.98]"
+                  className="w-full mt-4 py-3.5 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-all active:scale-[0.98]"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-[#A8BFA6]/15 flex items-center justify-center">
-                    <span className="material-icons-round text-[#A8BFA6] text-2xl">account_balance_wallet</span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-bold text-gray-800">記帳</div>
-                    <div className="text-xs text-gray-500">記錄旅途中的花費</div>
-                  </div>
-                  <span className="material-icons-round text-gray-300">chevron_right</span>
-                </Link>
+                  取消
+                </button>
               </div>
+            </div>
+          </div>
+        </>
+      )}
 
-              {/* 取消按鈕 */}
-              <button
-                onClick={() => setShowMenu(false)}
-                className="w-full mt-4 py-3.5 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-all active:scale-[0.98]"
-              >
-                取消
-              </button>
+      {/* 加入行程 Modal */}
+      {showJoinModal && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/40 z-50"
+            onClick={closeJoinModal}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
+            <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl animate-scale-in">
+              <div className="p-6">
+                {/* 步驟一：輸入團號和身分證 */}
+                {joinStep === 'input' && (
+                  <>
+                    <div className="text-center mb-6">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#Cfb9a5]/10 flex items-center justify-center">
+                        <span className="material-icons-round text-[#Cfb9a5] text-3xl">flight_takeoff</span>
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-800">加入行程</h3>
+                      <p className="text-sm text-gray-500 mt-1">請輸入您的團號和身分證字號</p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">團號</label>
+                        <input
+                          type="text"
+                          value={tourCode}
+                          onChange={(e) => setTourCode(e.target.value.toUpperCase())}
+                          placeholder="例如：OKA251223A"
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#Cfb9a5]/50 focus:border-[#Cfb9a5]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">身分證字號</label>
+                        <input
+                          type="text"
+                          value={idNumber}
+                          onChange={(e) => setIdNumber(e.target.value.toUpperCase())}
+                          placeholder="例如：A123456789"
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#Cfb9a5]/50 focus:border-[#Cfb9a5]"
+                        />
+                      </div>
+
+                      {verifyError && (
+                        <p className="text-sm text-red-500 text-center">{verifyError}</p>
+                      )}
+
+                      <button
+                        onClick={handleVerify}
+                        disabled={isVerifying}
+                        className="w-full py-3.5 bg-[#Cfb9a5] text-white font-bold rounded-xl hover:bg-[#c0a996] transition-all active:scale-[0.98] disabled:opacity-50"
+                      >
+                        {isVerifying ? '驗證中...' : '驗證'}
+                      </button>
+
+                      <button
+                        onClick={closeJoinModal}
+                        className="w-full py-3.5 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-all active:scale-[0.98]"
+                      >
+                        取消
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* 步驟二：確認身分 */}
+                {joinStep === 'confirm' && travelerInfo && (
+                  <>
+                    <div className="text-center mb-6">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#A8BFA6]/10 flex items-center justify-center">
+                        <span className="material-icons-round text-[#A8BFA6] text-3xl">person_check</span>
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-800">確認身分</h3>
+                      <p className="text-sm text-gray-500 mt-1">請確認以下資訊是否正確</p>
+                    </div>
+
+                    <div className="bg-gray-50 rounded-2xl p-5 mb-6">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-gray-800 mb-2">{travelerInfo.name}</p>
+                        <p className="text-sm text-gray-500">行程：{travelerInfo.tripTitle}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <button
+                        onClick={handleConfirmJoin}
+                        disabled={isVerifying}
+                        className="w-full py-3.5 bg-[#A8BFA6] text-white font-bold rounded-xl hover:bg-[#99b099] transition-all active:scale-[0.98] disabled:opacity-50"
+                      >
+                        {isVerifying ? '加入中...' : '確認，這是我'}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setJoinStep('input');
+                          setVerifyError('');
+                        }}
+                        className="w-full py-3.5 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-all active:scale-[0.98]"
+                      >
+                        不對，重新輸入
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* 步驟三：成功 */}
+                {joinStep === 'success' && travelerInfo && (
+                  <>
+                    <div className="text-center mb-6">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#A8BFA6]/20 flex items-center justify-center">
+                        <span className="material-icons-round text-[#A8BFA6] text-3xl">check_circle</span>
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-800">加入成功！</h3>
+                      <p className="text-sm text-gray-500 mt-1">您已成功加入行程</p>
+                    </div>
+
+                    <div className="bg-gray-50 rounded-2xl p-5 mb-6 text-center">
+                      <p className="text-lg font-bold text-gray-800">{travelerInfo.tripTitle}</p>
+                    </div>
+
+                    <button
+                      onClick={closeJoinModal}
+                      className="w-full py-3.5 bg-[#Cfb9a5] text-white font-bold rounded-xl hover:bg-[#c0a996] transition-all active:scale-[0.98]"
+                    >
+                      完成
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </>
       )}
 
       {/* 新增行程浮動按鈕 */}
-      <button className="fixed bottom-24 right-5 z-40 w-14 h-14 bg-[#Cfb9a5] hover:bg-[#c0a996] text-white rounded-full shadow-lg shadow-[#Cfb9a5]/30 flex items-center justify-center transition-all active:scale-95 hover:shadow-xl">
+      <button
+        onClick={() => setShowJoinModal(true)}
+        className="fixed bottom-24 right-5 z-40 w-14 h-14 bg-[#Cfb9a5] hover:bg-[#c0a996] text-white rounded-full shadow-lg shadow-[#Cfb9a5]/30 flex items-center justify-center transition-all active:scale-95 hover:shadow-xl"
+      >
         <span className="material-icons-round text-2xl">add</span>
       </button>
 
@@ -288,6 +537,19 @@ export default function OrdersPage() {
         }
         .animate-slide-up {
           animation: slide-up 0.3s ease-out;
+        }
+        @keyframes scale-in {
+          from {
+            transform: scale(0.9);
+            opacity: 0;
+          }
+          to {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+        .animate-scale-in {
+          animation: scale-in 0.2s ease-out;
         }
       `}</style>
     </div>
