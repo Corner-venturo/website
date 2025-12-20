@@ -463,10 +463,10 @@ export default function EditGroupPage() {
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-2 px-1">集合地點</label>
                 <LocationPicker
-                  value={formData.locationName && formData.latitude ? {
+                  value={formData.locationName ? {
                     name: formData.locationName,
                     address: formData.locationAddress,
-                    latitude: formData.latitude,
+                    latitude: formData.latitude || 0,
                     longitude: formData.longitude || 0,
                   } : null}
                   onChange={(location: LocationData) => {

@@ -138,6 +138,7 @@ export default function LocationPicker({ value, onChange, placeholder = '搜尋�
   const [showResults, setShowResults] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [isReverseGeocoding, setIsReverseGeocoding] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -197,6 +198,67 @@ export default function LocationPicker({ value, onChange, placeholder = '搜尋�
     setSearchQuery(result.name);
     setShowResults(false);
     setMapCenter([result.latitude, result.longitude]);
+  }, [onChange]);
+
+  // 取得目前位置
+  const handleGetCurrentLocation = useCallback(async () => {
+    if (!navigator.geolocation) {
+      alert('您的瀏覽器不支援定位功能');
+      return;
+    }
+
+    setIsGettingLocation(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        setMapCenter([lat, lng]);
+        setShowMap(true);
+
+        // 反向地理編碼取得地址
+        const result = await reverseGeocode(lat, lng);
+
+        if (result) {
+          onChange({
+            name: result.name,
+            address: result.address,
+            latitude: lat,
+            longitude: lng,
+          });
+          setSearchQuery(result.name);
+        } else {
+          onChange({
+            name: '目前位置',
+            address: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+            latitude: lat,
+            longitude: lng,
+          });
+          setSearchQuery('目前位置');
+        }
+
+        setIsGettingLocation(false);
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        let message = '無法取得位置';
+        if (error.code === error.PERMISSION_DENIED) {
+          message = '請允許存取位置權限';
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          message = '無法取得位置資訊';
+        } else if (error.code === error.TIMEOUT) {
+          message = '定位逾時，請再試一次';
+        }
+        alert(message);
+        setIsGettingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
   }, [onChange]);
 
   // 地圖點擊選擇位置
@@ -306,17 +368,33 @@ export default function LocationPicker({ value, onChange, placeholder = '搜尋�
         </div>
       )}
 
-      {/* 地圖選點切換 */}
-      <button
-        type="button"
-        onClick={() => setShowMap(!showMap)}
-        className="flex items-center gap-2 text-sm text-[#cfb9a5] font-medium hover:text-[#b09b88] transition-colors"
-      >
-        <span className="material-icons-round text-lg">
-          {showMap ? 'expand_less' : 'map'}
-        </span>
-        {showMap ? '收起地圖' : '從地圖選擇位置'}
-      </button>
+      {/* 定位按鈕區 */}
+      <div className="flex items-center gap-4">
+        {/* 使用目前位置 */}
+        <button
+          type="button"
+          onClick={handleGetCurrentLocation}
+          disabled={isGettingLocation}
+          className="flex items-center gap-2 text-sm text-[#A8BFA6] font-medium hover:text-[#8fa98c] transition-colors disabled:opacity-50"
+        >
+          <span className="material-icons-round text-lg">
+            {isGettingLocation ? 'sync' : 'my_location'}
+          </span>
+          {isGettingLocation ? '定位中...' : '使用目前位置'}
+        </button>
+
+        {/* 地圖選點切換 */}
+        <button
+          type="button"
+          onClick={() => setShowMap(!showMap)}
+          className="flex items-center gap-2 text-sm text-[#cfb9a5] font-medium hover:text-[#b09b88] transition-colors"
+        >
+          <span className="material-icons-round text-lg">
+            {showMap ? 'expand_less' : 'map'}
+          </span>
+          {showMap ? '收起地圖' : '從地圖選擇'}
+        </button>
+      </div>
 
       {/* 地圖 */}
       {showMap && (

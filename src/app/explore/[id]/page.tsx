@@ -237,7 +237,13 @@ export default function GroupDetailPage() {
 
           {/* 返回按鈕 - 使用 top-12 確保不被狀態列遮擋 */}
           <button
-            onClick={() => router.back()}
+            onClick={() => {
+              if (window.history.length > 1) {
+                router.back();
+              } else {
+                router.push('/explore');
+              }
+            }}
             className="absolute top-12 left-4 w-10 h-10 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center text-white"
           >
             <span className="material-icons-round">arrow_back</span>
@@ -368,7 +374,13 @@ export default function GroupDetailPage() {
 
           {/* 返回按鈕 - 使用 top-12 確保不被狀態列遮擋 */}
           <button
-            onClick={() => router.back()}
+            onClick={() => {
+              if (window.history.length > 1) {
+                router.back();
+              } else {
+                router.push('/explore');
+              }
+            }}
             className="absolute top-12 left-4 w-10 h-10 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center text-white"
           >
             <span className="material-icons-round">arrow_back</span>
