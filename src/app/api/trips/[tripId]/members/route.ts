@@ -65,7 +65,7 @@ export async function GET(
   }
 }
 
-// POST: 新增成員（邀請旅伴）
+// POST: 新增或更新成員（UPSERT）
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ tripId: string }> }
@@ -87,49 +87,79 @@ export async function POST(
     // 檢查是否已經是成員
     const { data: existing } = await supabase
       .from('trip_members')
-      .select('id')
+      .select('id, role')
       .eq('trip_id', tripId)
       .eq('user_id', userId)
       .single()
 
+    let member
+    let isUpdate = false
+
     if (existing) {
-      return NextResponse.json(
-        { error: '此用戶已經是成員' },
-        { status: 400 }
-      )
-    }
+      // 已存在：更新角色和暱稱
+      const { data: updated, error: updateError } = await supabase
+        .from('trip_members')
+        .update({
+          role,
+          nickname,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existing.id)
+        .select(`
+          id,
+          trip_id,
+          user_id,
+          role,
+          nickname,
+          joined_at,
+          user:profiles(id, display_name, full_name, avatar_url)
+        `)
+        .single()
 
-    // 新增成員
-    const { data: member, error } = await supabase
-      .from('trip_members')
-      .insert({
-        trip_id: tripId,
-        user_id: userId,
-        role,
-        nickname,
-      })
-      .select(`
-        id,
-        trip_id,
-        user_id,
-        role,
-        nickname,
-        joined_at,
-        user:profiles(id, display_name, full_name, avatar_url)
-      `)
-      .single()
+      if (updateError) {
+        console.error('Update member error:', updateError)
+        return NextResponse.json(
+          { error: '更新成員失敗' },
+          { status: 500 }
+        )
+      }
+      member = updated
+      isUpdate = true
+    } else {
+      // 新增成員
+      const { data: inserted, error: insertError } = await supabase
+        .from('trip_members')
+        .insert({
+          trip_id: tripId,
+          user_id: userId,
+          role,
+          nickname,
+        })
+        .select(`
+          id,
+          trip_id,
+          user_id,
+          role,
+          nickname,
+          joined_at,
+          user:profiles(id, display_name, full_name, avatar_url)
+        `)
+        .single()
 
-    if (error) {
-      console.error('Insert member error:', error)
-      return NextResponse.json(
-        { error: '新增成員失敗' },
-        { status: 500 }
-      )
+      if (insertError) {
+        console.error('Insert member error:', insertError)
+        return NextResponse.json(
+          { error: '新增成員失敗' },
+          { status: 500 }
+        )
+      }
+      member = inserted
     }
 
     return NextResponse.json({
       success: true,
       data: member,
+      message: isUpdate ? '成員資料已更新' : '已加入行程',
     })
   } catch (error) {
     console.error('Add member error:', error)
