@@ -2,10 +2,14 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
 // 使用 ERP Supabase
-const erpSupabase = createClient(
-  process.env.ERP_SUPABASE_URL!,
-  process.env.ERP_SUPABASE_SERVICE_ROLE_KEY!
-)
+const getErpSupabase = () => {
+  const url = process.env.ERP_SUPABASE_URL
+  const key = process.env.ERP_SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) {
+    throw new Error('ERP Supabase configuration missing')
+  }
+  return createClient(url, key)
+}
 
 interface ItineraryVersion {
   id: string
@@ -22,6 +26,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const erpSupabase = getErpSupabase()
     const { id: tourId } = await params
 
     // 查詢該團的所有行程表

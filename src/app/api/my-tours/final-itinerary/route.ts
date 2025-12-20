@@ -2,13 +2,18 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
 // 使用 ERP Supabase
-const erpSupabase = createClient(
-  process.env.ERP_SUPABASE_URL!,
-  process.env.ERP_SUPABASE_SERVICE_ROLE_KEY!
-)
+const getErpSupabase = () => {
+  const url = process.env.ERP_SUPABASE_URL
+  const key = process.env.ERP_SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) {
+    throw new Error('ERP Supabase configuration missing')
+  }
+  return createClient(url, key)
+}
 
 export async function GET(request: Request) {
   try {
+    const erpSupabase = getErpSupabase()
     const { searchParams } = new URL(request.url)
     const tourId = searchParams.get('tourId')
 

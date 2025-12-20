@@ -2,20 +2,23 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
 // ERP Supabase（來源）
-const erpSupabase = createClient(
-  process.env.ERP_SUPABASE_URL!,
-  process.env.ERP_SUPABASE_SERVICE_ROLE_KEY!
-)
+const getErpSupabase = () => {
+  const url = process.env.ERP_SUPABASE_URL
+  const key = process.env.ERP_SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) {
+    throw new Error('ERP Supabase configuration missing')
+  }
+  return createClient(url, key)
+}
 
 // Online Supabase（目標）
-const onlineSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const onlineSupabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
 const getOnlineSupabase = () => {
-  if (!onlineSupabaseUrl || !onlineSupabaseKey) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) {
     throw new Error('Online Supabase configuration missing')
   }
-  return createClient(onlineSupabaseUrl, onlineSupabaseKey)
+  return createClient(url, key)
 }
 
 // POST: 驗證團號 + 身分證字號
@@ -30,6 +33,8 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
+
+    const erpSupabase = getErpSupabase()
 
     // 1. 從 ERP 查詢訂單（用團號）
     const { data: erpOrder, error: orderError } = await erpSupabase

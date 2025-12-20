@@ -2,10 +2,14 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
 // 使用 ERP Supabase 的 Service Role Key 來查詢員工資料
-const erpSupabase = createClient(
-  process.env.ERP_SUPABASE_URL!,
-  process.env.ERP_SUPABASE_SERVICE_ROLE_KEY!
-)
+const getErpSupabase = () => {
+  const url = process.env.ERP_SUPABASE_URL
+  const key = process.env.ERP_SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) {
+    throw new Error('ERP Supabase configuration missing')
+  }
+  return createClient(url, key)
+}
 
 export async function POST(request: Request) {
   try {
@@ -17,6 +21,8 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
+
+    const erpSupabase = getErpSupabase()
 
     // 使用 ERP Supabase 查詢員工資料
     const { data: employees, error: queryError } = await erpSupabase
