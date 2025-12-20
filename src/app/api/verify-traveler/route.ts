@@ -25,7 +25,7 @@ const getOnlineSupabase = () => {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { tourCode, idNumber, isLeader } = body
+    const { tourCode, idNumber } = body
 
     if (!tourCode || !idNumber) {
       return NextResponse.json(
@@ -51,58 +51,26 @@ export async function POST(request: Request) {
       )
     }
 
-    let personName: string
-    let role: string = 'member'
+    // 2. 從 ERP 查詢該訂單的成員（用身分證字號）
+    const { data: erpMember, error: memberError } = await erpSupabase
+      .from('order_members')
+      .select('id, chinese_name, passport_name, id_number, identity')
+      .eq('order_id', erpOrder.id)
+      .eq('id_number', idNumber)
+      .single()
 
-    if (isLeader) {
-      // 領隊驗證：查詢 employees 表
-      const { data: employees, error: empError } = await erpSupabase
-        .from('employees')
-        .select('id, chinese_name, english_name, personal_info')
-        .limit(100)
-
-      if (empError) {
-        console.error('ERP employees query error:', empError)
-        return NextResponse.json(
-          { error: '查詢員工資料失敗' },
-          { status: 500 }
-        )
-      }
-
-      // 用身分證字號找員工
-      const employee = employees?.find(
-        (emp) => emp.personal_info?.national_id === idNumber
+    if (memberError || !erpMember) {
+      console.error('ERP member query error:', memberError)
+      return NextResponse.json(
+        { error: '找不到此身分證字號的成員' },
+        { status: 404 }
       )
-
-      if (!employee) {
-        return NextResponse.json(
-          { error: '找不到此身分證字號的員工' },
-          { status: 404 }
-        )
-      }
-
-      personName = employee.chinese_name || employee.english_name || '領隊'
-      role = 'leader'
-    } else {
-      // 旅客驗證：查詢 order_members 表
-      const { data: erpMember, error: memberError } = await erpSupabase
-        .from('order_members')
-        .select('id, chinese_name, passport_name, id_number')
-        .eq('order_id', erpOrder.id)
-        .eq('id_number', idNumber)
-        .single()
-
-      if (memberError || !erpMember) {
-        console.error('ERP member query error:', memberError)
-        return NextResponse.json(
-          { error: '找不到此身分證字號的旅客' },
-          { status: 404 }
-        )
-      }
-
-      personName = erpMember.chinese_name || erpMember.passport_name || '旅客'
-      role = 'member'
     }
+
+    // 根據 identity 欄位判斷角色
+    const identity = erpMember.identity || '旅客'
+    const role = identity === '領隊' ? 'leader' : 'member'
+    const personName = erpMember.chinese_name || erpMember.passport_name || '成員'
 
     // 3. 檢查或建立 Online 行程
     let tripId: string
@@ -167,6 +135,7 @@ export async function POST(request: Request) {
         tripTitle: tripTitle || erpOrder.tour_name,
         tourCode,
         role,
+        identity,
       },
     })
   } catch (error) {

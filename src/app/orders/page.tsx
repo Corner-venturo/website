@@ -110,10 +110,9 @@ export default function OrdersPage() {
   const [joinStep, setJoinStep] = useState<JoinStep>('input');
   const [tourCode, setTourCode] = useState('');
   const [idNumber, setIdNumber] = useState('');
-  const [isLeader, setIsLeader] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState('');
-  const [travelerInfo, setTravelerInfo] = useState<{ name: string; tripId: string; tripTitle: string; role: string } | null>(null);
+  const [travelerInfo, setTravelerInfo] = useState<{ name: string; tripId: string; tripTitle: string; role: string; identity: string } | null>(null);
 
   const { user, isInitialized } = useAuthStore();
   const { trips, isLoading, fetchMyTrips } = useTripStore();
@@ -134,7 +133,7 @@ export default function OrdersPage() {
       const response = await fetch('/api/verify-traveler', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tourCode: tourCode.trim().toUpperCase(), idNumber: idNumber.trim().toUpperCase(), isLeader }),
+        body: JSON.stringify({ tourCode: tourCode.trim().toUpperCase(), idNumber: idNumber.trim().toUpperCase() }),
       });
 
       const data = await response.json();
@@ -149,7 +148,8 @@ export default function OrdersPage() {
         name: data.data.name,
         tripId: data.data.tripId,
         tripTitle: data.data.tripTitle,
-        role: data.data.role || (isLeader ? 'leader' : 'member'),
+        role: data.data.role || 'member',
+        identity: data.data.identity || '旅客',
       });
       setJoinStep('confirm');
     } catch {
@@ -194,7 +194,6 @@ export default function OrdersPage() {
     setJoinStep('input');
     setTourCode('');
     setIdNumber('');
-    setIsLeader(false);
     setVerifyError('');
     setTravelerInfo(null);
   };
@@ -417,16 +416,6 @@ export default function OrdersPage() {
                           className="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#Cfb9a5]/50 focus:border-[#Cfb9a5]"
                         />
                       </div>
-
-                      <label className="flex items-center gap-3 cursor-pointer py-2">
-                        <input
-                          type="checkbox"
-                          checked={isLeader}
-                          onChange={(e) => setIsLeader(e.target.checked)}
-                          className="w-5 h-5 rounded border-gray-300 text-[#Cfb9a5] focus:ring-[#Cfb9a5]"
-                        />
-                        <span className="text-sm text-gray-700">我是領隊</span>
-                      </label>
 
                       {verifyError && (
                         <p className="text-sm text-red-500 text-center">{verifyError}</p>
