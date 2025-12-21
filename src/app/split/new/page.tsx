@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTripStore, Trip, TripMember } from "@/stores/trip-store";
 
-export default function NewSplitGroupPage() {
+function NewSplitGroupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tripIdFromUrl = searchParams.get("tripId");
@@ -315,5 +315,22 @@ export default function NewSplitGroupPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+// Loading fallback
+function LoadingFallback() {
+  return (
+    <div className="min-h-[100dvh] bg-[#F0EEE6] flex items-center justify-center">
+      <span className="material-icons-round animate-spin text-[#cfb9a5] text-3xl">sync</span>
+    </div>
+  );
+}
+
+export default function NewSplitGroupPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <NewSplitGroupContent />
+    </Suspense>
   );
 }
