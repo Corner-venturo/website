@@ -84,11 +84,16 @@ ${prompt}
           const generatedCode = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
 
           // 清理代碼（移除 markdown code block 和其他雜訊）
-          const cleanCode = generatedCode
+          let cleanCode = generatedCode
             .replace(/```(?:tsx?|jsx?|javascript|typescript)?\n?/gi, '')  // 移除開始的 code block
             .replace(/```\n?/g, '')  // 移除結束的 code block
             .replace(/^(?:tsx?|jsx?)\n/i, '')  // 移除開頭的語言標記
             .trim()
+
+          // 確保 "use client" 開頭正確
+          if (cleanCode.startsWith('use client')) {
+            cleanCode = '"' + cleanCode
+          }
 
           return NextResponse.json({
             success: true,
