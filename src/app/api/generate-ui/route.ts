@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { DESIGN_SYSTEM, UI_GENERATION_PROMPT } from '@/lib/design-system'
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyCz3lWioEi7Ru64o9hujNn81p3QrrpTCqY'
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 
 // 可用的模型列表（按優先順序）
 const GEMINI_MODELS = [
@@ -14,6 +14,13 @@ const GEMINI_MODELS = [
 export async function POST(request: Request) {
   try {
     const { prompt, pageType } = await request.json()
+
+    if (!GEMINI_API_KEY) {
+      return NextResponse.json(
+        { error: 'GEMINI_API_KEY 未設定' },
+        { status: 500 }
+      )
+    }
 
     if (!prompt) {
       return NextResponse.json(
