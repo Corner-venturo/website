@@ -4,6 +4,7 @@ export interface StatusTag {
   label: string;
   tone: string;
   href?: string;
+  onClick?: () => void;
 }
 
 export interface Order {

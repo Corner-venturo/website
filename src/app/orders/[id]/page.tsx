@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 import MobileNav from "@/components/MobileNav";
 import { useTripStore, Trip, TripItineraryItem } from "@/stores/trip-store";
 import { useAuthStore } from "@/stores/auth-store";
+import { CheckInScanner } from "@/components/check-in";
 
 // 個別參與者出席狀態
 interface ItemAttendance {
@@ -697,7 +698,7 @@ function dbItemToItineraryItem(dbItem: TripItineraryItem): ItineraryItem {
 
   return {
     id: dbItem.id,
-    time: dbItem.start_time?.substring(0, 5) || "00:00", // HH:MM format
+    time: dbItem.start_time?.substring(0, 5) || "", // HH:MM format，沒設定則為空
     title: dbItem.title,
     icon: dbItem.icon || "place",
     description: dbItem.description || undefined,
@@ -739,7 +740,15 @@ function tripToOrderData(trip: Trip, dbItems: TripItineraryItem[]): OrderData {
     const dayItems = dbItems
       .filter((item) => item.day_number === i + 1)
       .map(dbItemToItineraryItem)
-      .sort((a, b) => a.time.localeCompare(b.time));
+      .sort((a, b) => {
+        // 如果都有時間，按時間排序
+        if (a.time && b.time) return a.time.localeCompare(b.time);
+        // 如果只有一個有時間，有時間的排前面
+        if (a.time && !b.time) return -1;
+        if (!a.time && b.time) return 1;
+        // 如果都沒有時間，維持原本順序（sort_order）
+        return 0;
+      });
 
     schedule.push({
       day: i + 1,
@@ -777,12 +786,18 @@ export default function OrderDetailPage() {
     itineraryItems,
     fetchTripItineraryItems,
     createItineraryItem,
+    updateItineraryItem,
     deleteItineraryItem,
+    members,
+    fetchTripMembers,
   } = useTripStore();
 
   // 取得領隊資訊（如果有的話）
-  const { leaderInfo } = useAuthStore();
-  const isLeader = !!leaderInfo;
+  const { leaderInfo, user } = useAuthStore();
+
+  // 檢查是否為領隊：leaderInfo 有值，或者是此行程的 owner
+  const currentMember = members.find(m => m.user_id === user?.id);
+  const isLeader = !!leaderInfo || currentMember?.role === 'owner';
 
   // 統一使用 order state 來管理資料（不管來源是 mock 還是 db）
   const [order, setOrder] = useState<OrderData | null>(null);
@@ -795,13 +810,27 @@ export default function OrderDetailPage() {
       // 否則從資料庫載入
       fetchTripById(orderId);
       fetchTripItineraryItems(orderId);
+      fetchTripMembers(orderId);
     }
-  }, [orderId, mockOrder, fetchTripById, fetchTripItineraryItems]);
+  }, [orderId, mockOrder, fetchTripById, fetchTripItineraryItems, fetchTripMembers]);
 
   useEffect(() => {
     // 當資料庫資料載入完成，轉換格式
     if (currentTrip && currentTrip.id === orderId && !mockOrder) {
-      setOrder(tripToOrderData(currentTrip, itineraryItems));
+      const orderData = tripToOrderData(currentTrip, itineraryItems);
+      // 載入儲存的時間設定
+      const timeKey = `trip_times_${orderId}`;
+      const savedTimes = JSON.parse(localStorage.getItem(timeKey) || '{}');
+      if (Object.keys(savedTimes).length > 0) {
+        orderData.schedule = orderData.schedule.map((day) => ({
+          ...day,
+          items: day.items.map((item) => ({
+            ...item,
+            time: savedTimes[item.id] || item.time,
+          })),
+        }));
+      }
+      setOrder(orderData);
     }
   }, [currentTrip, orderId, mockOrder, itineraryItems]);
 
@@ -814,6 +843,9 @@ export default function OrderDetailPage() {
   const [selectedItem, setSelectedItem] = useState<ItineraryItem | null>(null);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
+  const [editingTimeItemId, setEditingTimeItemId] = useState<string | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
+  const [showMemberList, setShowMemberList] = useState(false);
   const [newItem, setNewItem] = useState({
     time: "",
     title: "",
@@ -1143,10 +1175,25 @@ export default function OrderDetailPage() {
         <div className="px-5 pt-6 pb-4 flex flex-col relative">
           {/* 日期標題和參與者 */}
           <div className="flex items-end justify-between mb-4 pl-2">
-            <h2 className="text-xl font-bold text-gray-800">
-              {currentDaySchedule?.dateLabel}{" "}
-              <span className="text-sm font-normal text-gray-500 ml-2">第{selectedDay}天</span>
-            </h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-bold text-gray-800">
+                {currentDaySchedule?.dateLabel}{" "}
+                <span className="text-sm font-normal text-gray-500 ml-2">第{selectedDay}天</span>
+              </h2>
+              {/* 領隊專屬：AI 排序時間按鈕 */}
+              {isLeader && currentDaySchedule?.items && currentDaySchedule.items.length > 0 && (
+                <button
+                  onClick={() => {
+                    // TODO: 呼叫 AI API 排序時間
+                    alert('AI 排序時間功能開發中...\n\n將會自動根據景點位置和營業時間，\n為您安排最佳行程順序和時間。')
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-xs font-medium rounded-full shadow-sm hover:shadow-md transition-all hover:scale-105 active:scale-95"
+                >
+                  <span className="material-icons-round text-sm">auto_awesome</span>
+                  AI 排時間
+                </button>
+              )}
+            </div>
             <div className="flex -space-x-2">
               {order.participants.slice(0, 3).map((p) => (
                 <div key={p.id} className="relative">
@@ -1213,10 +1260,61 @@ export default function OrderDetailPage() {
                           {item.category}
                         </span>
                       )}
-                      <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
-                        <span className="material-icons-round text-[10px]">schedule</span>
-                        {item.time}
-                      </span>
+                      {/* 時間：領隊可點擊編輯，旅客只在有時間時顯示 */}
+                      {(item.time || isLeader) && (
+                        editingTimeItemId === item.id ? (
+                          <select
+                            autoFocus
+                            value={item.time || ''}
+                            onChange={(e) => {
+                              const newTime = e.target.value;
+                              setEditingTimeItemId(null);
+                              // 暫存時間到 localStorage（之後可改存資料庫）
+                              const timeKey = `trip_times_${orderId}`;
+                              const savedTimes = JSON.parse(localStorage.getItem(timeKey) || '{}');
+                              savedTimes[item.id] = newTime;
+                              localStorage.setItem(timeKey, JSON.stringify(savedTimes));
+                              // 更新本地顯示
+                              const updatedSchedule = order.schedule.map((day) => ({
+                                ...day,
+                                items: day.items.map((i) =>
+                                  i.id === item.id ? { ...i, time: newTime } : i
+                                ),
+                              }));
+                              setOrder({ ...order, schedule: updatedSchedule });
+                            }}
+                            onBlur={() => setEditingTimeItemId(null)}
+                            className="text-[10px] text-gray-600 px-1 py-0.5 rounded border border-purple-300 bg-white focus:outline-none focus:ring-1 focus:ring-purple-400"
+                          >
+                            <option value="">不設定</option>
+                            {Array.from({ length: 24 * 4 }, (_, i) => {
+                              const hour = Math.floor(i / 4).toString().padStart(2, '0');
+                              const minute = ((i % 4) * 15).toString().padStart(2, '0');
+                              return `${hour}:${minute}`;
+                            }).map((time) => (
+                              <option key={time} value={time}>{time}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span
+                            className={`text-[10px] flex items-center gap-0.5 ${
+                              isLeader
+                                ? 'text-purple-500 cursor-pointer hover:bg-purple-50 px-1 py-0.5 rounded transition-colors'
+                                : 'text-gray-400'
+                            }`}
+                            onClick={(e) => {
+                              if (isLeader) {
+                                e.stopPropagation();
+                                setEditingTimeItemId(item.id);
+                              }
+                            }}
+                          >
+                            <span className="material-icons-round text-[10px]">schedule</span>
+                            {item.time || '設定時間'}
+                            {isLeader && <span className="material-icons-round text-[8px] ml-0.5">edit</span>}
+                          </span>
+                        )
+                      )}
                     </div>
                     {/* 標題 */}
                     <h4 className="text-sm font-bold text-gray-800 truncate">{item.title}</h4>
@@ -1640,15 +1738,23 @@ export default function OrderDetailPage() {
                   </div>
                 </div>
 
-                {/* 時間 */}
+                {/* 時間 - 15分鐘間隔選單 */}
                 <div className="mb-4">
                   <label className="text-xs font-bold text-gray-500 mb-2 block">時間</label>
-                  <input
-                    type="time"
+                  <select
                     value={newItem.time}
                     onChange={(e) => setNewItem({ ...newItem, time: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#Cfb9a5] focus:ring-2 focus:ring-[#Cfb9a5]/20 outline-none transition-all text-gray-800"
-                  />
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#Cfb9a5] focus:ring-2 focus:ring-[#Cfb9a5]/20 outline-none transition-all text-gray-800 bg-white"
+                  >
+                    <option value="">選擇時間</option>
+                    {Array.from({ length: 24 * 4 }, (_, i) => {
+                      const hour = Math.floor(i / 4).toString().padStart(2, '0');
+                      const minute = ((i % 4) * 15).toString().padStart(2, '0');
+                      return `${hour}:${minute}`;
+                    }).map((time) => (
+                      <option key={time} value={time}>{time}</option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* 標題 */}
@@ -1805,31 +1911,70 @@ export default function OrderDetailPage() {
                   </div>
                 </Link>
 
-                {/* 特殊出帳 - 只有領隊可見 */}
+                {/* 領隊專用功能 */}
                 {isLeader && (
-                  <button
-                    onClick={() => {
-                      setShowHeaderMenu(false);
-                      setExpenseItem(null); // 不針對特定項目
-                      setExpenseData({
-                        companyPaid: "",
-                        paidBy: "",
-                        splitWith: [],
-                        amount: "",
-                        note: "",
-                      });
-                      setShowExpenseModal(true);
-                    }}
-                    className="w-full flex items-center gap-4 p-4 rounded-2xl bg-amber-50 hover:bg-amber-100 transition-colors active:scale-[0.98]"
-                  >
-                    <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
-                      <span className="material-icons-round text-amber-600 text-2xl">receipt_long</span>
-                    </div>
-                    <div className="flex-1 text-left">
-                      <div className="font-bold text-amber-700">特殊出帳</div>
-                      <div className="text-xs text-gray-500">記錄公司額外支出</div>
-                    </div>
-                  </button>
+                  <>
+                    {/* 報到掃描 */}
+                    <button
+                      onClick={() => {
+                        setShowHeaderMenu(false);
+                        setShowScanner(true);
+                      }}
+                      className="w-full flex items-center gap-4 p-4 rounded-2xl bg-[#5B9BD5]/10 hover:bg-[#5B9BD5]/20 transition-colors active:scale-[0.98]"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-[#5B9BD5]/20 flex items-center justify-center">
+                        <span className="material-icons-round text-[#5B9BD5] text-2xl">qr_code_scanner</span>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div className="font-bold text-[#5B9BD5]">報到掃描</div>
+                        <div className="text-xs text-gray-500">掃描旅客 QR Code 完成報到</div>
+                      </div>
+                    </button>
+
+                    {/* 報到狀態 */}
+                    <button
+                      onClick={() => {
+                        setShowHeaderMenu(false);
+                        setShowMemberList(true);
+                      }}
+                      className="w-full flex items-center gap-4 p-4 rounded-2xl bg-[#6B8E6B]/10 hover:bg-[#6B8E6B]/20 transition-colors active:scale-[0.98]"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-[#6B8E6B]/20 flex items-center justify-center">
+                        <span className="material-icons-round text-[#6B8E6B] text-2xl">how_to_reg</span>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div className="font-bold text-[#6B8E6B]">報到狀態</div>
+                        <div className="text-xs text-gray-500">
+                          {members.filter(m => m.checked_in).length}/{members.length} 人已報到
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* 特殊出帳 */}
+                    <button
+                      onClick={() => {
+                        setShowHeaderMenu(false);
+                        setExpenseItem(null);
+                        setExpenseData({
+                          companyPaid: "",
+                          paidBy: "",
+                          splitWith: [],
+                          amount: "",
+                          note: "",
+                        });
+                        setShowExpenseModal(true);
+                      }}
+                      className="w-full flex items-center gap-4 p-4 rounded-2xl bg-amber-50 hover:bg-amber-100 transition-colors active:scale-[0.98]"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+                        <span className="material-icons-round text-amber-600 text-2xl">receipt_long</span>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div className="font-bold text-amber-700">特殊出帳</div>
+                        <div className="text-xs text-gray-500">記錄公司額外支出</div>
+                      </div>
+                    </button>
+                  </>
                 )}
 
                 {/* 行程資料 */}
@@ -2051,6 +2196,122 @@ export default function OrderDetailPage() {
 
       {/* 底部導航 */}
       <MobileNav />
+
+      {/* 報到掃描 Modal */}
+      {showScanner && orderId && (
+        <CheckInScanner
+          tripId={orderId}
+          onClose={() => setShowScanner(false)}
+          onCheckInSuccess={() => {
+            // 重新載入成員列表以更新報到狀態
+            fetchTripMembers(orderId);
+          }}
+        />
+      )}
+
+      {/* 成員報到狀態 Modal */}
+      {showMemberList && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-[70]"
+            onClick={() => setShowMemberList(false)}
+          />
+          <div className="fixed inset-0 z-[71] flex items-center justify-center p-4 pointer-events-none">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col pointer-events-auto animate-fade-in">
+              {/* 標題列 */}
+              <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800">成員報到狀態</h3>
+                  <p className="text-sm text-gray-500">
+                    {members.filter(m => m.checked_in).length}/{members.length} 人已報到
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowMemberList(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                >
+                  <span className="material-icons-round text-gray-500 text-[18px]">close</span>
+                </button>
+              </div>
+
+              {/* 成員列表 */}
+              <div className="flex-1 overflow-y-auto p-4">
+                <div className="space-y-2">
+                  {members.map((member) => (
+                    <div
+                      key={member.id}
+                      className={`flex items-center gap-3 p-3 rounded-xl ${
+                        member.checked_in ? 'bg-[#E8F5E9]' : 'bg-gray-50'
+                      }`}
+                    >
+                      {/* 頭像 */}
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        member.checked_in ? 'bg-[#6B8E6B]' : 'bg-gray-300'
+                      }`}>
+                        <span className="material-icons-round text-white text-lg">
+                          {member.checked_in ? 'check' : 'person'}
+                        </span>
+                      </div>
+
+                      {/* 名稱和狀態 */}
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-800">
+                          {member.nickname || '未命名'}
+                          {member.role === 'owner' && (
+                            <span className="ml-2 text-xs text-[#Cfb9a5] font-bold">領隊</span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {member.checked_in ? (
+                            <>
+                              <span className="text-[#6B8E6B]">已報到</span>
+                              {member.checked_in_at && (
+                                <span className="ml-1">
+                                  · {new Date(member.checked_in_at).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-gray-400">尚未報到</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 狀態圖標 */}
+                      <span className={`material-icons-round text-xl ${
+                        member.checked_in ? 'text-[#6B8E6B]' : 'text-gray-300'
+                      }`}>
+                        {member.checked_in ? 'check_circle' : 'radio_button_unchecked'}
+                      </span>
+                    </div>
+                  ))}
+
+                  {members.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <span className="material-icons-round text-4xl text-gray-300 mb-2 block">group_off</span>
+                      尚無成員
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 底部按鈕 */}
+              <div className="p-4 border-t border-gray-100">
+                <button
+                  onClick={() => {
+                    setShowMemberList(false);
+                    setShowScanner(true);
+                  }}
+                  className="w-full py-3 bg-[#5B9BD5] text-white font-bold rounded-xl hover:bg-[#4A8BC5] transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                >
+                  <span className="material-icons-round">qr_code_scanner</span>
+                  掃描報到
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       <style jsx>{`
         .hide-scrollbar::-webkit-scrollbar {

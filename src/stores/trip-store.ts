@@ -27,6 +27,10 @@ export interface TripMember {
   role: 'owner' | 'admin' | 'member'
   nickname: string | null
   joined_at: string
+  // 報到狀態
+  checked_in: boolean
+  checked_in_at: string | null
+  checked_in_by: string | null
   // Joined profile data
   profile?: {
     display_name: string | null
@@ -72,6 +76,7 @@ export interface ExpenseSplit {
 export interface Settlement {
   id: string
   trip_id: string
+  split_group_id: string | null
   from_user: string
   to_user: string
   amount: number
@@ -80,6 +85,65 @@ export interface Settlement {
   note: string | null
   created_at: string
   completed_at: string | null
+}
+
+// 分帳群組
+export interface SplitGroup {
+  id: string
+  name: string
+  description: string | null
+  cover_image: string | null
+  trip_id: string | null
+  default_currency: string
+  created_by: string
+  created_at: string
+  updated_at: string
+  // Joined data
+  trip?: {
+    id: string
+    title: string
+    cover_image: string | null
+    start_date: string | null
+    end_date: string | null
+  }
+  members?: SplitGroupMember[]
+  // Computed
+  totalExpenses?: number
+  myBalance?: number
+  memberCount?: number
+}
+
+export interface SplitGroupMember {
+  id: string
+  group_id: string
+  user_id: string
+  nickname: string | null
+  role: 'owner' | 'admin' | 'member'
+  joined_at: string
+  user?: {
+    id: string
+    display_name: string | null
+    avatar_url: string | null
+  }
+}
+
+export interface SplitGroupDetail extends SplitGroup {
+  expenses: Expense[]
+  memberBalances: {
+    userId: string
+    displayName: string | null
+    avatarUrl: string | null
+    totalPaid: number
+    totalOwed: number
+    balance: number
+  }[]
+  debts: {
+    from: string
+    fromName: string
+    to: string
+    toName: string
+    amount: number
+  }[]
 }
 
 // 行程項目
@@ -140,6 +204,10 @@ interface TripState {
   isLoading: boolean
   error: string | null
 
+  // Split groups
+  splitGroups: SplitGroup[]
+  currentSplitGroup: SplitGroupDetail | null
+
   // Trip actions
   fetchMyTrips: (userId: string) => Promise<void>
   fetchTripById: (tripId: string) => Promise<void>
@@ -180,7 +248,21 @@ interface TripState {
     amount: number
   }) => Promise<{ success: boolean; error?: string }>
 
+  // Split group actions
+  fetchMySplitGroups: (userId: string, tripId?: string) => Promise<void>
+  fetchSplitGroupById: (groupId: string, userId?: string) => Promise<void>
+  createSplitGroup: (data: {
+    name: string
+    description?: string
+    tripId?: string
+    createdBy: string
+    members?: string[]
+  }) => Promise<{ success: boolean; group?: SplitGroup; error?: string }>
+  inviteToSplitGroup: (groupId: string, userIds: string[]) => Promise<{ success: boolean; error?: string }>
+  removeFromSplitGroup: (groupId: string, userId: string) => Promise<{ success: boolean; error?: string }>
+
   clearTrip: () => void
+  clearSplitGroup: () => void
 }
 
 export const useTripStore = create<TripState>((set, get) => ({
@@ -192,6 +274,10 @@ export const useTripStore = create<TripState>((set, get) => ({
   itineraryItems: [],
   isLoading: false,
   error: null,
+
+  // Split groups
+  splitGroups: [],
+  currentSplitGroup: null,
 
   fetchMyTrips: async (userId: string) => {
     set({ isLoading: true, error: null })
@@ -564,5 +650,142 @@ export const useTripStore = create<TripState>((set, get) => ({
     settlements: [],
     itineraryItems: [],
     error: null,
+  }),
+
+  // Split group actions
+  fetchMySplitGroups: async (userId: string, tripId?: string) => {
+    set({ isLoading: true, error: null })
+
+    try {
+      let url = `/api/split-groups?userId=${userId}`
+      if (tripId) {
+        url += `&tripId=${tripId}`
+      }
+
+      const response = await fetch(url)
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || '載入分帳群組失敗')
+      }
+
+      set({ splitGroups: data.data || [], isLoading: false })
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '載入分帳群組失敗'
+      set({ isLoading: false, error: message })
+    }
+  },
+
+  fetchSplitGroupById: async (groupId: string, userId?: string) => {
+    set({ isLoading: true, error: null })
+
+    try {
+      let url = `/api/split-groups/${groupId}`
+      if (userId) {
+        url += `?userId=${userId}`
+      }
+
+      const response = await fetch(url)
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || '載入分帳群組失敗')
+      }
+
+      set({ currentSplitGroup: data.data, isLoading: false })
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '載入分帳群組失敗'
+      set({ isLoading: false, error: message })
+    }
+  },
+
+  createSplitGroup: async (data) => {
+    set({ isLoading: true, error: null })
+
+    try {
+      const response = await fetch('/api/split-groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: data.name,
+          description: data.description,
+          tripId: data.tripId,
+          createdBy: data.createdBy,
+          members: data.members,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || '建立分帳群組失敗')
+      }
+
+      // Refresh split groups
+      await get().fetchMySplitGroups(data.createdBy)
+
+      set({ isLoading: false })
+      return { success: true, group: result.data }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '建立分帳群組失敗'
+      set({ isLoading: false, error: message })
+      return { success: false, error: message }
+    }
+  },
+
+  inviteToSplitGroup: async (groupId: string, userIds: string[]) => {
+    try {
+      const response = await fetch(`/api/split-groups/${groupId}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userIds }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || '邀請成員失敗')
+      }
+
+      // Refresh current group
+      const { currentSplitGroup } = get()
+      if (currentSplitGroup) {
+        await get().fetchSplitGroupById(groupId)
+      }
+
+      return { success: true }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '邀請成員失敗'
+      return { success: false, error: message }
+    }
+  },
+
+  removeFromSplitGroup: async (groupId: string, userId: string) => {
+    try {
+      const response = await fetch(`/api/split-groups/${groupId}/members?userId=${userId}`, {
+        method: 'DELETE',
+      })
+
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || '移除成員失敗')
+      }
+
+      // Refresh current group
+      const { currentSplitGroup } = get()
+      if (currentSplitGroup) {
+        await get().fetchSplitGroupById(groupId)
+      }
+
+      return { success: true }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '移除成員失敗'
+      return { success: false, error: message }
+    }
+  },
+
+  clearSplitGroup: () => set({
+    currentSplitGroup: null,
   }),
 }))

@@ -12,22 +12,23 @@ const getSupabase = () => {
   return createClient(supabaseUrl, supabaseKey)
 }
 
-// GET: 取得行程的所有費用
+// GET: 取得費用列表（支援 tripId 或 groupId）
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const tripId = searchParams.get('tripId')
+    const groupId = searchParams.get('groupId')
 
-    if (!tripId) {
+    if (!tripId && !groupId) {
       return NextResponse.json(
-        { error: '請提供行程 ID' },
+        { error: '請提供行程 ID 或分帳群組 ID' },
         { status: 400 }
       )
     }
 
     // 取得費用列表（含分攤資訊）
     const supabase = getSupabase()
-    const { data: expenses, error } = await supabase
+    let query = supabase
       .from('expenses')
       .select(`
         *,
@@ -40,8 +41,16 @@ export async function GET(request: Request) {
           user:profiles(id, display_name, avatar_url)
         )
       `)
-      .eq('trip_id', tripId)
       .order('expense_date', { ascending: false })
+
+    // 根據參數過濾
+    if (groupId) {
+      query = query.eq('split_group_id', groupId)
+    } else if (tripId) {
+      query = query.eq('trip_id', tripId)
+    }
+
+    const { data: expenses, error } = await query
 
     if (error) {
       console.error('Query expenses error:', error)
@@ -70,6 +79,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const {
       tripId,
+      groupId, // 分帳群組 ID（可選，與 tripId 二擇一）
       title,
       description,
       category,
@@ -81,20 +91,32 @@ export async function POST(request: Request) {
       itineraryItemId, // 關聯的行程項目 ID（選填）
     } = body
 
-    if (!tripId || !title || !amount || !paidBy) {
+    if ((!tripId && !groupId) || !title || !amount || !paidBy) {
       return NextResponse.json(
-        { error: '請提供必要欄位：tripId, title, amount, paidBy' },
+        { error: '請提供必要欄位：(tripId 或 groupId), title, amount, paidBy' },
         { status: 400 }
       )
     }
 
     const supabase = getSupabase()
 
+    // 如果是透過群組記帳，取得群組關聯的 trip_id（如果有的話）
+    let effectiveTripId = tripId
+    if (groupId && !tripId) {
+      const { data: group } = await supabase
+        .from('split_groups')
+        .select('trip_id')
+        .eq('id', groupId)
+        .single()
+      effectiveTripId = group?.trip_id || null
+    }
+
     // 新增費用記錄
     const { data: expense, error: expenseError } = await supabase
       .from('expenses')
       .insert({
-        trip_id: tripId,
+        trip_id: effectiveTripId,
+        split_group_id: groupId || null,
         title,
         description,
         category: category || 'other',

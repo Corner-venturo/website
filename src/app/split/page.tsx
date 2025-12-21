@@ -1,19 +1,81 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import MobileNav from "@/components/MobileNav";
-import { SummaryCard, TripCard, EmptyState, trips } from "./components";
+import { useTripStore, SplitGroup } from "@/stores/trip-store";
+
+// 群組卡片元件
+function GroupCard({ group }: { group: SplitGroup }) {
+  const balance = group.myBalance || 0;
+
+  return (
+    <Link
+      href={`/split/${group.id}`}
+      className="block bg-white rounded-2xl p-4 shadow-sm active:scale-[0.98] transition-transform"
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#Cfb9a5] to-[#B8A090] flex items-center justify-center overflow-hidden">
+          {group.cover_image ? (
+            <img src={group.cover_image} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <span className="material-icons-round text-white text-xl">account_balance_wallet</span>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-gray-800 truncate">{group.name}</h3>
+          <p className="text-xs text-gray-500 flex items-center gap-1">
+            {group.trip ? (
+              <>
+                <span className="material-icons-round text-xs">flight</span>
+                {group.trip.title}
+              </>
+            ) : (
+              <>
+                <span className="material-icons-round text-xs">group</span>
+                {group.memberCount || 0} 人
+              </>
+            )}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className={`font-bold ${balance >= 0 ? "text-green-600" : "text-red-500"}`}>
+            {balance >= 0 ? "+" : "-"}${Math.abs(balance).toLocaleString()}
+          </p>
+          <p className="text-xs text-gray-400">
+            {balance > 0 ? "可收" : balance < 0 ? "應付" : "已清"}
+          </p>
+        </div>
+      </div>
+    </Link>
+  );
+}
 
 export default function SplitPage() {
+  const { splitGroups, fetchMySplitGroups, isLoading } = useTripStore();
+
+  // 模擬用戶 ID
+  const userId = typeof window !== "undefined" ? localStorage.getItem("userId") || "" : "";
+
+  useEffect(() => {
+    if (userId) {
+      fetchMySplitGroups(userId);
+    }
+  }, [userId, fetchMySplitGroups]);
+
   // 計算總覽數據
-  const totalOwed = trips.reduce(
-    (sum, t) => (t.myBalance < 0 ? sum + Math.abs(t.myBalance) : sum),
+  const totalOwed = splitGroups.reduce(
+    (sum, g) => ((g.myBalance || 0) < 0 ? sum + Math.abs(g.myBalance || 0) : sum),
     0
   );
-  const totalToReceive = trips.reduce(
-    (sum, t) => (t.myBalance > 0 ? sum + t.myBalance : sum),
+  const totalToReceive = splitGroups.reduce(
+    (sum, g) => ((g.myBalance || 0) > 0 ? sum + (g.myBalance || 0) : sum),
     0
   );
+
+  // 分類群組
+  const tripGroups = splitGroups.filter((g) => g.trip_id);
+  const dailyGroups = splitGroups.filter((g) => !g.trip_id);
 
   return (
     <div className="h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-[#F0EEE6] font-sans">
@@ -23,18 +85,41 @@ export default function SplitPage() {
         <div className="absolute -bottom-[10%] -right-[10%] w-[450px] h-[450px] bg-[#C8D6D3] opacity-40 blur-[90px] rounded-full" />
       </div>
 
-      {/* Header - absolute 定位 */}
-      <header className="absolute top-0 left-0 right-0 z-20 px-5 pt-4 pb-4">
-        <h1 className="text-2xl font-bold text-[#5C5C5C]">旅費分帳</h1>
-        <p className="text-sm text-[#949494] mt-1">選擇旅程來記錄或查看分帳</p>
+      {/* Header */}
+      <header className="absolute top-0 left-0 right-0 z-20 px-5 pt-4 pb-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-[#5C5C5C]">旅費分帳</h1>
+          <p className="text-sm text-[#949494] mt-1">管理你的分帳群組</p>
+        </div>
+        <Link
+          href="/split/new"
+          className="w-10 h-10 rounded-full bg-[#Cfb9a5] flex items-center justify-center shadow-md active:scale-95 transition-transform"
+        >
+          <span className="material-icons-round text-white">add</span>
+        </Link>
       </header>
 
       {/* 主要內容 */}
-      <div className="h-full overflow-y-auto pt-16 pb-32">
-
+      <div className="h-full overflow-y-auto pt-20 pb-32">
         {/* 總覽卡片 */}
         <div className="px-5 mb-4">
-          <SummaryCard totalToReceive={totalToReceive} totalOwed={totalOwed} />
+          <div className="bg-white rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-xs text-gray-500 mb-1">我要收</p>
+                <p className="text-2xl font-bold text-green-600">
+                  +${totalToReceive.toLocaleString()}
+                </p>
+              </div>
+              <div className="w-px h-12 bg-gray-200" />
+              <div className="flex-1 text-right">
+                <p className="text-xs text-gray-500 mb-1">我要付</p>
+                <p className="text-2xl font-bold text-red-500">
+                  -${totalOwed.toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* 快捷入口 */}
@@ -49,9 +134,7 @@ export default function SplitPage() {
               </span>
             </div>
             <div className="relative z-10">
-              <span className="material-icons-round text-white/90 text-xl mb-1">
-                task_alt
-              </span>
+              <span className="material-icons-round text-white/90 text-xl mb-1">task_alt</span>
               <p className="text-white font-bold text-sm">新手任務</p>
               <p className="text-white/70 text-xs mt-0.5">完成任務領點數</p>
             </div>
@@ -75,18 +158,62 @@ export default function SplitPage() {
           </Link>
         </div>
 
-        {/* 行程列表 */}
-        <div className="px-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-[#5C5C5C]">我的旅程</h2>
-            <span className="text-xs text-[#949494]">{trips.length} 個旅程</span>
-          </div>
+        {/* 分帳群組列表 */}
+        <div className="px-5 space-y-6">
+          {isLoading ? (
+            <div className="text-center py-12">
+              <span className="material-icons-round text-4xl text-[#Cfb9a5] animate-spin">
+                sync
+              </span>
+              <p className="mt-2 text-gray-500">載入中...</p>
+            </div>
+          ) : splitGroups.length === 0 ? (
+            <div className="text-center py-12">
+              <span className="material-icons-round text-5xl text-gray-300 mb-2">
+                account_balance_wallet
+              </span>
+              <p className="text-gray-500">還沒有任何分帳群組</p>
+              <p className="text-sm text-gray-400 mt-1">點擊右上角 + 建立第一個群組</p>
+            </div>
+          ) : (
+            <>
+              {/* 旅程分帳 */}
+              {tripGroups.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-sm font-bold text-[#5C5C5C] flex items-center gap-2">
+                      <span className="material-icons-round text-lg text-[#Cfb9a5]">flight</span>
+                      旅程分帳
+                    </h2>
+                    <span className="text-xs text-[#949494]">{tripGroups.length} 個</span>
+                  </div>
+                  <div className="space-y-3">
+                    {tripGroups.map((group) => (
+                      <GroupCard key={group.id} group={group} />
+                    ))}
+                  </div>
+                </div>
+              )}
 
-          {trips.map((trip) => (
-            <TripCard key={trip.id} trip={trip} />
-          ))}
-
-          {trips.length === 0 && <EmptyState />}
+              {/* 日常分帳 */}
+              {dailyGroups.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-sm font-bold text-[#5C5C5C] flex items-center gap-2">
+                      <span className="material-icons-round text-lg text-[#A5BCCF]">group</span>
+                      日常分帳
+                    </h2>
+                    <span className="text-xs text-[#949494]">{dailyGroups.length} 個</span>
+                  </div>
+                  <div className="space-y-3">
+                    {dailyGroups.map((group) => (
+                      <GroupCard key={group.id} group={group} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 

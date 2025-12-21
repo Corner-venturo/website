@@ -120,6 +120,7 @@ export async function POST(request: Request) {
           start_date: tripStartDate,
           end_date: tripEndDate,
           status: 'upcoming',
+          tour_code: tourCode,
           updated_at: new Date().toISOString(),
         })
         .eq('id', tripId)
@@ -139,6 +140,7 @@ export async function POST(request: Request) {
           end_date: tripEndDate,
           status: 'upcoming',
           default_currency: 'JPY',
+          tour_code: tourCode,
           created_by: userId || null,
         })
         .select()
@@ -166,40 +168,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4. 同步每日行程項目（如果有行程資料）
-    if (itinerary?.daily_itinerary && Array.isArray(itinerary.daily_itinerary)) {
-      // 先刪除舊的行程項目
-      await getOnlineSupabase()
-        .from('trip_itinerary_items')
-        .delete()
-        .eq('trip_id', tripId)
-
-      // 插入新的行程項目
-      const items = itinerary.daily_itinerary.flatMap((day) => {
-        if (!day.items) return []
-
-        return day.items.map((item, index) => ({
-          trip_id: tripId,
-          day_number: day.day,
-          start_time: item.time || '09:00',
-          title: item.title,
-          description: item.description || null,
-          category: mapCategory(item.type),
-          icon: item.icon || 'place',
-          sort_order: index,
-        }))
-      })
-
-      if (items.length > 0) {
-        const { error: itemsError } = await getOnlineSupabase()
-          .from('trip_itinerary_items')
-          .insert(items)
-
-        if (itemsError) {
-          console.error('Insert items error:', itemsError)
-        }
-      }
-    }
+    // 4. 每日行程不需同步 - Online 直接從 ERP 的 itineraries.daily_itinerary 讀取
+    // 透過 tour_code 關聯，在 /api/trips/[tripId]/itinerary 即時查詢 ERP
 
     // 5. 同步航班資訊（如果有行程資料）
     if (itinerary?.outbound_flight || itinerary?.return_flight) {

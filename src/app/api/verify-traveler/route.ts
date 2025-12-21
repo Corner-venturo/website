@@ -69,7 +69,8 @@ export async function POST(request: Request) {
 
     // 根據 identity 欄位判斷角色
     const identity = erpMember.identity || '旅客'
-    const role = identity === '領隊' ? 'leader' : 'member'
+    // 資料庫只允許 owner, admin, member
+    const role = identity === '領隊' ? 'owner' : 'member'
     const personName = erpMember.chinese_name || erpMember.passport_name || '成員'
 
     // 3. 檢查或建立 Online 行程

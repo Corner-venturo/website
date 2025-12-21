@@ -86,21 +86,31 @@ export default function OrderCard({ order }: OrderCardProps) {
               {order.statusTags.map((tag) => (
                 <button
                   key={tag.label}
-                  onClick={(e) => tag.href && handleTagClick(e, tag.href)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (tag.onClick) {
+                      tag.onClick();
+                    } else if (tag.href) {
+                      router.push(tag.href);
+                    }
+                  }}
                   className={`px-3 py-2 rounded-full text-xs font-medium border flex items-center gap-1.5 whitespace-nowrap transition-all ${
                     tag.tone === "green"
                       ? "bg-white/80 border-[#C8E6C9] hover:bg-[#E8F5E9]"
+                      : tag.tone === "blue"
+                      ? "bg-white/80 border-[#B3D4FC] hover:bg-[#E3F2FD]"
                       : "bg-white/60 border-[#E8E2DD] hover:bg-white/80"
-                  } ${tag.href ? "cursor-pointer active:scale-95" : ""}`}
+                  } ${(tag.href || tag.onClick) ? "cursor-pointer active:scale-95" : ""}`}
                 >
                   <span
                     className={`material-icons-round text-sm ${
-                      tag.tone === "green" ? "text-[#6B8E6B]" : "text-[#B8A065]"
+                      tag.tone === "green" ? "text-[#6B8E6B]" : tag.tone === "blue" ? "text-[#5B9BD5]" : "text-[#B8A065]"
                     }`}
                   >
-                    {tag.tone === "green" ? "check_circle" : "more_horiz"}
+                    {tag.tone === "green" ? "check_circle" : tag.tone === "blue" ? "qr_code_2" : "more_horiz"}
                   </span>
-                  <span className={tag.tone === "green" ? "text-[#6B8E6B]" : "text-[#949494]"}>
+                  <span className={tag.tone === "green" ? "text-[#6B8E6B]" : tag.tone === "blue" ? "text-[#5B9BD5]" : "text-[#949494]"}>
                     {tag.label}
                   </span>
                 </button>

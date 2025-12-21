@@ -6,12 +6,13 @@ import MobileNav from "@/components/MobileNav";
 import { OrderCard, FilterTabs, FilterType, Order } from "./components";
 import { useAuthStore } from "@/stores/auth-store";
 import { useTripStore, Trip } from "@/stores/trip-store";
+import { CheckInQRCode } from "@/components/check-in";
 
 // 加入行程的步驟
 type JoinStep = 'input' | 'confirm' | 'success';
 
 // 將 Trip 轉換為 Order 格式
-function tripToOrder(trip: Trip): Order {
+function tripToOrder(trip: Trip, onCheckInClick?: () => void): Order {
   const now = new Date();
   const startDate = trip.start_date ? new Date(trip.start_date) : null;
   const endDate = trip.end_date ? new Date(trip.end_date) : null;
@@ -33,24 +34,29 @@ function tripToOrder(trip: Trip): Order {
   let chipColor = "";
   let filter: FilterType = "planning";
 
-  if (trip.status === "completed") {
+  // 根據日期自動判斷狀態（優先於資料庫的 status）
+  const daysUntilStart = startDate ? Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+  const daysUntilEnd = endDate ? Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+
+  if (trip.status === "completed" || (daysUntilEnd !== null && daysUntilEnd < 0)) {
+    // 已完成：資料庫標記為 completed，或結束日期已過
     chipText = "已完成";
     chipColor = "bg-[#949494]";
-    filter = "planning"; // 已完成的放在 planning 分類（或可新增 completed 分類）
-  } else if (trip.status === "ongoing") {
+    filter = "planning"; // 已完成的放在 planning 分類
+  } else if (trip.status === "ongoing" || (daysUntilStart !== null && daysUntilStart < 0 && (daysUntilEnd === null || daysUntilEnd >= 0))) {
+    // 進行中：資料庫標記為 ongoing，或開始日期已過但結束日期未過
     chipText = "進行中";
     chipColor = "bg-[#A8BCA1]";
     filter = "upcoming";
-  } else if (trip.status === "upcoming" && startDate) {
-    const daysUntil = Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    if (daysUntil <= 0) {
+  } else if (startDate && daysUntilStart !== null) {
+    if (daysUntilStart === 0) {
       chipText = "今天出發";
       chipColor = "bg-[#CFA5A5]";
-    } else if (daysUntil === 1) {
+    } else if (daysUntilStart === 1) {
       chipText = "明天出發";
       chipColor = "bg-[#CFA5A5]";
     } else {
-      chipText = `${daysUntil} 天後出發`;
+      chipText = `${daysUntilStart} 天後出發`;
       chipColor = "bg-[#94A3B8]";
     }
     filter = "upcoming";
@@ -98,6 +104,7 @@ function tripToOrder(trip: Trip): Order {
     statusTags: trip.status === "upcoming" ? [
       { label: "航班資訊", tone: "green", href: `/orders/${trip.id}/flight` },
       { label: "住宿資訊", tone: "green", href: `/orders/${trip.id}/flight?tab=stay` },
+      { label: "報到", tone: "blue", onClick: onCheckInClick },
     ] : undefined,
     image: trip.cover_image || undefined,
   };
@@ -114,11 +121,21 @@ export default function OrdersPage() {
   const [verifyError, setVerifyError] = useState('');
   const [travelerInfo, setTravelerInfo] = useState<{ name: string; tripId: string; tripTitle: string; role: string; identity: string } | null>(null);
 
-  const { user, isInitialized } = useAuthStore();
+  const { user, isInitialized, leaderInfo } = useAuthStore();
   const { trips, isLoading, fetchMyTrips } = useTripStore();
 
   const hasTrips = trips.length > 0;
+  const isLeader = !!leaderInfo;
 
+  // QR Code 報到狀態
+  const [qrTripInfo, setQrTripInfo] = useState<{
+    tripId: string;
+    userId: string;
+    userName: string;
+    tripTitle: string;
+  } | null>(null);
+
+  
   // 驗證團號+身分證
   const handleVerify = async () => {
     if (!tourCode.trim() || !idNumber.trim()) {
@@ -205,9 +222,20 @@ export default function OrdersPage() {
     }
   }, [isInitialized, user?.id, fetchMyTrips]);
 
+  // 處理報到按鈕點擊
+  const handleCheckInClick = (trip: Trip) => {
+    if (!user) return;
+    setQrTripInfo({
+      tripId: trip.id,
+      userId: user.id,
+      userName: user.user_metadata?.name || user.email || '旅客',
+      tripTitle: trip.title,
+    });
+  };
+
   // 將 trips 轉換為 orders 並按日期排序
   const orders = useMemo(() => {
-    const orderList = trips.map(tripToOrder);
+    const orderList = trips.map(trip => tripToOrder(trip, () => handleCheckInClick(trip)));
 
     // 按照開始日期排序（最近的在前面，沒有日期的在最後）
     return orderList.sort((a, b) => {
@@ -219,7 +247,8 @@ export default function OrdersPage() {
 
       return dateA - dateB;
     });
-  }, [trips]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trips, user]);
 
   const filteredOrders =
     activeFilter === "all"
@@ -327,20 +356,23 @@ export default function OrdersPage() {
                   {/* 有行程時才顯示的選項 */}
                   {hasTrips && (
                     <>
-                      <Link
-                        href="/my/friends/invite"
-                        onClick={() => setShowMenu(false)}
-                        className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors active:scale-[0.98]"
-                      >
-                        <div className="w-12 h-12 rounded-xl bg-[#A5BCCF]/15 flex items-center justify-center">
-                          <span className="material-icons-round text-[#A5BCCF] text-2xl">person_add</span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-bold text-gray-800">邀請旅伴</div>
-                          <div className="text-xs text-gray-500">分享連結或 QR Code 邀請好友</div>
-                        </div>
-                        <span className="material-icons-round text-gray-300">chevron_right</span>
-                      </Link>
+                      {/* 邀請旅伴 - 領隊不需要此功能 */}
+                      {!isLeader && (
+                        <Link
+                          href="/my/friends/invite"
+                          onClick={() => setShowMenu(false)}
+                          className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors active:scale-[0.98]"
+                        >
+                          <div className="w-12 h-12 rounded-xl bg-[#A5BCCF]/15 flex items-center justify-center">
+                            <span className="material-icons-round text-[#A5BCCF] text-2xl">person_add</span>
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-bold text-gray-800">邀請旅伴</div>
+                            <div className="text-xs text-gray-500">分享連結或 QR Code 邀請好友</div>
+                          </div>
+                          <span className="material-icons-round text-gray-300">chevron_right</span>
+                        </Link>
+                      )}
 
                       <Link
                         href="/split"
@@ -518,6 +550,17 @@ export default function OrdersPage() {
 
       {/* 手機版底部導航 */}
       <MobileNav />
+
+      {/* 報到 QR Code Modal */}
+      {qrTripInfo && (
+        <CheckInQRCode
+          tripId={qrTripInfo.tripId}
+          userId={qrTripInfo.userId}
+          userName={qrTripInfo.userName}
+          tripTitle={qrTripInfo.tripTitle}
+          onClose={() => setQrTripInfo(null)}
+        />
+      )}
 
       <style jsx>{`
         .hide-scrollbar::-webkit-scrollbar {

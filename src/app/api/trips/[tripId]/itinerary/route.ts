@@ -1,18 +1,27 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-// 使用 service role key 繞過 RLS
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-const getSupabase = () => {
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase configuration missing')
+// Online Supabase
+const getOnlineSupabase = () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) {
+    throw new Error('Online Supabase configuration missing')
   }
-  return createClient(supabaseUrl, supabaseKey)
+  return createClient(url, key)
 }
 
-// GET: 取得行程的所有項目
+// ERP Supabase
+const getErpSupabase = () => {
+  const url = process.env.ERP_SUPABASE_URL
+  const key = process.env.ERP_SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) {
+    throw new Error('ERP Supabase configuration missing')
+  }
+  return createClient(url, key)
+}
+
+// GET: 從 ERP 取得行程的每日行程
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ tripId: string }> }
@@ -27,26 +36,94 @@ export async function GET(
       )
     }
 
-    const supabase = getSupabase()
+    const onlineSupabase = getOnlineSupabase()
+    const erpSupabase = getErpSupabase()
 
-    const { data: items, error } = await supabase
-      .from('trip_itinerary_items')
-      .select(`
-        *,
-        attendance:trip_item_attendance(*)
-      `)
-      .eq('trip_id', tripId)
-      .order('day_number', { ascending: true })
-      .order('sort_order', { ascending: true })
-      .order('start_time', { ascending: true })
+    // 1. 從 Online 取得 trip 資訊（用來找 tour_code）
+    const { data: trip } = await onlineSupabase
+      .from('trips')
+      .select('id, title, tour_code')
+      .eq('id', tripId)
+      .single()
 
-    if (error) {
-      console.error('Query itinerary items error:', error)
+    if (!trip) {
       return NextResponse.json(
-        { error: '取得行程項目失敗' },
-        { status: 500 }
+        { error: '找不到此行程' },
+        { status: 404 }
       )
     }
+
+    // 2. 用 title 或 tour_code 從 ERP 找對應的 itinerary
+    let itinerary = null
+
+    // 先用 tour_code 查詢（如果有）
+    if (trip.tour_code) {
+      const { data } = await erpSupabase
+        .from('itineraries')
+        .select('id, title, daily_itinerary, outbound_flight, return_flight')
+        .eq('tour_code', trip.tour_code)
+        .single()
+      itinerary = data
+    }
+
+    // 如果沒有，用 title 查詢
+    if (!itinerary) {
+      const { data } = await erpSupabase
+        .from('itineraries')
+        .select('id, title, daily_itinerary, outbound_flight, return_flight')
+        .eq('title', trip.title)
+        .single()
+      itinerary = data
+    }
+
+    if (!itinerary || !itinerary.daily_itinerary) {
+      return NextResponse.json({
+        success: true,
+        data: [],
+      })
+    }
+
+    // 3. 轉換 daily_itinerary 格式
+    const items = itinerary.daily_itinerary.flatMap((day: {
+      day?: number
+      dayLabel?: string
+      date?: string
+      title?: string
+      activities?: Array<{
+        icon?: string
+        title?: string
+        description?: string
+        attraction_id?: string
+        image?: string
+      }>
+      items?: Array<{
+        icon?: string
+        title?: string
+        description?: string
+        attraction_id?: string
+        time?: string
+        type?: string
+        image?: string
+      }>
+    }) => {
+      const dayItems = day.activities || day.items || []
+      const dayNumber = day.day || parseInt(day.dayLabel?.replace('Day ', '') || '1')
+
+      return dayItems.map((item, index: number) => ({
+        id: `${dayNumber}-${index}`,
+        trip_id: tripId,
+        day_number: dayNumber,
+        day_title: day.title || '',
+        item_date: day.date || null,
+        start_time: null, // 時間由領隊自己安排，不從 ERP 帶入
+        title: item.title || '',
+        description: item.description || '',
+        icon: item.icon || '📍',
+        attraction_id: item.attraction_id || null,
+        image: item.image || null,
+        sort_order: index,
+      }))
+    })
 
     return NextResponse.json({
       success: true,
@@ -54,54 +131,6 @@ export async function GET(
     })
   } catch (error) {
     console.error('Get itinerary items error:', error)
-    return NextResponse.json(
-      { error: '系統錯誤' },
-      { status: 500 }
-    )
-  }
-}
-
-// POST: 新增行程項目
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ tripId: string }> }
-) {
-  try {
-    const { tripId } = await params
-    const body = await request.json()
-
-    if (!tripId) {
-      return NextResponse.json(
-        { error: '請提供行程 ID' },
-        { status: 400 }
-      )
-    }
-
-    const supabase = getSupabase()
-
-    const { data: item, error } = await supabase
-      .from('trip_itinerary_items')
-      .insert({
-        ...body,
-        trip_id: tripId,
-      })
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Insert itinerary item error:', error)
-      return NextResponse.json(
-        { error: '新增行程項目失敗' },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: item,
-    })
-  } catch (error) {
-    console.error('Create itinerary item error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }
