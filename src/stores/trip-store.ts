@@ -375,12 +375,16 @@ export const useTripStore = create<TripState>((set, get) => ({
     const supabase = getSupabaseClient()
 
     try {
+      // 使用 upsert 避免重複加入時報錯
       const { error } = await supabase
         .from('trip_members')
-        .insert({
+        .upsert({
           trip_id: tripId,
           user_id: userId,
           role,
+        }, {
+          onConflict: 'trip_id,user_id',
+          ignoreDuplicates: true,
         })
 
       if (error) throw error
