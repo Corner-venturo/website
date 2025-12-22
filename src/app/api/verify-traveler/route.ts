@@ -144,9 +144,10 @@ export async function POST(request: Request) {
       },
     })
   } catch (error) {
-    console.error('Verify traveler error:', error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error('Verify traveler error:', errorMessage, error)
     return NextResponse.json(
-      { error: '驗證失敗' },
+      { error: `驗證失敗: ${errorMessage}` },
       { status: 500 }
     )
   }
