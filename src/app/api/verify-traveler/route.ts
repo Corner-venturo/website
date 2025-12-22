@@ -83,29 +83,29 @@ export async function POST(request: Request) {
 
     const onlineSupabase = getOnlineSupabase()
 
-    // 先用團號查詢（如果有 tour_code 欄位）
+    // 先用 tour_code 欄位查詢
     let existingTrip = null
 
-    // 嘗試用多種方式查找現有行程
-    const { data: tripByCode } = await onlineSupabase
+    // 嘗試用 tour_code 查找
+    const { data: tripByTourCode } = await onlineSupabase
       .from('trips')
       .select('id, title')
-      .or(`title.ilike.%${tourCode}%,title.ilike.%沖繩%聖誕%`)
-      .limit(1)
+      .eq('tour_code', tourCode)
       .single()
 
-    if (tripByCode) {
-      existingTrip = tripByCode
+    if (tripByTourCode) {
+      existingTrip = tripByTourCode
     } else {
-      // 嘗試用團名查找
-      const { data: tripByName } = await onlineSupabase
+      // 嘗試用標題包含團號查找
+      const { data: tripByTitle } = await onlineSupabase
         .from('trips')
         .select('id, title')
-        .eq('title', erpOrder.tour_name)
+        .ilike('title', `%${tourCode}%`)
+        .limit(1)
         .single()
 
-      if (tripByName) {
-        existingTrip = tripByName
+      if (tripByTitle) {
+        existingTrip = tripByTitle
       }
     }
 
