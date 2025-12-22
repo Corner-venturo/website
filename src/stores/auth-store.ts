@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { User, Session, AuthChangeEvent } from '@supabase/supabase-js'
 import { getSupabaseClient } from '@/lib/supabase'
-import { setErpSession, clearErpSession } from '@/lib/erp-supabase'
+import { setErpSession, clearErpSession, getErpSession, getErpSupabaseClient } from '@/lib/erp-supabase'
 
 // 領隊/員工資訊
 interface LeaderInfo {
@@ -48,11 +48,50 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (error) throw error
 
-      set({
-        user: session?.user ?? null,
-        session,
-        isInitialized: true,
-      })
+      // 檢查是否有 ERP session（領隊登入）
+      const erpSession = await getErpSession()
+      if (erpSession?.user) {
+        // 驗證領隊身份是否仍然有效
+        const erpClient = getErpSupabaseClient()
+        if (erpClient) {
+          const { data: employee } = await erpClient
+            .from('employees')
+            .select('id, employee_number, name, roles')
+            .eq('user_id', erpSession.user.id)
+            .single()
+
+          if (employee) {
+            // 領隊身份仍然有效
+            set({
+              user: erpSession.user,
+              session: erpSession,
+              leaderInfo: {
+                employee_id: employee.id,
+                employee_number: employee.employee_number,
+                name: employee.name,
+                roles: employee.roles || [],
+              },
+              isInitialized: true,
+            })
+          } else {
+            // 領隊身份已被移除，清除 session
+            console.log('Leader identity removed, clearing session')
+            await clearErpSession()
+            set({
+              user: session?.user ?? null,
+              session,
+              leaderInfo: null,
+              isInitialized: true,
+            })
+          }
+        }
+      } else {
+        set({
+          user: session?.user ?? null,
+          session,
+          isInitialized: true,
+        })
+      }
 
       // 監聽 auth 狀態變化
       supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
