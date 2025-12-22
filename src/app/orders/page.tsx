@@ -178,7 +178,11 @@ export default function OrdersPage() {
 
   // 確認加入行程
   const handleConfirmJoin = async () => {
-    if (!travelerInfo || !user?.id) return;
+    if (!travelerInfo) return;
+    if (!user?.id) {
+      setVerifyError('請先登入後再加入行程');
+      return;
+    }
 
     setIsVerifying(true);
     try {
