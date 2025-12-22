@@ -178,6 +178,7 @@ export default function OrdersPage() {
 
   // 確認加入行程
   const handleConfirmJoin = async () => {
+    alert(`按鈕被點擊！user.id = ${user?.id || '無'}`);
     console.log('handleConfirmJoin called', { travelerInfo, user });
     if (!travelerInfo) {
       console.log('No travelerInfo');
