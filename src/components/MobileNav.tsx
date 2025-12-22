@@ -13,7 +13,6 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: '/', icon: 'home', activeIcon: 'home', label: '首頁' },
   { href: '/explore', icon: 'explore', activeIcon: 'explore', label: '探索' },
-  { href: '/ai-planner', icon: 'auto_awesome', activeIcon: 'auto_awesome', label: 'AI' },
   { href: '/orders', icon: 'confirmation_number', activeIcon: 'confirmation_number', label: '訂單' },
   { href: '/my', icon: 'person_outline', activeIcon: 'person', label: '我的' },
 ];
@@ -21,8 +20,8 @@ const navItems: NavItem[] = [
 export default function MobileNav() {
   const pathname = usePathname();
 
-  // 不顯示漸變遮罩的頁面（首頁、探索頁、AI頁、有自己底部按鈕的頁面）
-  const hideGradientPages = ['/', '/explore', '/ai-planner', '/my/footprint/record'];
+  // 不顯示漸變遮罩的頁面（首頁、探索頁、有自己底部按鈕的頁面）
+  const hideGradientPages = ['/', '/explore', '/my/footprint/record'];
   const showGradient = !hideGradientPages.some(page => pathname === page || pathname.startsWith(page + '/'));
 
   return (

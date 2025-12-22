@@ -14,6 +14,8 @@ export const airports: Airport[] = [
   { code: 'KHH', name: '高雄國際機場', city: '高雄', country: '台灣', countryCode: 'TW' },
   { code: 'RMQ', name: '台中國際機場', city: '台中', country: '台灣', countryCode: 'TW' },
 
+  // === 開團國家（優先顯示）===
+
   // 日本
   { code: 'NRT', name: '成田國際機場', city: '東京', country: '日本', countryCode: 'JP' },
   { code: 'HND', name: '羽田機場', city: '東京', country: '日本', countryCode: 'JP' },
@@ -23,12 +25,6 @@ export const airports: Airport[] = [
   { code: 'CTS', name: '新千歲機場', city: '札幌', country: '日本', countryCode: 'JP' },
   { code: 'FUK', name: '福岡機場', city: '福岡', country: '日本', countryCode: 'JP' },
   { code: 'OKA', name: '那霸機場', city: '沖繩', country: '日本', countryCode: 'JP' },
-
-  // 韓國
-  { code: 'ICN', name: '仁川國際機場', city: '首爾', country: '韓國', countryCode: 'KR' },
-  { code: 'GMP', name: '金浦機場', city: '首爾', country: '韓國', countryCode: 'KR' },
-  { code: 'PUS', name: '金海機場', city: '釜山', country: '韓國', countryCode: 'KR' },
-  { code: 'CJU', name: '濟州機場', city: '濟州', country: '韓國', countryCode: 'KR' },
 
   // 泰國
   { code: 'BKK', name: '素萬那普機場', city: '曼谷', country: '泰國', countryCode: 'TH' },
@@ -41,6 +37,20 @@ export const airports: Airport[] = [
   { code: 'HAN', name: '內排機場', city: '河內', country: '越南', countryCode: 'VN' },
   { code: 'DAD', name: '峴港機場', city: '峴港', country: '越南', countryCode: 'VN' },
 
+  // 中國
+  { code: 'PVG', name: '浦東國際機場', city: '上海', country: '中國', countryCode: 'CN' },
+  { code: 'SHA', name: '虹橋機場', city: '上海', country: '中國', countryCode: 'CN' },
+  { code: 'PEK', name: '首都國際機場', city: '北京', country: '中國', countryCode: 'CN' },
+  { code: 'PKX', name: '大興國際機場', city: '北京', country: '中國', countryCode: 'CN' },
+
+  // === 其他國家 ===
+
+  // 韓國
+  { code: 'ICN', name: '仁川國際機場', city: '首爾', country: '韓國', countryCode: 'KR' },
+  { code: 'GMP', name: '金浦機場', city: '首爾', country: '韓國', countryCode: 'KR' },
+  { code: 'PUS', name: '金海機場', city: '釜山', country: '韓國', countryCode: 'KR' },
+  { code: 'CJU', name: '濟州機場', city: '濟州', country: '韓國', countryCode: 'KR' },
+
   // 新加坡
   { code: 'SIN', name: '樟宜機場', city: '新加坡', country: '新加坡', countryCode: 'SG' },
 
@@ -52,12 +62,6 @@ export const airports: Airport[] = [
 
   // 澳門
   { code: 'MFM', name: '澳門國際機場', city: '澳門', country: '澳門', countryCode: 'MO' },
-
-  // 中國
-  { code: 'PVG', name: '浦東國際機場', city: '上海', country: '中國', countryCode: 'CN' },
-  { code: 'SHA', name: '虹橋機場', city: '上海', country: '中國', countryCode: 'CN' },
-  { code: 'PEK', name: '首都國際機場', city: '北京', country: '中國', countryCode: 'CN' },
-  { code: 'PKX', name: '大興國際機場', city: '北京', country: '中國', countryCode: 'CN' },
 
   // 菲律賓
   { code: 'MNL', name: '尼諾伊·艾奎諾機場', city: '馬尼拉', country: '菲律賓', countryCode: 'PH' },

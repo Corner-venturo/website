@@ -77,17 +77,6 @@ const advancedTasks = [
     href: null,
   },
   {
-    id: "ai-planner",
-    icon: "auto_awesome",
-    iconBg: "bg-[#E0D6A8]/20",
-    iconColor: "text-[#C5B078]",
-    title: "使用 AI 規劃行程",
-    description: "讓 AI 幫你規劃完美旅程",
-    points: 100,
-    status: "todo",
-    href: "/ai-planner",
-  },
-  {
     id: "complete-trip",
     icon: "verified",
     iconBg: "bg-[#A8BFA6]/20",
