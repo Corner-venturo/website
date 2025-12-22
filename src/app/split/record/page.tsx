@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTripStore, SplitGroupMember } from '@/stores/trip-store';
 
-export default function SplitRecordPage() {
+function SplitRecordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const groupId = searchParams.get('groupId');
@@ -303,5 +303,17 @@ export default function SplitRecordPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function SplitRecordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[100dvh] bg-[#F0EEE6] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#Cfb9a5]"></div>
+      </div>
+    }>
+      <SplitRecordContent />
+    </Suspense>
   );
 }
