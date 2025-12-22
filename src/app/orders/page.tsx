@@ -178,7 +178,11 @@ export default function OrdersPage() {
 
   // 確認加入行程
   const handleConfirmJoin = async () => {
-    if (!travelerInfo) return;
+    console.log('handleConfirmJoin called', { travelerInfo, user });
+    if (!travelerInfo) {
+      console.log('No travelerInfo');
+      return;
+    }
     if (!user?.id) {
       setVerifyError('請先登入後再加入行程');
       return;
@@ -186,6 +190,7 @@ export default function OrdersPage() {
 
     setIsVerifying(true);
     try {
+      console.log('Calling API:', `/api/trips/${travelerInfo.tripId}/members`);
       const response = await fetch(`/api/trips/${travelerInfo.tripId}/members`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -193,6 +198,7 @@ export default function OrdersPage() {
       });
 
       const data = await response.json();
+      console.log('API response:', { ok: response.ok, data });
       if (response.ok) {
         if (data.alreadyMember) {
           setVerifyError('已經加入過此行程');
@@ -206,7 +212,8 @@ export default function OrdersPage() {
         setVerifyError(data.error || '加入失敗');
         setJoinStep('input');
       }
-    } catch {
+    } catch (err) {
+      console.error('API error:', err);
       setVerifyError('網路錯誤');
       setJoinStep('input');
     } finally {
