@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTripStore } from "@/stores/trip-store";
+import { useAuthStore } from "@/stores/auth-store";
 
 export default function SplitGroupDetailPage() {
   const params = useParams();
@@ -11,11 +12,18 @@ export default function SplitGroupDetailPage() {
   const groupId = params.groupId as string;
 
   const { currentSplitGroup, fetchSplitGroupById, clearSplitGroup, isLoading } = useTripStore();
+  const { user, initialize, isInitialized } = useAuthStore();
 
   const [activeTab, setActiveTab] = useState<"expenses" | "members" | "settle">("expenses");
 
-  // 模擬用戶 ID（實際應從 auth 取得）
-  const userId = typeof window !== "undefined" ? localStorage.getItem("userId") || "" : "";
+  // 初始化 auth
+  useEffect(() => {
+    if (!isInitialized) {
+      initialize();
+    }
+  }, [initialize, isInitialized]);
+
+  const userId = user?.id || "";
 
   useEffect(() => {
     if (groupId && userId) {

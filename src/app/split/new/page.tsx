@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTripStore, Trip, TripMember } from "@/stores/trip-store";
+import { useAuthStore } from "@/stores/auth-store";
 
 function NewSplitGroupContent() {
   const router = useRouter();
@@ -11,6 +12,7 @@ function NewSplitGroupContent() {
   const tripIdFromUrl = searchParams.get("tripId");
 
   const { trips, members, fetchMyTrips, fetchTripMembers, createSplitGroup, isLoading } = useTripStore();
+  const { user, initialize, isInitialized } = useAuthStore();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -18,8 +20,14 @@ function NewSplitGroupContent() {
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [showTripSelector, setShowTripSelector] = useState(false);
 
-  // 模擬用戶 ID（實際應從 auth 取得）
-  const userId = typeof window !== "undefined" ? localStorage.getItem("userId") || "" : "";
+  // 初始化 auth
+  useEffect(() => {
+    if (!isInitialized) {
+      initialize();
+    }
+  }, [initialize, isInitialized]);
+
+  const userId = user?.id || "";
 
   // 載入用戶的旅程
   useEffect(() => {

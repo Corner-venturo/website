@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTripStore, SplitGroupMember } from '@/stores/trip-store';
+import { useAuthStore } from '@/stores/auth-store';
 
 function SplitRecordContent() {
   const router = useRouter();
@@ -11,6 +12,7 @@ function SplitRecordContent() {
   const groupId = searchParams.get('groupId');
 
   const { currentSplitGroup, fetchSplitGroupById, isLoading } = useTripStore();
+  const { user, initialize, isInitialized } = useAuthStore();
 
   const [amount, setAmount] = useState('');
   const [title, setTitle] = useState('');
@@ -20,8 +22,14 @@ function SplitRecordContent() {
   const [splitWith, setSplitWith] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 模擬用戶 ID
-  const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') || '' : '';
+  // 初始化 auth
+  useEffect(() => {
+    if (!isInitialized) {
+      initialize();
+    }
+  }, [initialize, isInitialized]);
+
+  const userId = user?.id || '';
 
   // 載入群組資料
   useEffect(() => {
