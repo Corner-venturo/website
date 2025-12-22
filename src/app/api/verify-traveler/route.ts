@@ -24,6 +24,10 @@ const getOnlineSupabase = () => {
 // POST: 驗證團號 + 身分證字號
 export async function POST(request: Request) {
   try {
+    // 從 request 取得 base URL
+    const url = new URL(request.url)
+    const baseUrl = `${url.protocol}//${url.host}`
+
     const body = await request.json()
     const { tourCode, idNumber } = body
 
@@ -110,7 +114,7 @@ export async function POST(request: Request) {
       tripTitle = existingTrip.title
     } else {
       // 如果沒有，同步建立行程
-      const syncResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/trips/sync-from-erp`, {
+      const syncResponse = await fetch(`${baseUrl}/api/trips/sync-from-erp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tourCode }),
