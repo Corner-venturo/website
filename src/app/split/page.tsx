@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import MobileNav from "@/components/MobileNav";
 import { useTripStore, SplitGroup } from "@/stores/trip-store";
+import { useAuthStore } from "@/stores/auth-store";
 
 // 群組卡片元件
 function GroupCard({ group }: { group: SplitGroup }) {
@@ -25,17 +26,8 @@ function GroupCard({ group }: { group: SplitGroup }) {
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-gray-800 truncate">{group.name}</h3>
           <p className="text-xs text-gray-500 flex items-center gap-1">
-            {group.trip ? (
-              <>
-                <span className="material-icons-round text-xs">flight</span>
-                {group.trip.title}
-              </>
-            ) : (
-              <>
-                <span className="material-icons-round text-xs">group</span>
-                {group.memberCount || 0} 人
-              </>
-            )}
+            <span className="material-icons-round text-xs">group</span>
+            {group.memberCount || 0} 人
           </p>
         </div>
         <div className="text-right">
@@ -53,15 +45,19 @@ function GroupCard({ group }: { group: SplitGroup }) {
 
 export default function SplitPage() {
   const { splitGroups, fetchMySplitGroups, isLoading } = useTripStore();
-
-  // 模擬用戶 ID
-  const userId = typeof window !== "undefined" ? localStorage.getItem("userId") || "" : "";
+  const { user, initialize, isInitialized } = useAuthStore();
 
   useEffect(() => {
-    if (userId) {
-      fetchMySplitGroups(userId);
+    if (!isInitialized) {
+      initialize();
     }
-  }, [userId, fetchMySplitGroups]);
+  }, [initialize, isInitialized]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchMySplitGroups(user.id);
+    }
+  }, [user?.id, fetchMySplitGroups]);
 
   // 計算總覽數據
   const totalOwed = splitGroups.reduce(
@@ -72,10 +68,6 @@ export default function SplitPage() {
     (sum, g) => ((g.myBalance || 0) > 0 ? sum + (g.myBalance || 0) : sum),
     0
   );
-
-  // 分類群組
-  const tripGroups = splitGroups.filter((g) => g.trip_id);
-  const dailyGroups = splitGroups.filter((g) => !g.trip_id);
 
   return (
     <div className="h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-[#F0EEE6] font-sans">
@@ -88,8 +80,8 @@ export default function SplitPage() {
       {/* Header */}
       <header className="absolute top-0 left-0 right-0 z-20 px-5 pt-4 pb-4 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#5C5C5C]">旅費分帳</h1>
-          <p className="text-sm text-[#949494] mt-1">管理你的分帳群組</p>
+          <h1 className="text-2xl font-bold text-[#5C5C5C]">分帳</h1>
+          <p className="text-sm text-[#949494] mt-1">和朋友輕鬆分帳</p>
         </div>
         <Link
           href="/split/new"
@@ -176,43 +168,20 @@ export default function SplitPage() {
               <p className="text-sm text-gray-400 mt-1">點擊右上角 + 建立第一個群組</p>
             </div>
           ) : (
-            <>
-              {/* 旅程分帳 */}
-              {tripGroups.length > 0 && (
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-sm font-bold text-[#5C5C5C] flex items-center gap-2">
-                      <span className="material-icons-round text-lg text-[#Cfb9a5]">flight</span>
-                      旅程分帳
-                    </h2>
-                    <span className="text-xs text-[#949494]">{tripGroups.length} 個</span>
-                  </div>
-                  <div className="space-y-3">
-                    {tripGroups.map((group) => (
-                      <GroupCard key={group.id} group={group} />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* 日常分帳 */}
-              {dailyGroups.length > 0 && (
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-sm font-bold text-[#5C5C5C] flex items-center gap-2">
-                      <span className="material-icons-round text-lg text-[#A5BCCF]">group</span>
-                      日常分帳
-                    </h2>
-                    <span className="text-xs text-[#949494]">{dailyGroups.length} 個</span>
-                  </div>
-                  <div className="space-y-3">
-                    {dailyGroups.map((group) => (
-                      <GroupCard key={group.id} group={group} />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-bold text-[#5C5C5C] flex items-center gap-2">
+                  <span className="material-icons-round text-lg text-[#Cfb9a5]">account_balance_wallet</span>
+                  我的分帳群組
+                </h2>
+                <span className="text-xs text-[#949494]">{splitGroups.length} 個</span>
+              </div>
+              <div className="space-y-3">
+                {splitGroups.map((group) => (
+                  <GroupCard key={group.id} group={group} />
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </div>
