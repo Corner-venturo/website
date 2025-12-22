@@ -1898,7 +1898,7 @@ export default function OrderDetailPage() {
 
                 {/* 邀請旅伴 */}
                 <Link
-                  href={`/invite/${orderId}`}
+                  href={`/my/friends/invite?tripId=${orderId}`}
                   onClick={() => setShowHeaderMenu(false)}
                   className="w-full flex items-center gap-4 p-4 rounded-2xl bg-[#A5BCCF]/10 hover:bg-[#A5BCCF]/20 transition-colors active:scale-[0.98]"
                 >

@@ -1,17 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { QRCodeSVG } from 'qrcode.react';
+import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth-store';
 import { useProfileStore } from '@/stores/profile-store';
 import { useFriendsStore } from '@/stores/friends-store';
+import { useTripStore } from '@/stores/trip-store';
 
-export default function InvitePage() {
+function InvitePageContent() {
+  const searchParams = useSearchParams();
+  const tripId = searchParams.get('tripId');
+
   const { user, initialize, isInitialized } = useAuthStore();
   const { profile, fetchProfile } = useProfileStore();
   const { sendFriendRequest, searchUsers } = useFriendsStore();
+  const { currentTrip, fetchTripById, addTripMember } = useTripStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{ id: string; display_name: string | null; avatar_url: string | null; username?: string | null }[]>([]);
@@ -32,6 +38,13 @@ export default function InvitePage() {
       fetchProfile(user.id);
     }
   }, [user?.id, fetchProfile]);
+
+  // 如果有 tripId，載入行程資訊
+  useEffect(() => {
+    if (tripId) {
+      fetchTripById(tripId);
+    }
+  }, [tripId, fetchTripById]);
 
   const showNotification = (message: string) => {
     setToastMessage(message);
@@ -58,12 +71,23 @@ export default function InvitePage() {
     }
   };
 
-  // 發送好友邀請
+  // 發送好友邀請（如果有 tripId，也加入行程）
   const handleSendRequest = async (friendId: string) => {
     if (!user?.id) return;
 
+    // 發送好友邀請
     const result = await sendFriendRequest(user.id, friendId);
-    if (result.success) {
+
+    // 如果有 tripId，將好友加入行程
+    if (tripId) {
+      const tripResult = await addTripMember(tripId, friendId, 'member');
+      if (tripResult.success) {
+        setSentRequests(prev => new Set(prev).add(friendId));
+        showNotification('已邀請加入行程！');
+      } else {
+        showNotification(tripResult.error || '加入行程失敗');
+      }
+    } else if (result.success) {
       setSentRequests(prev => new Set(prev).add(friendId));
       showNotification('已發送邀請！');
     } else {
@@ -122,14 +146,19 @@ export default function InvitePage() {
       {/* Header - absolute 定位 */}
       <header className="absolute top-0 left-0 right-0 z-20 px-6 pt-4 pb-4 flex items-center justify-between">
         <Link
-          href="/my/friends"
+          href={tripId ? `/orders/${tripId}` : '/my/friends'}
           className="w-10 h-10 bg-white/70 backdrop-blur-xl border border-white/60 rounded-full shadow-sm text-gray-600 hover:text-[#Cfb9a5] transition-colors flex items-center justify-center"
         >
           <span className="material-icons-round text-xl">close</span>
         </Link>
-        <h1 className="text-lg font-bold text-gray-800 tracking-wide">
-          邀請夥伴
-        </h1>
+        <div className="text-center">
+          <h1 className="text-lg font-bold text-gray-800 tracking-wide">
+            {tripId ? '邀請旅伴' : '邀請夥伴'}
+          </h1>
+          {tripId && currentTrip && (
+            <p className="text-xs text-gray-500">{currentTrip.title}</p>
+          )}
+        </div>
         <div className="w-10" />
       </header>
 
@@ -307,12 +336,24 @@ export default function InvitePage() {
       {/* 底部完成按鈕 */}
       <div className="fixed bottom-0 left-0 w-full p-6 pb-10 bg-gradient-to-t from-[#F0EEE6] via-[#F0EEE6] via-70% to-transparent z-40">
         <Link
-          href="/my/friends"
+          href={tripId ? `/orders/${tripId}` : '/my/friends'}
           className="w-full py-4 rounded-3xl bg-[#cfb9a5] hover:bg-[#b09b88] text-white font-bold text-lg shadow-lg shadow-[#cfb9a5]/30 flex items-center justify-center gap-2 transition-transform active:scale-95"
         >
           完成
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function InvitePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[100dvh] bg-[#F0EEE6] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#Cfb9a5]"></div>
+      </div>
+    }>
+      <InvitePageContent />
+    </Suspense>
   );
 }
