@@ -149,7 +149,7 @@ export async function POST(request: Request) {
       if (insertError || !newTrip) {
         console.error('Insert trip error:', insertError)
         return NextResponse.json(
-          { error: '建立行程失敗' },
+          { error: `建立行程失敗: ${insertError?.message || '未知錯誤'}` },
           { status: 500 }
         )
       }
