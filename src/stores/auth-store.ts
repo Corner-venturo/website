@@ -54,36 +54,61 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // 驗證領隊身份是否仍然有效
         const erpClient = getErpSupabaseClient()
         if (erpClient) {
-          const { data: employee } = await erpClient
-            .from('employees')
-            .select('id, employee_number, name, roles')
-            .eq('user_id', erpSession.user.id)
-            .single()
+          try {
+            const { data: employee, error: employeeError } = await erpClient
+              .from('employees')
+              .select('id, employee_number, name, roles')
+              .eq('user_id', erpSession.user.id)
+              .single()
 
-          if (employee) {
-            // 領隊身份仍然有效
+            if (employeeError) {
+              // 查詢錯誤時，保持現有 session（不要因為網路錯誤就登出）
+              console.warn('Employee verification failed:', employeeError)
+              set({
+                user: erpSession.user,
+                session: erpSession,
+                isInitialized: true,
+              })
+            } else if (employee) {
+              // 領隊身份仍然有效
+              set({
+                user: erpSession.user,
+                session: erpSession,
+                leaderInfo: {
+                  employee_id: employee.id,
+                  employee_number: employee.employee_number,
+                  name: employee.name,
+                  roles: employee.roles || [],
+                },
+                isInitialized: true,
+              })
+            } else {
+              // 領隊身份已被移除，清除 session
+              console.log('Leader identity removed, clearing session')
+              await clearErpSession()
+              set({
+                user: session?.user ?? null,
+                session,
+                leaderInfo: null,
+                isInitialized: true,
+              })
+            }
+          } catch (verifyError) {
+            // 驗證過程出錯，保持現有 session
+            console.error('Leader verification error:', verifyError)
             set({
               user: erpSession.user,
               session: erpSession,
-              leaderInfo: {
-                employee_id: employee.id,
-                employee_number: employee.employee_number,
-                name: employee.name,
-                roles: employee.roles || [],
-              },
-              isInitialized: true,
-            })
-          } else {
-            // 領隊身份已被移除，清除 session
-            console.log('Leader identity removed, clearing session')
-            await clearErpSession()
-            set({
-              user: session?.user ?? null,
-              session,
-              leaderInfo: null,
               isInitialized: true,
             })
           }
+        } else {
+          // 沒有 ERP client，保持 ERP session
+          set({
+            user: erpSession.user,
+            session: erpSession,
+            isInitialized: true,
+          })
         }
       } else {
         set({
