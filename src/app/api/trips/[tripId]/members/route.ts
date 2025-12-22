@@ -159,7 +159,8 @@ export async function POST(
     return NextResponse.json({
       success: true,
       data: member,
-      message: isUpdate ? '成員資料已更新' : '已加入行程',
+      alreadyMember: isUpdate,
+      message: isUpdate ? '已經加入過此行程' : '已加入行程',
     })
   } catch (error) {
     console.error('Add member error:', error)

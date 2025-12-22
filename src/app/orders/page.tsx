@@ -188,12 +188,17 @@ export default function OrdersPage() {
         body: JSON.stringify({ userId: user.id, role: travelerInfo.role, nickname: travelerInfo.name }),
       });
 
+      const data = await response.json();
       if (response.ok) {
-        setJoinStep('success');
-        // 重新載入行程
-        fetchMyTrips(user.id);
+        if (data.alreadyMember) {
+          setVerifyError('已經加入過此行程');
+          setJoinStep('input');
+        } else {
+          setJoinStep('success');
+          // 重新載入行程
+          fetchMyTrips(user.id);
+        }
       } else {
-        const data = await response.json();
         setVerifyError(data.error || '加入失敗');
         setJoinStep('input');
       }

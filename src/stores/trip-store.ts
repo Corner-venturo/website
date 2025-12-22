@@ -375,16 +375,24 @@ export const useTripStore = create<TripState>((set, get) => ({
     const supabase = getSupabaseClient()
 
     try {
-      // 使用 upsert 避免重複加入時報錯
+      // 先檢查是否已經是成員
+      const { data: existing } = await supabase
+        .from('trip_members')
+        .select('id')
+        .eq('trip_id', tripId)
+        .eq('user_id', userId)
+        .single()
+
+      if (existing) {
+        return { success: true, alreadyMember: true, message: '已經加入過此行程' }
+      }
+
       const { error } = await supabase
         .from('trip_members')
-        .upsert({
+        .insert({
           trip_id: tripId,
           user_id: userId,
           role,
-        }, {
-          onConflict: 'trip_id,user_id',
-          ignoreDuplicates: true,
         })
 
       if (error) throw error
@@ -392,7 +400,7 @@ export const useTripStore = create<TripState>((set, get) => ({
       // Refresh members
       await get().fetchTripMembers(tripId)
 
-      return { success: true }
+      return { success: true, alreadyMember: false }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '新增成員失敗'
       return { success: false, error: message }
