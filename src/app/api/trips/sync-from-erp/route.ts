@@ -234,9 +234,10 @@ export async function POST(request: Request) {
       },
     })
   } catch (error) {
-    console.error('Sync error:', error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error('Sync error:', errorMessage, error)
     return NextResponse.json(
-      { error: '同步失敗' },
+      { error: `同步失敗: ${errorMessage}` },
       { status: 500 }
     )
   }
