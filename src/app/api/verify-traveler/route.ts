@@ -122,8 +122,9 @@ export async function POST(request: Request) {
 
       const syncData = await syncResponse.json()
       if (!syncResponse.ok || !syncData.success) {
+        console.error('Sync failed:', syncData)
         return NextResponse.json(
-          { error: '行程同步失敗' },
+          { error: `行程同步失敗: ${syncData.error || '未知錯誤'}` },
           { status: 500 }
         )
       }
