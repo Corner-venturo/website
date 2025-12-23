@@ -24,7 +24,6 @@ function SplitRecordContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isLoadingExpense, setIsLoadingExpense] = useState(false);
 
   const isEditMode = !!expenseId;
 
@@ -61,8 +60,7 @@ function SplitRecordContent() {
         setSplitWith(splitUserIds);
         // 不需要顯示載入中
       } else {
-        // 沒有快取，從 API 載入
-        setIsLoadingExpense(true);
+        // 沒有快取，從 API 載入（背景載入，不阻擋 UI）
         fetch(`/api/expenses/${expenseId}`)
           .then(res => res.json())
           .then(data => {
@@ -77,8 +75,7 @@ function SplitRecordContent() {
               setSplitWith(splitUserIds);
             }
           })
-          .catch(err => console.error('Load expense error:', err))
-          .finally(() => setIsLoadingExpense(false));
+          .catch(err => console.error('Load expense error:', err));
       }
     }
   }, [isEditMode, expenseId, currentSplitGroup]);
@@ -434,26 +431,13 @@ function SplitRecordContent() {
         </div>
       )}
 
-      {/* 載入中遮罩 */}
-      {isLoadingExpense && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F0EEE6]/80">
-          <div className="text-center">
-            <span className="material-icons-round text-4xl text-[#Cfb9a5] animate-spin">sync</span>
-            <p className="mt-2 text-gray-500">載入中...</p>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
 
 export default function SplitRecordPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-[100dvh] bg-[#F0EEE6] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#Cfb9a5]"></div>
-      </div>
-    }>
+    <Suspense fallback={<div className="min-h-[100dvh] bg-[#F0EEE6]" />}>
       <SplitRecordContent />
     </Suspense>
   );
