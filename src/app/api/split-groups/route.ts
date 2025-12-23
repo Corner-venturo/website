@@ -1,15 +1,6 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-const getSupabase = () => {
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase configuration missing')
-  }
-  return createClient(supabaseUrl, supabaseKey)
-}
+import { getOnlineSupabase } from '@/lib/supabase-server'
+import { jsonResponse, errorResponse, CACHE_CONFIGS } from '@/lib/api-utils'
 
 // GET: 取得我的所有分帳群組
 export async function GET(request: Request) {
@@ -19,13 +10,10 @@ export async function GET(request: Request) {
     const tripId = searchParams.get('tripId') // 可選：只取得某旅遊團的分帳群組
 
     if (!userId) {
-      return NextResponse.json(
-        { error: '請提供使用者 ID' },
-        { status: 400 }
-      )
+      return errorResponse('請提供使用者 ID', 400)
     }
 
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     // 取得用戶所屬的群組 ID
     const { data: memberOf, error: memberError } = await supabase
@@ -35,23 +23,17 @@ export async function GET(request: Request) {
 
     if (memberError) {
       console.error('Query member groups error:', memberError)
-      return NextResponse.json(
-        { error: '取得群組失敗' },
-        { status: 500 }
-      )
+      return errorResponse('取得群組失敗', 500)
     }
 
     const groupIds = memberOf?.map(m => m.group_id) || []
 
     if (groupIds.length === 0) {
-      return NextResponse.json({
-        success: true,
-        data: [],
-      })
+      return jsonResponse({ success: true, data: [] }, { cache: CACHE_CONFIGS.privateShort })
     }
 
-    // 取得群組詳情
-    let query = supabase
+    // 平行取得所有需要的資料（避免 N+1 查詢）
+    let groupQuery = supabase
       .from('split_groups')
       .select(`
         *,
@@ -67,68 +49,68 @@ export async function GET(request: Request) {
       .in('id', groupIds)
       .order('updated_at', { ascending: false })
 
-    // 如果指定了 tripId，過濾只顯示該旅遊團的群組
     if (tripId) {
-      query = query.eq('trip_id', tripId)
+      groupQuery = groupQuery.eq('trip_id', tripId)
     }
 
-    const { data: groups, error: groupsError } = await query
+    // 平行執行所有查詢 - 優化 N+1 問題
+    const [groupsResult, allExpensesResult, userSplitsResult] = await Promise.all([
+      groupQuery,
+      // 一次取得所有群組的費用
+      supabase
+        .from('expenses')
+        .select('id, amount, paid_by, split_group_id')
+        .in('split_group_id', groupIds),
+      // 一次取得用戶在所有群組的分攤
+      supabase
+        .from('expense_splits')
+        .select('amount, is_settled, expense_id')
+        .eq('user_id', userId)
+    ])
 
-    if (groupsError) {
-      console.error('Query groups error:', groupsError)
-      return NextResponse.json(
-        { error: '取得群組失敗' },
-        { status: 500 }
-      )
+    if (groupsResult.error) {
+      console.error('Query groups error:', groupsResult.error)
+      return errorResponse('取得群組失敗', 500)
     }
 
-    // 計算每個群組的餘額（簡化版：只計算費用總額）
-    const groupsWithBalance = await Promise.all(
-      (groups || []).map(async (group) => {
-        // 取得群組費用
-        const { data: expenses } = await supabase
-          .from('expenses')
-          .select('amount, paid_by')
-          .eq('split_group_id', group.id)
+    const groups = groupsResult.data || []
+    const allExpenses = allExpensesResult.data || []
+    const userSplits = userSplitsResult.data || []
 
-        // 取得用戶的分攤
-        const { data: splits } = await supabase
-          .from('expense_splits')
-          .select('amount, is_settled, expense:expenses!inner(split_group_id)')
-          .eq('user_id', userId)
-          .eq('expense.split_group_id', group.id)
+    // 建立費用 ID 到群組 ID 的映射
+    const expenseToGroup = new Map<string, string>()
+    allExpenses.forEach(e => expenseToGroup.set(e.id, e.split_group_id))
 
-        // 計算用戶在此群組的餘額
-        // 正數 = 別人欠你，負數 = 你欠別人
-        const totalPaid = expenses
-          ?.filter(e => e.paid_by === userId)
-          .reduce((sum, e) => sum + Number(e.amount), 0) || 0
+    // 在記憶體中計算每個群組的餘額（超快速）
+    const groupsWithBalance = groups.map((group) => {
+      const groupExpenses = allExpenses.filter(e => e.split_group_id === group.id)
 
-        const totalOwed = splits
-          ?.filter(s => !s.is_settled)
-          .reduce((sum, s) => sum + Number(s.amount), 0) || 0
+      // 計算用戶付款總額
+      const totalPaid = groupExpenses
+        .filter(e => e.paid_by === userId)
+        .reduce((sum, e) => sum + Number(e.amount), 0)
 
-        const myBalance = totalPaid - totalOwed
+      // 計算用戶在此群組的分攤
+      const groupExpenseIds = new Set(groupExpenses.map(e => e.id))
+      const totalOwed = userSplits
+        .filter(s => !s.is_settled && groupExpenseIds.has(s.expense_id))
+        .reduce((sum, s) => sum + Number(s.amount), 0)
 
-        return {
-          ...group,
-          totalExpenses: expenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0,
-          myBalance,
-          memberCount: group.members?.length || 0,
-        }
-      })
-    )
+      return {
+        ...group,
+        totalExpenses: groupExpenses.reduce((sum, e) => sum + Number(e.amount), 0),
+        myBalance: totalPaid - totalOwed,
+        memberCount: group.members?.length || 0,
+      }
+    })
 
-    return NextResponse.json({
+    return jsonResponse({
       success: true,
       data: groupsWithBalance,
-    })
+    }, { cache: CACHE_CONFIGS.privateShort })
   } catch (error) {
     console.error('Get split groups error:', error)
-    return NextResponse.json(
-      { error: '系統錯誤' },
-      { status: 500 }
-    )
+    return errorResponse('系統錯誤', 500)
   }
 }
 
@@ -153,7 +135,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     // 建立群組
     const { data: group, error: groupError } = await supabase

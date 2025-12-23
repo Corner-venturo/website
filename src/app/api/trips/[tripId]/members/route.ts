@@ -1,16 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-
-// 使用 venturo-online Supabase
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-const getSupabase = () => {
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase configuration missing')
-  }
-  return createClient(supabaseUrl, supabaseKey)
-}
+import { getOnlineSupabase } from '@/lib/supabase-server'
 
 // GET: 取得行程的所有成員
 export async function GET(
@@ -27,7 +16,7 @@ export async function GET(
       )
     }
 
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     // 取得成員列表（含用戶資訊）
     const { data: members, error } = await supabase
@@ -82,7 +71,7 @@ export async function POST(
       )
     }
 
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     // 檢查是否已經是成員
     const { data: existing } = await supabase
@@ -188,7 +177,7 @@ export async function DELETE(
       )
     }
 
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     const { error } = await supabase
       .from('trip_members')

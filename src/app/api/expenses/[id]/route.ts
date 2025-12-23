@@ -1,15 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-const getSupabase = () => {
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase configuration missing')
-  }
-  return createClient(supabaseUrl, supabaseKey)
-}
+import { getOnlineSupabase } from '@/lib/supabase-server'
 
 // GET: 取得單筆費用詳情
 export async function GET(
@@ -26,7 +16,7 @@ export async function GET(
       )
     }
 
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     const { data: expense, error } = await supabase
       .from('expenses')
@@ -92,7 +82,7 @@ export async function PUT(
       splitWith, // 新的分攤對象（可選）
     } = body
 
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     // 建立更新物件（只更新有提供的欄位）
     const updateData: Record<string, unknown> = {
@@ -181,7 +171,7 @@ export async function DELETE(
       )
     }
 
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     // 先刪除相關的分攤記錄（CASCADE 應該會自動處理，但保險起見）
     await supabase

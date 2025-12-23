@@ -1,15 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-
-// 使用 ERP Supabase
-const getErpSupabase = () => {
-  const url = process.env.ERP_SUPABASE_URL
-  const key = process.env.ERP_SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) {
-    throw new Error('ERP Supabase configuration missing')
-  }
-  return createClient(url, key)
-}
+import { getErpSupabase } from '@/lib/supabase-server'
 
 interface ItineraryVersion {
   id: string

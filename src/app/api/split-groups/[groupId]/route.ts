@@ -1,15 +1,6 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-const getSupabase = () => {
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase configuration missing')
-  }
-  return createClient(supabaseUrl, supabaseKey)
-}
+import { getOnlineSupabase } from '@/lib/supabase-server'
+import { jsonResponse, errorResponse, CACHE_CONFIGS } from '@/lib/api-utils'
 
 // GET: 取得群組詳情（含費用、成員餘額）
 export async function GET(
@@ -21,7 +12,7 @@ export async function GET(
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
 
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     // 並行執行兩個查詢（大幅提升效能）
     const [groupResult, expensesResult] = await Promise.all([
@@ -127,7 +118,7 @@ export async function GET(
       }
     })
 
-    return NextResponse.json({
+    return jsonResponse({
       success: true,
       data: {
         ...group,
@@ -139,13 +130,10 @@ export async function GET(
           ? memberBalances.find((m: { userId: string }) => m.userId === userId)?.balance || 0
           : 0,
       },
-    })
+    }, { cache: CACHE_CONFIGS.privateShort })
   } catch (error) {
     console.error('Get split group error:', error)
-    return NextResponse.json(
-      { error: '系統錯誤' },
-      { status: 500 }
-    )
+    return errorResponse('系統錯誤', 500)
   }
 }
 
@@ -159,7 +147,7 @@ export async function PUT(
     const body = await request.json()
     const { name, description, coverImage, defaultCurrency } = body
 
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     const updateData: Record<string, unknown> = {}
     if (name !== undefined) updateData.name = name
@@ -202,7 +190,7 @@ export async function DELETE(
 ) {
   try {
     const { groupId } = await params
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     const { error } = await supabase
       .from('split_groups')

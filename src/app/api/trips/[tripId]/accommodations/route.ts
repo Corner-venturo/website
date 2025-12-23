@@ -1,15 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-const getSupabase = () => {
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase configuration missing')
-  }
-  return createClient(supabaseUrl, supabaseKey)
-}
+import { getOnlineSupabase } from '@/lib/supabase-server'
 
 // GET: 取得行程的住宿資訊
 export async function GET(
@@ -26,7 +16,7 @@ export async function GET(
       )
     }
 
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     const { data: accommodations, error } = await supabase
       .from('trip_accommodations')
@@ -98,7 +88,7 @@ export async function POST(
       )
     }
 
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     const { data: accommodation, error } = await supabase
       .from('trip_accommodations')
@@ -163,7 +153,7 @@ export async function PUT(
       )
     }
 
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     // Convert camelCase to snake_case
     const dbData: Record<string, unknown> = {
@@ -234,7 +224,7 @@ export async function DELETE(
       )
     }
 
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     const { error } = await supabase
       .from('trip_accommodations')

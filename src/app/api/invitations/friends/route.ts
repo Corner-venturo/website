@@ -1,14 +1,7 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
-
-function getServiceSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
+import { getOnlineSupabase } from '@/lib/supabase-server'
 
 async function getAuthSupabase() {
   const cookieStore = await cookies()
@@ -38,7 +31,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') || 'received' // received | sent | all
 
-    const serviceSupabase = getServiceSupabase()
+    const serviceSupabase = getOnlineSupabase()
 
     let query = serviceSupabase
       .from('friends')
@@ -89,7 +82,7 @@ export async function POST(request: Request) {
 
     const { friendId, username, message, expiresInDays = 7 } = await request.json()
 
-    const serviceSupabase = getServiceSupabase()
+    const serviceSupabase = getOnlineSupabase()
     let targetUserId = friendId
 
     // 如果提供 username，查找對應用戶

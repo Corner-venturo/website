@@ -1,6 +1,11 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { getSupabaseClient } from '@/lib/supabase'
+import { dedup, invalidateCacheByPrefix } from '@/lib/request-dedup'
+
+// 快取設定
+const CACHE_DURATION = 2 * 60 * 1000 // 2 分鐘內直接用快取
+const STALE_DURATION = 5 * 60 * 1000 // 5 分鐘後背景刷新
 
 // Types
 export type TripStatus = 'planning' | 'upcoming' | 'ongoing' | 'completed'
@@ -292,15 +297,17 @@ export const useTripStore = create<TripState>()(
     }
 
     try {
-      // 使用 API 取得行程（繞過 RLS）
-      const response = await fetch(`/api/my-trips?userId=${userId}`)
-      const data = await response.json()
+      // 使用 dedup 防止重複請求
+      const data = await dedup(`trips:${userId}`, async () => {
+        const response = await fetch(`/api/my-trips?userId=${userId}`)
+        const result = await response.json()
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || '載入旅程失敗')
+        }
+        return result.data || []
+      })
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || '載入旅程失敗')
-      }
-
-      set({ trips: data.data || [], isLoading: false })
+      set({ trips: data, isLoading: false })
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '載入旅程失敗'
       set({ isLoading: false, error: message })
@@ -308,18 +315,27 @@ export const useTripStore = create<TripState>()(
   },
 
   fetchTripById: async (tripId: string) => {
-    set({ isLoading: true, error: null })
+    const cachedTrip = get().currentTrip
+    const hasValidCache = cachedTrip?.id === tripId
+
+    if (!hasValidCache) {
+      set({ isLoading: true, error: null })
+    }
 
     try {
-      // 使用 API 取得行程（繞過 RLS）
-      const response = await fetch(`/api/my-trips?tripId=${tripId}`)
-      const data = await response.json()
+      // 使用 dedup 防止重複請求
+      const data = await dedup(`trip:${tripId}`, async () => {
+        const response = await fetch(`/api/my-trips?tripId=${tripId}`)
+        const result = await response.json()
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || '載入旅程失敗')
-      }
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || '載入旅程失敗')
+        }
 
-      set({ currentTrip: data.data, isLoading: false })
+        return result.data
+      })
+
+      set({ currentTrip: data, isLoading: false })
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '載入旅程失敗'
       set({ isLoading: false, error: message })
@@ -366,15 +382,19 @@ export const useTripStore = create<TripState>()(
 
   fetchTripMembers: async (tripId: string) => {
     try {
-      // 使用 API 取得成員（繞過 RLS）
-      const response = await fetch(`/api/trips/${tripId}/members`)
-      const data = await response.json()
+      // 使用 dedup 防止重複請求
+      const data = await dedup(`tripMembers:${tripId}`, async () => {
+        const response = await fetch(`/api/trips/${tripId}/members`)
+        const result = await response.json()
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || '載入成員失敗')
-      }
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || '載入成員失敗')
+        }
 
-      set({ members: data.data || [] })
+        return result.data || []
+      })
+
+      set({ members: data })
     } catch (error: unknown) {
       console.error('Failed to fetch trip members:', error)
     }
@@ -488,15 +508,19 @@ export const useTripStore = create<TripState>()(
 
   fetchTripItineraryItems: async (tripId: string) => {
     try {
-      // 使用 API 取得行程項目（繞過 RLS）
-      const response = await fetch(`/api/trips/${tripId}/itinerary`)
-      const data = await response.json()
+      // 使用 dedup 防止重複請求
+      const data = await dedup(`tripItinerary:${tripId}`, async () => {
+        const response = await fetch(`/api/trips/${tripId}/itinerary`)
+        const result = await response.json()
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || '載入行程項目失敗')
-      }
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || '載入行程項目失敗')
+        }
 
-      set({ itineraryItems: data.data || [] })
+        return result.data || []
+      })
+
+      set({ itineraryItems: data })
     } catch (error: unknown) {
       console.error('Failed to fetch itinerary items:', error)
     }
@@ -682,19 +706,26 @@ export const useTripStore = create<TripState>()(
     }
 
     try {
-      let url = `/api/split-groups?userId=${userId}`
-      if (tripId) {
-        url += `&tripId=${tripId}`
-      }
+      const cacheKey = tripId ? `splitGroups:${userId}:${tripId}` : `splitGroups:${userId}`
 
-      const response = await fetch(url)
-      const data = await response.json()
+      // 使用 dedup 防止重複請求
+      const data = await dedup(cacheKey, async () => {
+        let url = `/api/split-groups?userId=${userId}`
+        if (tripId) {
+          url += `&tripId=${tripId}`
+        }
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || '載入分帳群組失敗')
-      }
+        const response = await fetch(url)
+        const result = await response.json()
 
-      set({ splitGroups: data.data || [], isLoading: false })
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || '載入分帳群組失敗')
+        }
+
+        return result.data || []
+      })
+
+      set({ splitGroups: data, isLoading: false })
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '載入分帳群組失敗'
       set({ isLoading: false, error: message })
@@ -712,19 +743,26 @@ export const useTripStore = create<TripState>()(
     }
 
     try {
-      let url = `/api/split-groups/${groupId}`
-      if (userId) {
-        url += `?userId=${userId}`
-      }
+      const cacheKey = `splitGroup:${groupId}:${userId || 'anon'}`
 
-      const response = await fetch(url)
-      const data = await response.json()
+      // 使用 dedup 防止重複請求
+      const data = await dedup(cacheKey, async () => {
+        let url = `/api/split-groups/${groupId}`
+        if (userId) {
+          url += `?userId=${userId}`
+        }
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || '載入分帳群組失敗')
-      }
+        const response = await fetch(url)
+        const result = await response.json()
 
-      set({ currentSplitGroup: data.data, isLoading: false })
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || '載入分帳群組失敗')
+        }
+
+        return result.data
+      })
+
+      set({ currentSplitGroup: data, isLoading: false })
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '載入分帳群組失敗'
       // 如果有快取，保持快取資料，只記錄錯誤

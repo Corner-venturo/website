@@ -1,20 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-const getSupabase = () => {
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase configuration missing')
-  }
-  return createClient(supabaseUrl, supabaseKey)
-}
+import { getOnlineSupabase } from '@/lib/supabase-server'
 
 // POST: 將行程項目從新 trip 轉移到舊 trip，並清理重複資料
 export async function POST() {
   try {
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     const OLD_TRIP_ID = '15248559-8b86-4d5b-bef9-81ffa7b140c0' // 舊的（用戶已加入）
     const NEW_TRIP_ID = '0e13e6be-1444-4319-bc5e-9c043ee660f3' // 新的（有行程項目）

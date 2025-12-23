@@ -1,17 +1,7 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { getErpSupabase } from '@/lib/supabase-server'
 
 export const revalidate = 0; // Force dynamic rendering, no caching
-
-// 使用 ERP Supabase
-const getErpSupabase = () => {
-  const url = process.env.ERP_SUPABASE_URL
-  const key = process.env.ERP_SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) {
-    throw new Error('ERP Supabase configuration missing')
-  }
-  return createClient(url, key)
-}
 
 export async function GET(request: Request) {
   try {

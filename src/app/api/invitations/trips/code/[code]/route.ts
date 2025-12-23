@@ -1,14 +1,7 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
-
-function getServiceSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
+import { getOnlineSupabase } from '@/lib/supabase-server'
 
 async function getAuthSupabase() {
   const cookieStore = await cookies()
@@ -32,7 +25,7 @@ export async function GET(
 ) {
   try {
     const { code } = await params
-    const serviceSupabase = getServiceSupabase()
+    const serviceSupabase = getOnlineSupabase()
 
     // 查詢邀請
     const { data: invitation, error } = await serviceSupabase
@@ -99,7 +92,7 @@ export async function POST(
     }
 
     const { code } = await params
-    const serviceSupabase = getServiceSupabase()
+    const serviceSupabase = getOnlineSupabase()
 
     // 查詢邀請
     const { data: invitation, error: fetchError } = await serviceSupabase

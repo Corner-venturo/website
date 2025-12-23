@@ -1,17 +1,10 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
+import { getOnlineSupabase } from '@/lib/supabase-server'
 
 // GET: 取得所有儲存的 UI 代碼
 export async function GET() {
   try {
-    const { data, error } = await getSupabase()
+    const { data, error } = await getOnlineSupabase()
       .from('generated_ui')
       .select('id, name, prompt, page_type, created_at, updated_at')
       .order('updated_at', { ascending: false })
@@ -44,7 +37,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const { data, error } = await getSupabase()
+    const { data, error } = await getOnlineSupabase()
       .from('generated_ui')
       .insert({
         name,

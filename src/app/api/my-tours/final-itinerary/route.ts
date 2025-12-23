@@ -1,15 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-
-// 使用 ERP Supabase
-const getErpSupabase = () => {
-  const url = process.env.ERP_SUPABASE_URL
-  const key = process.env.ERP_SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) {
-    throw new Error('ERP Supabase configuration missing')
-  }
-  return createClient(url, key)
-}
+import { getErpSupabase } from '@/lib/supabase-server'
 
 export async function GET(request: Request) {
   try {
@@ -70,39 +60,22 @@ export async function GET(request: Request) {
       )
     }
 
-    // 如果團已鎖定，取得鎖定的行程版本
-    let finalItinerary = null
-    let finalQuote = null
+    // 平行取得行程和報價 (如果已鎖定)
+    const [itineraryResult, quoteResult] = await Promise.all([
+      // 取得行程
+      tour.locked_itinerary_id
+        ? erpSupabase.from('itineraries').select('*').eq('id', tour.locked_itinerary_id).single()
+        : erpSupabase.from('itineraries').select('*').eq('tour_id', tourId).order('updated_at', { ascending: false }).limit(1),
+      // 取得報價
+      tour.locked_quote_id
+        ? erpSupabase.from('quotes').select('id, code, name, status, total_amount').eq('id', tour.locked_quote_id).single()
+        : Promise.resolve({ data: null }),
+    ])
 
-    if (tour.locked_itinerary_id) {
-      const { data: itinerary } = await erpSupabase
-        .from('itineraries')
-        .select('*')
-        .eq('id', tour.locked_itinerary_id)
-        .single()
-
-      finalItinerary = itinerary
-    } else {
-      // 否則取得最新的行程
-      const { data: itineraries } = await erpSupabase
-        .from('itineraries')
-        .select('*')
-        .eq('tour_id', tourId)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-
-      finalItinerary = itineraries?.[0] || null
-    }
-
-    if (tour.locked_quote_id) {
-      const { data: quote } = await erpSupabase
-        .from('quotes')
-        .select('id, code, name, status, total_amount')
-        .eq('id', tour.locked_quote_id)
-        .single()
-
-      finalQuote = quote
-    }
+    const finalItinerary = tour.locked_itinerary_id
+      ? itineraryResult.data
+      : (itineraryResult.data as unknown[])?.[0] || null
+    const finalQuote = quoteResult.data
 
     return NextResponse.json({
       success: true,

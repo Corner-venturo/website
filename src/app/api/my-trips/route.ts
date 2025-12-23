@@ -1,16 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-
-// 使用 service role key 繞過 RLS
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-const getSupabase = () => {
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase configuration missing')
-  }
-  return createClient(supabaseUrl, supabaseKey)
-}
+import { getOnlineSupabase } from '@/lib/supabase-server'
 
 // GET: 取得用戶的所有行程 或 單一行程
 export async function GET(request: Request) {
@@ -19,7 +8,7 @@ export async function GET(request: Request) {
     const userId = searchParams.get('userId')
     const tripId = searchParams.get('tripId')
 
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     // 如果有 tripId，取得單一行程
     if (tripId) {
@@ -51,27 +40,21 @@ export async function GET(request: Request) {
       )
     }
 
-    // 1. 取得用戶作為成員的行程 ID
-    const { data: memberTrips, error: memberError } = await supabase
-      .from('trip_members')
-      .select('trip_id')
-      .eq('user_id', userId)
+    // 1. 平行取得用戶的行程 (作為成員 + 建立者)
+    const [memberResult, createdResult] = await Promise.all([
+      supabase.from('trip_members').select('trip_id').eq('user_id', userId),
+      supabase.from('trips').select('id').eq('created_by', userId),
+    ])
 
-    if (memberError) {
-      console.error('Query trip_members error:', memberError)
+    if (memberResult.error) {
+      console.error('Query trip_members error:', memberResult.error)
+    }
+    if (createdResult.error) {
+      console.error('Query created trips error:', createdResult.error)
     }
 
-    const tripIds = memberTrips?.map((m) => m.trip_id) || []
-
-    // 2. 取得用戶建立的行程
-    const { data: createdTrips, error: createdError } = await supabase
-      .from('trips')
-      .select('id')
-      .eq('created_by', userId)
-
-    if (createdError) {
-      console.error('Query created trips error:', createdError)
-    }
+    const tripIds = memberResult.data?.map((m) => m.trip_id) || []
+    const createdTrips = createdResult.data
 
     // 3. 合併並去重
     const allTripIds = [...new Set([...tripIds, ...(createdTrips?.map((t) => t.id) || [])])]

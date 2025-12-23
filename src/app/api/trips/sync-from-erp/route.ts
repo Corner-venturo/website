@@ -1,25 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-
-// ERP Supabase（來源）
-const getErpSupabase = () => {
-  const url = process.env.ERP_SUPABASE_URL
-  const key = process.env.ERP_SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) {
-    throw new Error('ERP Supabase configuration missing')
-  }
-  return createClient(url, key)
-}
-
-// Online Supabase（目標）
-const getOnlineSupabase = () => {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) {
-    throw new Error('Online Supabase configuration missing')
-  }
-  return createClient(url, key)
-}
+import { getErpSupabase, getOnlineSupabase } from '@/lib/supabase-server'
 
 interface ErpItinerary {
   id: string

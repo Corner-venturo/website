@@ -1,15 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-const getSupabase = () => {
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase configuration missing')
-  }
-  return createClient(supabaseUrl, supabaseKey)
-}
+import { getOnlineSupabase } from '@/lib/supabase-server'
 
 // GET: 取得結算記錄
 export async function GET(request: Request) {
@@ -26,7 +16,7 @@ export async function GET(request: Request) {
       )
     }
 
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     let query = supabase
       .from('settlements')
@@ -91,7 +81,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     // 如果是透過群組結算，取得群組關聯的 trip_id
     let effectiveTripId = tripId
@@ -157,7 +147,7 @@ export async function PUT(request: Request) {
       )
     }
 
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     const updateData: Record<string, unknown> = { status }
     if (status === 'completed') {

@@ -1,12 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
+import { getOnlineSupabase } from '@/lib/supabase-server'
 
 // GET: 取得單一 UI 代碼
 export async function GET(
@@ -16,7 +9,7 @@ export async function GET(
   try {
     const { id } = await params
 
-    const { data, error } = await getSupabase()
+    const { data, error } = await getOnlineSupabase()
       .from('generated_ui')
       .select('*')
       .eq('id', id)
@@ -52,7 +45,7 @@ export async function PUT(
     if (prompt !== undefined) updateData.prompt = prompt
     if (pageType) updateData.page_type = pageType
 
-    const { data, error } = await getSupabase()
+    const { data, error } = await getOnlineSupabase()
       .from('generated_ui')
       .update(updateData)
       .eq('id', id)
@@ -82,7 +75,7 @@ export async function DELETE(
   try {
     const { id } = await params
 
-    const { error } = await getSupabase()
+    const { error } = await getOnlineSupabase()
       .from('generated_ui')
       .delete()
       .eq('id', id)

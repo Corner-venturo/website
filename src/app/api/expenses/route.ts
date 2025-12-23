@@ -1,16 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-
-// 使用 venturo-online Supabase (使用 anon key，依賴 RLS)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-const getSupabase = () => {
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase configuration missing')
-  }
-  return createClient(supabaseUrl, supabaseKey)
-}
+import { getOnlineSupabase } from '@/lib/supabase-server'
 
 // GET: 取得費用列表（支援 tripId 或 groupId）
 export async function GET(request: Request) {
@@ -27,7 +16,7 @@ export async function GET(request: Request) {
     }
 
     // 取得費用列表（含分攤資訊）
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
     let query = supabase
       .from('expenses')
       .select(`
@@ -98,7 +87,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = getSupabase()
+    const supabase = getOnlineSupabase()
 
     // 如果是透過群組記帳，取得群組關聯的 trip_id（如果有的話）
     let effectiveTripId = tripId

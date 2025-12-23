@@ -1,14 +1,7 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
-
-function getServiceSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
+import { getOnlineSupabase } from '@/lib/supabase-server'
 
 async function getAuthSupabase() {
   const cookieStore = await cookies()
@@ -45,7 +38,7 @@ export async function PUT(
       return NextResponse.json({ error: '無效的操作' }, { status: 400 })
     }
 
-    const serviceSupabase = getServiceSupabase()
+    const serviceSupabase = getOnlineSupabase()
 
     // 取得邀請
     const { data: invitation, error: fetchError } = await serviceSupabase
@@ -154,7 +147,7 @@ export async function DELETE(
     }
 
     const { id } = await params
-    const serviceSupabase = getServiceSupabase()
+    const serviceSupabase = getOnlineSupabase()
 
     // 取得邀請
     const { data: invitation } = await serviceSupabase

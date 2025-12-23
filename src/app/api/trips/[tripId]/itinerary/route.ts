@@ -1,25 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-
-// Online Supabase
-const getOnlineSupabase = () => {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) {
-    throw new Error('Online Supabase configuration missing')
-  }
-  return createClient(url, key)
-}
-
-// ERP Supabase
-const getErpSupabase = () => {
-  const url = process.env.ERP_SUPABASE_URL
-  const key = process.env.ERP_SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) {
-    throw new Error('ERP Supabase configuration missing')
-  }
-  return createClient(url, key)
-}
+import { getOnlineSupabase, getErpSupabase } from '@/lib/supabase-server'
 
 // GET: 從 ERP 取得行程的每日行程
 export async function GET(
