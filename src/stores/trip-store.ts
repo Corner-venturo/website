@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import { getSupabaseClient } from '@/lib/supabase'
 
 // Types
@@ -267,7 +268,9 @@ interface TripState {
   clearSplitGroup: () => void
 }
 
-export const useTripStore = create<TripState>((set, get) => ({
+export const useTripStore = create<TripState>()(
+  persist(
+    (set, get) => ({
   trips: [],
   currentTrip: null,
   members: [],
@@ -282,7 +285,11 @@ export const useTripStore = create<TripState>((set, get) => ({
   currentSplitGroup: null,
 
   fetchMyTrips: async (userId: string) => {
-    set({ isLoading: true, error: null })
+    // 只有沒有快取時才顯示載入中（有快取就背景靜默刷新）
+    const hasCache = get().trips.length > 0
+    if (!hasCache) {
+      set({ isLoading: true, error: null })
+    }
 
     try {
       // 使用 API 取得行程（繞過 RLS）
@@ -668,7 +675,11 @@ export const useTripStore = create<TripState>((set, get) => ({
 
   // Split group actions
   fetchMySplitGroups: async (userId: string, tripId?: string) => {
-    set({ isLoading: true, error: null })
+    // 只有沒有快取時才顯示載入中（有快取就背景靜默刷新）
+    const hasCache = get().splitGroups.length > 0
+    if (!hasCache) {
+      set({ isLoading: true, error: null })
+    }
 
     try {
       let url = `/api/split-groups?userId=${userId}`
@@ -691,7 +702,11 @@ export const useTripStore = create<TripState>((set, get) => ({
   },
 
   fetchSplitGroupById: async (groupId: string, userId?: string) => {
-    set({ isLoading: true, error: null })
+    // 只有沒有快取時才顯示載入中
+    const hasCache = get().currentSplitGroup?.id === groupId
+    if (!hasCache) {
+      set({ isLoading: true, error: null })
+    }
 
     try {
       let url = `/api/split-groups/${groupId}`
@@ -802,4 +817,16 @@ export const useTripStore = create<TripState>((set, get) => ({
   clearSplitGroup: () => set({
     currentSplitGroup: null,
   }),
-}))
+    }),
+    {
+      name: 'venturo-trip-storage', // localStorage key
+      storage: createJSONStorage(() => localStorage),
+      // 只快取必要的數據，不快取 loading 狀態
+      partialize: (state) => ({
+        trips: state.trips,
+        splitGroups: state.splitGroups,
+        currentSplitGroup: state.currentSplitGroup,
+      }),
+    }
+  )
+)
