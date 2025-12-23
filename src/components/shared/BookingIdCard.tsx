@@ -1,6 +1,15 @@
-import { stayInfo } from '../constants';
+'use client'
 
-export default function BookingIdCard() {
+interface BookingIdCardProps {
+  bookingId: string;
+  onVoucherClick?: () => void;
+}
+
+export default function BookingIdCard({ bookingId, onVoucherClick }: BookingIdCardProps) {
+  const handleCopy = () => {
+    navigator.clipboard.writeText(bookingId)
+  }
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden group">
       <div className="p-5 relative z-10">
@@ -8,8 +17,9 @@ export default function BookingIdCard() {
           <div>
             <div className="text-[10px] text-gray-400 mb-1 uppercase tracking-wider font-bold">訂房代號 (Booking ID)</div>
             <div className="flex items-center gap-2">
-              <span className="text-2xl font-mono font-bold text-gray-800 tracking-widest">{stayInfo.bookingId}</span>
+              <span className="text-2xl font-mono font-bold text-gray-800 tracking-widest">{bookingId}</span>
               <button
+                onClick={handleCopy}
                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 text-gray-400 hover:text-primary transition-colors"
                 aria-label="複製訂房代號"
               >
@@ -27,7 +37,10 @@ export default function BookingIdCard() {
         <div className="absolute right-0 w-4 h-8 bg-[#F0EEE6] rounded-l-full -mr-2" />
         <div className="w-full border-t-2 border-dashed border-gray-200 h-px" />
       </div>
-      <button className="w-full p-4 flex justify-between items-center hover:bg-gray-50 transition-colors group">
+      <button
+        onClick={onVoucherClick}
+        className="w-full p-4 flex justify-between items-center hover:bg-gray-50 transition-colors group"
+      >
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
             <span className="material-icons-round text-sm">description</span>

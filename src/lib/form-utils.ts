@@ -91,7 +91,7 @@ export const schemas = {
 /**
  * 表單錯誤訊息的中文對應
  */
-export const zodErrorMap: z.ZodErrorMap = (issue, ctx) => {
+export const zodErrorMap = (issue: z.ZodIssueOptionalMessage, ctx: { defaultError: string }) => {
   switch (issue.code) {
     case z.ZodIssueCode.invalid_type:
       if (issue.expected === 'string') return { message: '請輸入文字' }

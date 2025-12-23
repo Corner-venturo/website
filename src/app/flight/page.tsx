@@ -153,8 +153,8 @@ function FlightDetailContent() {
         {/* Stay Content */}
         {activeTab === 'stay' && (
           <main className="flex-1 w-full h-full overflow-y-auto hide-scrollbar pb-32 px-6 pt-2 space-y-5">
-            <HotelInfoCard onMapClick={() => setShowMapOptions(true)} />
-            <BookingIdCard />
+            <HotelInfoCard stayInfo={stayInfo} onMapClick={() => setShowMapOptions(true)} />
+            <BookingIdCard bookingId={stayInfo.bookingId} />
 
             <div className="flex items-center justify-between mb-1 px-1">
               <h3 className="text-sm font-bold text-gray-800">詳細資訊</h3>

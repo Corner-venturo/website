@@ -1,3 +1,5 @@
+import type { StayInfo } from '@/components/shared'
+
 // 航班資訊
 export const flightInfo = {
   airline: '星宇航空',
@@ -34,7 +36,7 @@ export const flightReminders = [
 ];
 
 // 住宿資訊
-export const stayInfo = {
+export const stayInfo: StayInfo = {
   name: '大阪世紀酒店',
   rating: 4.8,
   stars: 5,

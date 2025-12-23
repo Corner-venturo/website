@@ -1,10 +1,13 @@
-import { StayInfo } from "./types";
+'use client'
+
+import { StayInfo } from './types'
 
 interface HotelInfoCardProps {
   stayInfo: StayInfo;
+  onMapClick?: () => void;
 }
 
-export default function HotelInfoCard({ stayInfo }: HotelInfoCardProps) {
+export default function HotelInfoCard({ stayInfo, onMapClick }: HotelInfoCardProps) {
   return (
     <div className="glass-card rounded-3xl p-6 relative overflow-hidden shadow-soft">
       <div className="absolute -top-10 -right-10 w-40 h-40 bg-morandi-blue/10 rounded-full blur-2xl pointer-events-none" />
@@ -43,8 +46,9 @@ export default function HotelInfoCard({ stayInfo }: HotelInfoCardProps) {
           <span className="text-sm text-gray-600 leading-relaxed font-medium">{stayInfo.address}</span>
         </div>
         <button
-          className="shrink-0 w-8 h-8 rounded-full bg-white border border-gray-100 text-morandi-blue flex items-center justify-center shadow-sm"
-          aria-label="查看地圖"
+          onClick={onMapClick}
+          className="shrink-0 w-8 h-8 rounded-full bg-white border border-gray-100 text-morandi-blue flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors"
+          aria-label="在地圖中查看"
         >
           <span className="material-icons-round text-sm">map</span>
         </button>

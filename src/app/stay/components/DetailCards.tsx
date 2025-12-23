@@ -1,4 +1,4 @@
-import { StayInfo } from "./types";
+import type { StayInfo } from "@/components/shared";
 
 interface DetailCardsProps {
   stayInfo: StayInfo;

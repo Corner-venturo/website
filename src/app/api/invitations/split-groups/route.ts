@@ -183,28 +183,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '不能邀請自己' }, { status: 400 })
     }
 
-    // 檢查是否已是成員
-    const { data: existingMember } = await serviceSupabase
-      .from('split_group_members')
-      .select('id')
-      .eq('group_id', groupId)
-      .eq('user_id', targetUserId)
-      .single()
+    // 平行檢查是否已是成員 + 是否已有邀請
+    const [memberResult, inviteResult] = await Promise.all([
+      serviceSupabase
+        .from('split_group_members')
+        .select('id')
+        .eq('group_id', groupId)
+        .eq('user_id', targetUserId)
+        .single(),
+      serviceSupabase
+        .from('split_group_invitations')
+        .select('id, status')
+        .eq('group_id', groupId)
+        .eq('invitee_id', targetUserId)
+        .eq('status', 'pending')
+        .single(),
+    ])
 
-    if (existingMember) {
+    if (memberResult.data) {
       return NextResponse.json({ error: '該用戶已是群組成員' }, { status: 400 })
     }
 
-    // 檢查是否已有邀請
-    const { data: existingInvite } = await serviceSupabase
-      .from('split_group_invitations')
-      .select('id, status')
-      .eq('group_id', groupId)
-      .eq('invitee_id', targetUserId)
-      .eq('status', 'pending')
-      .single()
-
-    if (existingInvite) {
+    if (inviteResult.data) {
       return NextResponse.json({ error: '已有待處理的邀請' }, { status: 400 })
     }
 

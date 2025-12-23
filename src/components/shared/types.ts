@@ -1,3 +1,7 @@
+/**
+ * 共用組件類型定義
+ */
+
 export interface StayInfo {
   name: string;
   rating: number;
