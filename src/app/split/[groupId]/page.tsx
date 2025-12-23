@@ -73,6 +73,7 @@ export default function SplitGroupDetailPage() {
   const [memberToRemove, setMemberToRemove] = useState<{ userId: string; name: string } | null>(null);
   const [addMemberTab, setAddMemberTab] = useState<'trip' | 'virtual'>('trip');
   const [virtualMemberName, setVirtualMemberName] = useState('');
+  const [isLoadingMembers, setIsLoadingMembers] = useState(false);
 
   // 初始化 auth
   useEffect(() => {
@@ -216,6 +217,7 @@ export default function SplitGroupDetailPage() {
       return;
     }
 
+    setIsLoadingMembers(true);
     try {
       const res = await fetch(`/api/trips/${currentSplitGroup.trip_id}/members`);
       const data = await res.json();
@@ -229,14 +231,17 @@ export default function SplitGroupDetailPage() {
       }
     } catch (error) {
       console.error('Failed to fetch trip members:', error);
+    } finally {
+      setIsLoadingMembers(false);
     }
   }, [currentSplitGroup?.trip_id, currentSplitGroup?.memberBalances]);
 
-  // Open add member modal
-  const handleOpenAddMember = async () => {
+  // Open add member modal - 先顯示彈窗，再背景載入
+  const handleOpenAddMember = () => {
     setSelectedNewMembers([]);
-    await fetchAvailableMembersFromTrip();
     setShowAddMemberModal(true);
+    // 背景載入可用成員
+    fetchAvailableMembersFromTrip();
   };
 
   // Toggle member selection
@@ -872,7 +877,12 @@ export default function SplitGroupDetailPage() {
             <div className="max-h-[50vh] overflow-y-auto">
               {addMemberTab === 'trip' ? (
                 <div className="p-5 space-y-3">
-                  {availableMembers.length === 0 ? (
+                  {isLoadingMembers ? (
+                    <div className="text-center py-8">
+                      <span className="material-icons-round text-4xl text-[#Cfb9a5] animate-spin mb-2">sync</span>
+                      <p className="text-gray-500">載入成員中...</p>
+                    </div>
+                  ) : availableMembers.length === 0 ? (
                     <div className="text-center py-8">
                       <span className="material-icons-round text-4xl text-gray-300 mb-2">group</span>
                       <p className="text-gray-500">沒有可新增的成員</p>
