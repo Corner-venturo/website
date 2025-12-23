@@ -412,9 +412,10 @@ export default function SplitGroupDetailPage() {
               </div>
             ) : (
               group.expenses?.map((expense) => (
-                <div
+                <Link
                   key={expense.id}
-                  className="bg-white rounded-xl p-4 shadow-sm"
+                  href={`/split/record?groupId=${groupId}&expenseId=${expense.id}`}
+                  className="block bg-white rounded-xl p-4 shadow-sm active:scale-[0.98] transition-transform"
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#Cfb9a5] to-[#B8A090] flex items-center justify-center">
@@ -438,9 +439,12 @@ export default function SplitGroupDetailPage() {
                             {(expense as { paid_by_profile?: { display_name: string } }).paid_by_profile?.display_name || "某人"} 付款
                           </p>
                         </div>
-                        <p className="font-bold text-gray-800">
-                          ${expense.amount.toLocaleString()}
-                        </p>
+                        <div className="text-right">
+                          <p className="font-bold text-gray-800">
+                            ${expense.amount.toLocaleString()}
+                          </p>
+                          <span className="material-icons-round text-gray-300 text-sm">edit</span>
+                        </div>
                       </div>
                       {expense.description && (
                         <p className="text-sm text-gray-500 mt-1">
@@ -452,7 +456,7 @@ export default function SplitGroupDetailPage() {
                       </p>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))
             )}
           </div>

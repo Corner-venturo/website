@@ -3,15 +3,16 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useTripStore, SplitGroupMember } from '@/stores/trip-store';
+import { useTripStore } from '@/stores/trip-store';
 import { useAuthStore } from '@/stores/auth-store';
 
 function SplitRecordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const groupId = searchParams.get('groupId');
+  const expenseId = searchParams.get('expenseId'); // 編輯模式
 
-  const { currentSplitGroup, fetchSplitGroupById, isLoading } = useTripStore();
+  const { currentSplitGroup, fetchSplitGroupById } = useTripStore();
   const { user, initialize, isInitialized } = useAuthStore();
 
   const [amount, setAmount] = useState('');
@@ -21,6 +22,11 @@ function SplitRecordContent() {
   const [paidBy, setPaidBy] = useState<string>('');
   const [splitWith, setSplitWith] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isLoadingExpense, setIsLoadingExpense] = useState(false);
+
+  const isEditMode = !!expenseId;
 
   // 初始化 auth
   useEffect(() => {
@@ -38,15 +44,39 @@ function SplitRecordContent() {
     }
   }, [groupId, userId, fetchSplitGroupById]);
 
-  // 設定預設值
+  // 載入費用資料（編輯模式）
   useEffect(() => {
-    if (currentSplitGroup && userId) {
+    if (isEditMode && expenseId) {
+      setIsLoadingExpense(true);
+      fetch(`/api/expenses/${expenseId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.data) {
+            const expense = data.data;
+            setAmount(String(expense.amount));
+            setTitle(expense.title || '');
+            setDescription(expense.description || '');
+            setCategory(expense.category || 'other');
+            setPaidBy(expense.paid_by || '');
+            // 設定分帳對象
+            const splitUserIds = expense.expense_splits?.map((s: { user_id: string }) => s.user_id) || [];
+            setSplitWith(splitUserIds);
+          }
+        })
+        .catch(err => console.error('Load expense error:', err))
+        .finally(() => setIsLoadingExpense(false));
+    }
+  }, [isEditMode, expenseId]);
+
+  // 設定預設值（新增模式）
+  useEffect(() => {
+    if (!isEditMode && currentSplitGroup && userId) {
       setPaidBy(userId);
       // 預設分帳給所有成員
       const allMemberIds = currentSplitGroup.members?.map(m => m.user_id) || [];
       setSplitWith(allMemberIds);
     }
-  }, [currentSplitGroup, userId]);
+  }, [isEditMode, currentSplitGroup, userId]);
 
   const members = currentSplitGroup?.members || [];
 
@@ -67,8 +97,11 @@ function SplitRecordContent() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/expenses', {
-        method: 'POST',
+      const url = isEditMode ? `/api/expenses/${expenseId}` : '/api/expenses';
+      const method = isEditMode ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           groupId,
@@ -86,12 +119,37 @@ function SplitRecordContent() {
       if (result.success) {
         router.push(`/split/${groupId}`);
       } else {
-        alert(result.error || '新增失敗');
+        alert(result.error || (isEditMode ? '更新失敗' : '新增失敗'));
       }
     } catch {
       alert('系統錯誤');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!expenseId) return;
+
+    setIsDeleting(true);
+
+    try {
+      const response = await fetch(`/api/expenses/${expenseId}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        router.push(`/split/${groupId}`);
+      } else {
+        alert(result.error || '刪除失敗');
+      }
+    } catch {
+      alert('系統錯誤');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -130,7 +188,7 @@ function SplitRecordContent() {
             <span className="material-icons-round text-xl">close</span>
           </Link>
           <h1 className="text-lg font-bold text-[#5C5C5C]">
-            {currentSplitGroup?.name || '新增費用'}
+            {isEditMode ? '編輯費用' : '新增費用'}
           </h1>
           <button
             onClick={handleSubmit}
@@ -308,8 +366,68 @@ function SplitRecordContent() {
               />
             </div>
           </section>
+
+          {/* 刪除按鈕（編輯模式） */}
+          {isEditMode && (
+            <section className="pt-4">
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-full py-4 bg-red-50 hover:bg-red-100 text-red-500 font-bold rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+              >
+                <span className="material-icons-round">delete</span>
+                刪除此筆費用
+              </button>
+            </section>
+          )}
         </div>
       </div>
+
+      {/* 刪除確認彈窗 */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-6 mx-5 max-w-sm w-full shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                <span className="material-icons-round text-red-500 text-3xl">delete_forever</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-800">確定刪除？</h3>
+              <p className="text-sm text-gray-500 mt-2">刪除後無法復原，相關的分帳記錄也會一併刪除。</p>
+            </div>
+            <div className="space-y-3">
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="w-full py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <span className="material-icons-round animate-spin">sync</span>
+                    刪除中...
+                  </>
+                ) : (
+                  '確定刪除'
+                )}
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="w-full py-3.5 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-all active:scale-[0.98]"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 載入中遮罩 */}
+      {isLoadingExpense && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F0EEE6]/80">
+          <div className="text-center">
+            <span className="material-icons-round text-4xl text-[#Cfb9a5] animate-spin">sync</span>
+            <p className="mt-2 text-gray-500">載入中...</p>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
