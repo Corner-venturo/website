@@ -44,29 +44,44 @@ function SplitRecordContent() {
     }
   }, [groupId, userId, fetchSplitGroupById]);
 
-  // 載入費用資料（編輯模式）
+  // 載入費用資料（編輯模式）- 優先使用快取
   useEffect(() => {
-    if (isEditMode && expenseId) {
-      setIsLoadingExpense(true);
-      fetch(`/api/expenses/${expenseId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success && data.data) {
-            const expense = data.data;
-            setAmount(String(expense.amount));
-            setTitle(expense.title || '');
-            setDescription(expense.description || '');
-            setCategory(expense.category || 'other');
-            setPaidBy(expense.paid_by || '');
-            // 設定分帳對象
-            const splitUserIds = expense.expense_splits?.map((s: { user_id: string }) => s.user_id) || [];
-            setSplitWith(splitUserIds);
-          }
-        })
-        .catch(err => console.error('Load expense error:', err))
-        .finally(() => setIsLoadingExpense(false));
+    if (isEditMode && expenseId && currentSplitGroup) {
+      // 先嘗試從快取取得費用資料
+      const cachedExpense = currentSplitGroup.expenses?.find(e => e.id === expenseId);
+
+      if (cachedExpense) {
+        // 使用快取資料，立即填入表單
+        setAmount(String(cachedExpense.amount));
+        setTitle(cachedExpense.title || '');
+        setDescription(cachedExpense.description || '');
+        setCategory(cachedExpense.category || 'other');
+        setPaidBy(cachedExpense.paid_by || '');
+        const splitUserIds = (cachedExpense as { expense_splits?: { user_id: string }[] }).expense_splits?.map(s => s.user_id) || [];
+        setSplitWith(splitUserIds);
+        // 不需要顯示載入中
+      } else {
+        // 沒有快取，從 API 載入
+        setIsLoadingExpense(true);
+        fetch(`/api/expenses/${expenseId}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.data) {
+              const expense = data.data;
+              setAmount(String(expense.amount));
+              setTitle(expense.title || '');
+              setDescription(expense.description || '');
+              setCategory(expense.category || 'other');
+              setPaidBy(expense.paid_by || '');
+              const splitUserIds = expense.expense_splits?.map((s: { user_id: string }) => s.user_id) || [];
+              setSplitWith(splitUserIds);
+            }
+          })
+          .catch(err => console.error('Load expense error:', err))
+          .finally(() => setIsLoadingExpense(false));
+      }
     }
-  }, [isEditMode, expenseId]);
+  }, [isEditMode, expenseId, currentSplitGroup]);
 
   // 設定預設值（新增模式）
   useEffect(() => {
