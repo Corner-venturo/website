@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
+export const revalidate = 0; // Force dynamic rendering, no caching
+
 // 使用 ERP Supabase
 const getErpSupabase = () => {
   const url = process.env.ERP_SUPABASE_URL

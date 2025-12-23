@@ -9,6 +9,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useProfileStore } from '@/stores/profile-store';
 import { useFriendsStore } from '@/stores/friends-store';
 import { useTripStore } from '@/stores/trip-store';
+import { useInvitations } from '@/hooks/useInvitations';
 
 function InvitePageContent() {
   const searchParams = useSearchParams();
@@ -18,6 +19,7 @@ function InvitePageContent() {
   const { profile, fetchProfile } = useProfileStore();
   const { sendFriendRequest, searchUsers } = useFriendsStore();
   const { currentTrip, fetchTripById, addTripMember } = useTripStore();
+  const { sendTripInvitation } = useInvitations();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{ id: string; display_name: string | null; avatar_url: string | null; username?: string | null }[]>([]);
@@ -26,6 +28,11 @@ function InvitePageContent() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
+
+  // 行程邀請碼相關
+  const [tripInviteCode, setTripInviteCode] = useState<string | null>(null);
+  const [tripInviteLink, setTripInviteLink] = useState<string | null>(null);
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
 
   useEffect(() => {
     if (!isInitialized) {
@@ -126,6 +133,55 @@ function InvitePageContent() {
       return `${typeof window !== 'undefined' ? window.location.origin : ''}/invite/${username}`;
     }
     return `${typeof window !== 'undefined' ? window.location.origin : ''}/invite?ref=${user?.id || ''}`;
+  };
+
+  // 產生行程邀請碼
+  const handleGenerateTripCode = async () => {
+    if (!tripId) return;
+
+    setIsGeneratingCode(true);
+    const result = await sendTripInvitation({
+      tripId,
+      generateCode: true,
+      message: `來加入「${currentTrip?.title || '我的行程'}」一起旅行吧！`,
+    });
+
+    if (result.success && result.data) {
+      setTripInviteCode(result.data.invite_code);
+      setTripInviteLink(result.inviteLink || `${window.location.origin}/invite/trip/${result.data.invite_code}`);
+      showNotification('已產生邀請碼！');
+    } else {
+      showNotification(result.error || '產生邀請碼失敗');
+    }
+    setIsGeneratingCode(false);
+  };
+
+  // 分享行程邀請連結
+  const handleShareTripLink = async () => {
+    const link = tripInviteLink || `${window.location.origin}/invite/trip/${tripInviteCode}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${currentTrip?.title || '行程邀請'} - Venturo`,
+          text: `來加入「${currentTrip?.title || '我的行程'}」一起旅行吧！`,
+          url: link,
+        });
+      } catch {
+        // 用戶取消分享
+      }
+    } else {
+      await navigator.clipboard.writeText(link);
+      showNotification('已複製邀請連結！');
+    }
+  };
+
+  // 複製邀請碼
+  const handleCopyCode = async () => {
+    if (tripInviteCode) {
+      await navigator.clipboard.writeText(tripInviteCode);
+      showNotification('已複製邀請碼！');
+    }
   };
 
   return (
@@ -237,6 +293,76 @@ function InvitePageContent() {
             ) : null}
           </div>
         </section>
+
+        {/* 行程邀請碼（只有 tripId 時顯示） */}
+        {tripId && (
+          <section className="mb-6">
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">
+              行程邀請碼
+            </h3>
+            <div className="bg-white rounded-2xl shadow-sm border border-white/50 overflow-hidden">
+              {tripInviteCode ? (
+                // 已有邀請碼
+                <div className="p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">邀請碼</p>
+                      <p className="text-2xl font-bold text-[#cfb9a5] tracking-widest">{tripInviteCode}</p>
+                    </div>
+                    <button
+                      onClick={handleCopyCode}
+                      className="w-10 h-10 rounded-full bg-[#cfb9a5]/10 flex items-center justify-center text-[#cfb9a5] active:scale-95 transition-transform"
+                    >
+                      <span className="material-icons-round">content_copy</span>
+                    </button>
+                  </div>
+
+                  {/* QR Code */}
+                  <div className="bg-[#F5F4F0] rounded-xl p-4 flex flex-col items-center mb-4">
+                    <QRCodeSVG
+                      value={tripInviteLink || `${window.location.origin}/invite/trip/${tripInviteCode}`}
+                      size={140}
+                      level="M"
+                      includeMargin={false}
+                      bgColor="#F5F4F0"
+                      fgColor="#5C5C5C"
+                    />
+                    <p className="text-xs text-gray-400 mt-3">掃描加入 {currentTrip?.title}</p>
+                  </div>
+
+                  {/* 分享按鈕 */}
+                  <button
+                    onClick={handleShareTripLink}
+                    className="w-full py-3 bg-[#cfb9a5] text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                  >
+                    <span className="material-icons-round">share</span>
+                    分享邀請連結
+                  </button>
+                </div>
+              ) : (
+                // 尚未產生邀請碼
+                <button
+                  onClick={handleGenerateTripCode}
+                  disabled={isGeneratingCode}
+                  className="w-full p-5 flex items-center gap-4 hover:bg-white/80 transition-colors active:scale-[0.98] disabled:opacity-60"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#cfb9a5] to-[#A5BCCF] flex items-center justify-center">
+                    {isGeneratingCode ? (
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <span className="material-icons-round text-white">vpn_key</span>
+                    )}
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-medium text-gray-800">產生邀請碼</p>
+                    <p className="text-xs text-gray-400">讓任何人都能透過連結加入行程</p>
+                  </div>
+                  <span className="material-icons-round text-gray-300">arrow_forward</span>
+                </button>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* 其他邀請方式 */}
         <section className="mb-6">
