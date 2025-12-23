@@ -113,6 +113,72 @@ return jsonResponse({ data }, { cache: CACHE_CONFIGS.privateShort })
 
 ---
 
+## 🚨 前端效能優化規範 (2025-12-24 新增)
+
+### 1. Image Blur Placeholder - 圖片載入優化
+
+```typescript
+// ❌ 錯誤：直接使用 Image
+<Image src={url} alt="..." width={200} height={150} />
+
+// ✅ 正確：使用 blur placeholder
+import { getOptimizedImageProps } from '@/lib/image-utils'
+
+<Image
+  src={url}
+  alt="..."
+  width={200}
+  height={150}
+  {...getOptimizedImageProps(url)}
+/>
+```
+
+**效果**：載入時顯示模糊佔位符，改善視覺體驗
+
+### 2. useVirtualList - 大資料虛擬化 (可選)
+
+```typescript
+import { useVirtualList } from '@/hooks/useVirtualList'
+
+const { parentRef, virtualItems, totalSize, measureElement } = useVirtualList({
+  data: largeData,
+  estimateSize: 80,
+  overscan: 5,
+})
+
+return (
+  <div ref={parentRef} style={{ height: '500px', overflow: 'auto' }}>
+    <div style={{ height: totalSize, position: 'relative' }}>
+      {virtualItems.map((virtualRow) => (
+        <div
+          key={virtualRow.key}
+          ref={measureElement}
+          data-index={virtualRow.index}
+          style={{
+            position: 'absolute',
+            top: virtualRow.start,
+            width: '100%',
+          }}
+        >
+          {data[virtualRow.index].name}
+        </div>
+      ))}
+    </div>
+  </div>
+)
+```
+
+**使用時機**：列表 >100 筆資料時考慮使用
+
+### 效能組件一覽表
+
+| 組件/工具 | 檔案位置 | 用途 |
+|---------|---------|------|
+| `useVirtualList` | `src/hooks/useVirtualList.ts` | 虛擬列表 Hook |
+| `getOptimizedImageProps` | `src/lib/image-utils.ts` | 圖片 blur placeholder |
+
+---
+
 ## 🚨 Next.js 16 RSC 邊界規範 (重要！)
 
 > **背景**: Next.js 16 使用 Turbopack，對 Server/Client Component 邊界檢查更嚴格。
