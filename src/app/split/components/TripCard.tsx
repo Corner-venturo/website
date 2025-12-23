@@ -1,6 +1,9 @@
+'use client';
+
 import Image from "next/image";
 import Link from "next/link";
 import { Trip } from "./types";
+import { getOptimizedImageProps } from "@/lib/image-utils";
 
 interface TripCardProps {
   trip: Trip;
@@ -15,7 +18,7 @@ export default function TripCard({ trip }: TripCardProps) {
       <div className="flex">
         {/* 圖片 */}
         <div className="relative w-24 h-24 shrink-0">
-          <Image src={trip.image} alt={trip.title} fill className="object-cover" />
+          <Image src={trip.image} alt={trip.title} fill className="object-cover" {...getOptimizedImageProps(trip.image)} />
           <div
             className={`absolute top-2 left-2 ${trip.statusColor} text-white text-[10px] font-medium px-2 py-0.5 rounded-full`}
           >

@@ -1,5 +1,8 @@
+'use client';
+
 import Image from "next/image";
 import Link from "next/link";
+import { getOptimizedImageProps } from "@/lib/image-utils";
 
 interface ProfileHeaderProps {
   userName: string;
@@ -26,6 +29,7 @@ export default function ProfileHeader({
                 fill
                 sizes="80px"
                 className="object-cover"
+                {...getOptimizedImageProps(avatarUrl)}
               />
             ) : (
               <span className="text-2xl font-bold text-white">

@@ -1,4 +1,7 @@
+'use client';
+
 import Image from "next/image";
+import { getOptimizedImageProps } from "@/lib/image-utils";
 
 interface HotelImageGalleryProps {
   image: string;
@@ -15,6 +18,7 @@ export default function HotelImageGallery({ image, alt }: HotelImageGalleryProps
         className="object-cover transition-transform duration-700 group-hover:scale-105"
         sizes="(max-width: 768px) 100vw, 600px"
         priority
+        {...getOptimizedImageProps(image)}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
