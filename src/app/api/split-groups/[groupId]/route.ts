@@ -23,25 +23,46 @@ export async function GET(
 
     const supabase = getSupabase()
 
-    // 取得群組基本資料
-    const { data: group, error: groupError } = await supabase
-      .from('split_groups')
-      .select(`
-        *,
-        trip:trips(id, title, cover_image, start_date, end_date),
-        members:split_group_members(
-          id,
-          user_id,
-          nickname,
-          role,
-          joined_at,
-          display_name,
-          is_virtual,
-          user:profiles(id, display_name, avatar_url)
-        )
-      `)
-      .eq('id', groupId)
-      .single()
+    // 並行執行兩個查詢（大幅提升效能）
+    const [groupResult, expensesResult] = await Promise.all([
+      // 查詢 1: 群組基本資料
+      supabase
+        .from('split_groups')
+        .select(`
+          *,
+          trip:trips(id, title, cover_image, start_date, end_date),
+          members:split_group_members(
+            id,
+            user_id,
+            nickname,
+            role,
+            joined_at,
+            display_name,
+            is_virtual,
+            user:profiles(id, display_name, avatar_url)
+          )
+        `)
+        .eq('id', groupId)
+        .single(),
+
+      // 查詢 2: 費用（簡化，不 join profile）
+      supabase
+        .from('expenses')
+        .select(`
+          *,
+          expense_splits(
+            id,
+            user_id,
+            amount,
+            is_settled
+          )
+        `)
+        .eq('split_group_id', groupId)
+        .order('expense_date', { ascending: false })
+    ])
+
+    const { data: group, error: groupError } = groupResult
+    const { data: expenses } = expensesResult
 
     if (groupError) {
       console.error('Query group error:', groupError)
@@ -50,23 +71,6 @@ export async function GET(
         { status: 404 }
       )
     }
-
-    // 取得群組所有費用
-    const { data: expenses } = await supabase
-      .from('expenses')
-      .select(`
-        *,
-        paid_by_profile:profiles!expenses_paid_by_fkey(id, display_name, avatar_url),
-        expense_splits(
-          id,
-          user_id,
-          amount,
-          is_settled,
-          user:profiles(id, display_name, avatar_url)
-        )
-      `)
-      .eq('split_group_id', groupId)
-      .order('expense_date', { ascending: false })
 
     // 計算每個成員的餘額
     const memberBalances = (group.members || []).map((member: {
@@ -110,11 +114,24 @@ export async function GET(
     // 計算誰欠誰（簡化版：使用最小交易演算法）
     const debts = calculateDebts(memberBalances)
 
+    // 為費用補上付款人資訊（從成員列表取得）
+    const expensesWithPayer = (expenses || []).map(expense => {
+      const payer = memberBalances.find((m: { userId: string }) => m.userId === expense.paid_by)
+      return {
+        ...expense,
+        paid_by_profile: payer ? {
+          id: payer.userId,
+          display_name: payer.displayName,
+          avatar_url: payer.avatarUrl
+        } : null
+      }
+    })
+
     return NextResponse.json({
       success: true,
       data: {
         ...group,
-        expenses: expenses || [],
+        expenses: expensesWithPayer,
         memberBalances,
         debts, // [{ from, to, amount }]
         totalExpenses: (expenses || []).reduce((sum, e) => sum + Number(e.amount), 0),
