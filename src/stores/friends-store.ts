@@ -42,6 +42,8 @@ interface FriendsState {
   acceptFriendRequest: (requestId: string) => Promise<{ success: boolean; error?: string }>
   rejectFriendRequest: (requestId: string) => Promise<{ success: boolean; error?: string }>
   removeFriend: (friendshipId: string) => Promise<{ success: boolean; error?: string }>
+  // 撤回發出的好友邀請
+  cancelFriendRequest: (requestId: string) => Promise<{ success: boolean; error?: string }>
   searchUsers: (query: string, currentUserId: string) => Promise<{ id: string; display_name: string | null; avatar_url: string | null }[]>
   // 透過邀請連結直接成為好友
   acceptInviteLink: (userId: string, inviterId: string) => Promise<{ success: boolean; error?: string }>
@@ -299,6 +301,46 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
       return { success: true }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '移除好友失敗'
+      return { success: false, error: message }
+    }
+  },
+
+  cancelFriendRequest: async (requestId: string) => {
+    const supabase = getSupabaseClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user?.id) {
+      return { success: false, error: '請先登入' }
+    }
+
+    try {
+      // 驗證是自己發出的邀請且狀態為 pending
+      const { data: request, error: fetchError } = await supabase
+        .from('friends')
+        .select('*')
+        .eq('id', requestId)
+        .eq('user_id', user.id)
+        .eq('status', 'pending')
+        .maybeSingle()
+
+      if (fetchError) throw fetchError
+
+      if (!request) {
+        return { success: false, error: '找不到此邀請或已處理' }
+      }
+
+      // 刪除邀請
+      const { error } = await supabase
+        .from('friends')
+        .delete()
+        .eq('id', requestId)
+
+      if (error) throw error
+
+      await get().fetchFriends(user.id)
+      return { success: true }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '撤回邀請失敗'
       return { success: false, error: message }
     }
   },
