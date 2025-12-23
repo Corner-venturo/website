@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import MobileNav from "@/components/MobileNav";
 import { OrderCard, FilterTabs, FilterType, Order } from "./components";
@@ -10,6 +10,9 @@ import { CheckInQRCode } from "@/components/check-in";
 
 // 加入行程的步驟
 type JoinStep = 'input' | 'confirm' | 'success';
+
+// 同步狀態
+type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
 
 // 將 Trip 轉換為 Order 格式
 function tripToOrder(trip: Trip, onCheckInClick?: () => void): Order {
@@ -135,7 +138,99 @@ export default function OrdersPage() {
     tripTitle: string;
   } | null>(null);
 
-  
+  // 同步狀態
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const [syncMessage, setSyncMessage] = useState('');
+  const hasSyncedRef = useRef(false);
+
+  // 下拉刷新狀態
+  const [isPulling, setIsPulling] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const mainRef = useRef<HTMLDivElement>(null);
+  const startYRef = useRef(0);
+
+  // 同步 ERP 訂單
+  const syncOrders = useCallback(async (showToast = true) => {
+    if (!user?.id) return;
+
+    setSyncStatus('syncing');
+
+    try {
+      const response = await fetch('/api/sync-my-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        if (data.data.synced > 0) {
+          setSyncMessage(`發現 ${data.data.synced} 個新行程`);
+          setSyncStatus('success');
+          // 重新載入行程
+          fetchMyTrips(user.id);
+        } else if (data.data.needsBinding) {
+          setSyncMessage('');
+          setSyncStatus('idle');
+        } else {
+          if (showToast) {
+            setSyncMessage('已是最新');
+          }
+          setSyncStatus('success');
+        }
+
+        // 3 秒後清除訊息
+        setTimeout(() => {
+          setSyncStatus('idle');
+          setSyncMessage('');
+        }, 3000);
+      } else {
+        setSyncStatus('error');
+        setSyncMessage(data.error || '同步失敗');
+        setTimeout(() => {
+          setSyncStatus('idle');
+          setSyncMessage('');
+        }, 3000);
+      }
+    } catch {
+      setSyncStatus('error');
+      setSyncMessage('網路錯誤');
+      setTimeout(() => {
+        setSyncStatus('idle');
+        setSyncMessage('');
+      }, 3000);
+    }
+  }, [user?.id, fetchMyTrips]);
+
+  // 下拉刷新處理
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (mainRef.current?.scrollTop === 0) {
+      startYRef.current = e.touches[0].clientY;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (mainRef.current?.scrollTop !== 0) return;
+
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - startYRef.current;
+
+    if (diff > 0 && startYRef.current > 0) {
+      setIsPulling(true);
+      setPullDistance(Math.min(diff * 0.5, 80));
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (pullDistance > 60) {
+      syncOrders(true);
+    }
+    setIsPulling(false);
+    setPullDistance(0);
+    startYRef.current = 0;
+  }, [pullDistance, syncOrders]);
+
   // 驗證團號+身分證
   const handleVerify = async () => {
     if (!tourCode.trim() || !idNumber.trim()) {
@@ -150,7 +245,11 @@ export default function OrdersPage() {
       const response = await fetch('/api/verify-traveler', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tourCode: tourCode.trim().toUpperCase(), idNumber: idNumber.trim().toUpperCase() }),
+        body: JSON.stringify({
+          tourCode: tourCode.trim().toUpperCase(),
+          idNumber: idNumber.trim().toUpperCase(),
+          userId: user?.id, // 傳入 userId 用於綁定身分證
+        }),
       });
 
       const data = await response.json();
@@ -231,12 +330,18 @@ export default function OrdersPage() {
     setTravelerInfo(null);
   };
 
-  // 取得用戶的行程
+  // 取得用戶的行程 + 自動同步 ERP
   useEffect(() => {
     if (isInitialized && user?.id) {
       fetchMyTrips(user.id);
+
+      // 進入頁面時自動同步一次（靜默，不顯示 toast）
+      if (!hasSyncedRef.current) {
+        hasSyncedRef.current = true;
+        syncOrders(false);
+      }
     }
-  }, [isInitialized, user?.id, fetchMyTrips]);
+  }, [isInitialized, user?.id, fetchMyTrips, syncOrders]);
 
   // 處理報到按鈕點擊
   const handleCheckInClick = (trip: Trip) => {
@@ -292,7 +397,46 @@ export default function OrdersPage() {
       </header>
 
       {/* 主要內容區域 */}
-      <main className="h-full overflow-y-auto px-4 pt-16 pb-24">
+      <main
+        ref={mainRef}
+        className="h-full overflow-y-auto px-4 pt-16 pb-24"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* 下拉刷新指示器 */}
+        {(isPulling || syncStatus === 'syncing') && (
+          <div
+            className="flex items-center justify-center transition-all duration-200"
+            style={{ height: isPulling ? pullDistance : syncStatus === 'syncing' ? 50 : 0 }}
+          >
+            {syncStatus === 'syncing' ? (
+              <div className="flex items-center gap-2 text-sm text-[#949494]">
+                <div className="w-4 h-4 border-2 border-[#Cfb9a5]/30 border-t-[#Cfb9a5] rounded-full animate-spin" />
+                <span>同步中...</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-[#949494]">
+                <span className="material-icons-round text-lg" style={{
+                  transform: pullDistance > 60 ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s'
+                }}>arrow_downward</span>
+                <span>{pullDistance > 60 ? '放開刷新' : '下拉刷新'}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 同步結果提示 */}
+        {syncMessage && syncStatus !== 'syncing' && (
+          <div className={`mb-3 px-4 py-2 rounded-xl text-sm text-center transition-all ${
+            syncStatus === 'success' ? 'bg-[#A8BFA6]/20 text-[#5a7a5a]' :
+            syncStatus === 'error' ? 'bg-red-100 text-red-600' : ''
+          }`}>
+            {syncMessage}
+          </div>
+        )}
+
         {/* 篩選標籤 */}
         <div className="mb-4">
           <FilterTabs activeFilter={activeFilter} onFilterChange={setActiveFilter} />

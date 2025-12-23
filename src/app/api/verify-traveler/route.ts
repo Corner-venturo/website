@@ -21,7 +21,7 @@ const getOnlineSupabase = () => {
   return createClient(url, key)
 }
 
-// POST: 驗證團號 + 身分證字號
+// POST: 驗證團號 + 身分證字號，並綁定身分證到用戶帳號
 export async function POST(request: Request) {
   try {
     // 從 request 取得 base URL
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     const baseUrl = `${url.protocol}//${url.host}`
 
     const body = await request.json()
-    const { tourCode, idNumber } = body
+    const { tourCode, idNumber, userId } = body
 
     if (!tourCode || !idNumber) {
       return NextResponse.json(
@@ -39,6 +39,24 @@ export async function POST(request: Request) {
     }
 
     const erpSupabase = getErpSupabase()
+    const onlineSupabase = getOnlineSupabase()
+
+    // 0. 檢查身分證是否已被其他帳號綁定
+    if (userId) {
+      const { data: existingBinding } = await onlineSupabase
+        .from('profiles')
+        .select('id, display_name')
+        .eq('id_number', idNumber)
+        .single()
+
+      if (existingBinding && existingBinding.id !== userId) {
+        // 身分證已被其他帳號綁定
+        return NextResponse.json(
+          { error: '此身分證已被其他帳號綁定，請使用該帳號登入' },
+          { status: 409 }
+        )
+      }
+    }
 
     // 1. 從 ERP 查詢訂單（用團號）
     const { data: erpOrder, error: orderError } = await erpSupabase
@@ -80,8 +98,6 @@ export async function POST(request: Request) {
     // 3. 檢查或建立 Online 行程
     let tripId: string
     let tripTitle: string
-
-    const onlineSupabase = getOnlineSupabase()
 
     // 先用 tour_code 欄位查詢
     let existingTrip = null
@@ -132,7 +148,26 @@ export async function POST(request: Request) {
       tripTitle = syncData.data.title || erpOrder.tour_name
     }
 
-    // 4. 回傳驗證成功的資料
+    // 4. 綁定身分證到用戶帳號（如果有提供 userId 且尚未綁定）
+    if (userId) {
+      const { data: currentProfile } = await onlineSupabase
+        .from('profiles')
+        .select('id_number')
+        .eq('id', userId)
+        .single()
+
+      if (!currentProfile?.id_number) {
+        // 尚未綁定，進行綁定
+        await onlineSupabase
+          .from('profiles')
+          .update({ id_number: idNumber })
+          .eq('id', userId)
+
+        console.log(`已綁定身分證 ${idNumber} 到用戶 ${userId}`)
+      }
+    }
+
+    // 5. 回傳驗證成功的資料
     return NextResponse.json({
       success: true,
       data: {
@@ -142,6 +177,7 @@ export async function POST(request: Request) {
         tourCode,
         role,
         identity,
+        idNumberBound: !!userId, // 告訴前端是否已綁定身分證
       },
     })
   } catch (error) {

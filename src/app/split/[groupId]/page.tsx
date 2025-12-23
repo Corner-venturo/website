@@ -1,10 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTripStore } from "@/stores/trip-store";
 import { useAuthStore } from "@/stores/auth-store";
+import ConfirmModal from "@/components/ConfirmModal";
+import Toast from "@/components/Toast";
+
+// Settlement type
+interface Settlement {
+  id: string;
+  from_user: string;
+  to_user: string;
+  amount: number;
+  status: 'pending' | 'completed' | 'cancelled';
+  created_at: string;
+  completed_at: string | null;
+  from_profile?: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+  };
+  to_profile?: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+  };
+}
 
 export default function SplitGroupDetailPage() {
   const params = useParams();
@@ -15,6 +38,29 @@ export default function SplitGroupDetailPage() {
   const { user, initialize, isInitialized } = useAuthStore();
 
   const [activeTab, setActiveTab] = useState<"expenses" | "members" | "settle">("expenses");
+
+  // Settlement states
+  const [settlements, setSettlements] = useState<Settlement[]>([]);
+  const [loadingSettlements, setLoadingSettlements] = useState(false);
+
+  // Modal states
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    type: 'pay' | 'confirm';
+    debt?: { from: string; fromName: string; to: string; toName: string; amount: number };
+    settlementId?: string;
+  }>({ isOpen: false, type: 'pay' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Toast state
+  const [toast, setToast] = useState<{ isOpen: boolean; message: string; variant: 'success' | 'info' }>({
+    isOpen: false,
+    message: '',
+    variant: 'success'
+  });
+
+  // Celebration state
+  const [showCelebration, setShowCelebration] = useState(false);
 
   // 初始化 auth
   useEffect(() => {
@@ -31,6 +77,125 @@ export default function SplitGroupDetailPage() {
     }
     return () => clearSplitGroup();
   }, [groupId, userId, fetchSplitGroupById, clearSplitGroup]);
+
+  // Fetch settlements
+  const fetchSettlements = useCallback(async () => {
+    if (!groupId) return;
+    setLoadingSettlements(true);
+    try {
+      const res = await fetch(`/api/settlements?groupId=${groupId}`);
+      const data = await res.json();
+      if (data.success) {
+        setSettlements(data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch settlements:', error);
+    } finally {
+      setLoadingSettlements(false);
+    }
+  }, [groupId]);
+
+  useEffect(() => {
+    if (groupId) {
+      fetchSettlements();
+    }
+  }, [groupId, fetchSettlements]);
+
+  // Check if a debt has a pending/completed settlement
+  const getSettlementForDebt = (fromUser: string, toUser: string) => {
+    return settlements.find(
+      s => s.from_user === fromUser && s.to_user === toUser && s.status !== 'cancelled'
+    );
+  };
+
+  // Handle "我已付款" click
+  const handlePayClick = (debt: { from: string; fromName: string; to: string; toName: string; amount: number }) => {
+    setConfirmModal({
+      isOpen: true,
+      type: 'pay',
+      debt
+    });
+  };
+
+  // Handle "確認已收款" click
+  const handleConfirmReceiveClick = (settlementId: string) => {
+    setConfirmModal({
+      isOpen: true,
+      type: 'confirm',
+      settlementId
+    });
+  };
+
+  // Submit payment (create settlement with pending status)
+  const handleSubmitPayment = async () => {
+    if (!confirmModal.debt) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/settlements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          groupId,
+          fromUser: confirmModal.debt.from,
+          toUser: confirmModal.debt.to,
+          amount: confirmModal.debt.amount,
+          note: '分帳結算'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        await fetchSettlements();
+        setToast({ isOpen: true, message: '已通知對方確認收款', variant: 'info' });
+      }
+    } catch (error) {
+      console.error('Submit payment error:', error);
+    } finally {
+      setIsSubmitting(false);
+      setConfirmModal({ isOpen: false, type: 'pay' });
+    }
+  };
+
+  // Confirm receipt (update settlement to completed)
+  const handleConfirmReceipt = async () => {
+    if (!confirmModal.settlementId) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/settlements', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          settlementId: confirmModal.settlementId,
+          status: 'completed'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        await fetchSettlements();
+
+        // Check if all debts are settled
+        const updatedSettlements = [...settlements];
+        const settledCount = updatedSettlements.filter(s => s.status === 'completed' || s.id === confirmModal.settlementId).length;
+        const totalDebts = currentSplitGroup?.debts?.length || 0;
+
+        if (settledCount >= totalDebts && totalDebts > 0) {
+          setShowCelebration(true);
+        } else {
+          setToast({ isOpen: true, message: '已確認收款，結算完成！', variant: 'success' });
+        }
+      }
+    } catch (error) {
+      console.error('Confirm receipt error:', error);
+    } finally {
+      setIsSubmitting(false);
+      setConfirmModal({ isOpen: false, type: 'confirm' });
+    }
+  };
+
+  // Check if all debts are settled
+  const allSettled = currentSplitGroup?.debts?.every(debt => {
+    const settlement = getSettlementForDebt(debt.from, debt.to);
+    return settlement?.status === 'completed';
+  }) && (currentSplitGroup?.debts?.length || 0) > 0;
 
   if (isLoading || !currentSplitGroup) {
     return (
@@ -230,33 +395,129 @@ export default function SplitGroupDetailPage() {
                 <span className="material-icons-round text-[#Cfb9a5]">swap_horiz</span>
                 最簡化的結算方式
               </h3>
+
               {group.debts?.length === 0 ? (
-                <p className="text-center text-gray-500 py-4">
-                  太棒了！大家都結清了
-                </p>
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 mx-auto mb-3 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="material-icons-round text-3xl text-green-600">celebration</span>
+                  </div>
+                  <p className="text-gray-800 font-bold">太棒了！</p>
+                  <p className="text-gray-500 text-sm">大家都結清了</p>
+                </div>
+              ) : allSettled ? (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 mx-auto mb-3 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="material-icons-round text-3xl text-green-600">check_circle</span>
+                  </div>
+                  <p className="text-gray-800 font-bold">全部結算完成！</p>
+                  <p className="text-gray-500 text-sm">所有款項都已確認收訖</p>
+                </div>
               ) : (
                 <div className="space-y-3">
-                  {group.debts?.map((debt, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
-                    >
-                      <div className="flex-1 flex items-center gap-2">
-                        <span className="font-medium text-gray-800">
-                          {debt.fromName}
-                        </span>
-                        <span className="material-icons-round text-gray-400">
-                          arrow_forward
-                        </span>
-                        <span className="font-medium text-gray-800">
-                          {debt.toName}
-                        </span>
+                  {group.debts?.map((debt, index) => {
+                    const settlement = getSettlementForDebt(debt.from, debt.to);
+                    const isSettled = settlement?.status === 'completed';
+                    const isPending = settlement?.status === 'pending';
+                    const isMyDebt = debt.from === userId; // 我欠別人
+                    const isMyCredit = debt.to === userId; // 別人欠我
+
+                    return (
+                      <div
+                        key={index}
+                        className={`p-4 rounded-xl border transition-all ${
+                          isSettled
+                            ? 'bg-gray-50 border-gray-200'
+                            : 'bg-white border-gray-100'
+                        }`}
+                      >
+                        {/* Debt info row */}
+                        <div className="flex items-center gap-3 mb-3">
+                          {/* From avatar */}
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center overflow-hidden ${
+                            isSettled ? 'grayscale opacity-60' : 'bg-gradient-to-br from-[#CFA5A5] to-[#B89090]'
+                          }`}>
+                            <span className="material-icons-round text-white">person</span>
+                          </div>
+
+                          <div className="flex-1 flex items-center gap-2">
+                            <span className={`font-medium ${isSettled ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                              {debt.fromName}
+                              {debt.from === userId && <span className="text-xs text-[#CFA5A5]">（你）</span>}
+                            </span>
+                            <span className={`material-icons-round text-sm ${isSettled ? 'text-gray-300' : 'text-gray-400'}`}>
+                              arrow_forward
+                            </span>
+                            <span className={`font-medium ${isSettled ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                              {debt.toName}
+                              {debt.to === userId && <span className="text-xs text-[#A5BCCF]">（你）</span>}
+                            </span>
+                          </div>
+
+                          {/* Amount */}
+                          <div className="text-right">
+                            {isSettled ? (
+                              <div className="flex items-center gap-1">
+                                <span className="text-gray-400 line-through text-sm">${debt.amount.toLocaleString()}</span>
+                                <span className="material-icons-round text-green-500 text-lg">check_circle</span>
+                              </div>
+                            ) : (
+                              <span className="font-bold text-[#Cfb9a5]">${debt.amount.toLocaleString()}</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Action buttons */}
+                        {!isSettled && (
+                          <div className="pt-2 border-t border-gray-100">
+                            {isMyDebt && !isPending && (
+                              <button
+                                onClick={() => handlePayClick(debt)}
+                                className="w-full py-2.5 bg-[#CFA5A5] hover:bg-[#C49898] text-white rounded-xl font-bold text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                              >
+                                <span className="material-icons-round text-lg">payment</span>
+                                我已付款
+                              </button>
+                            )}
+
+                            {isMyDebt && isPending && (
+                              <div className="text-center py-2">
+                                <span className="text-sm text-gray-500 flex items-center justify-center gap-2">
+                                  <span className="material-icons-round text-lg text-yellow-500">schedule</span>
+                                  等待對方確認收款中...
+                                </span>
+                              </div>
+                            )}
+
+                            {isMyCredit && isPending && settlement && (
+                              <button
+                                onClick={() => handleConfirmReceiveClick(settlement.id)}
+                                className="w-full py-2.5 bg-[#A5BCCF] hover:bg-[#96ADC0] text-white rounded-xl font-bold text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                              >
+                                <span className="material-icons-round text-lg">verified</span>
+                                確認已收款
+                              </button>
+                            )}
+
+                            {isMyCredit && !isPending && (
+                              <div className="text-center py-2">
+                                <span className="text-sm text-gray-500">
+                                  等待 {debt.fromName} 標記已付款
+                                </span>
+                              </div>
+                            )}
+
+                            {!isMyDebt && !isMyCredit && (
+                              <div className="text-center py-2">
+                                <span className="text-sm text-gray-400">
+                                  {isPending ? '等待確認中' : '其他人的款項'}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <span className="font-bold text-[#Cfb9a5]">
-                        ${debt.amount.toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -278,6 +539,76 @@ export default function SplitGroupDetailPage() {
           新增費用
         </Link>
       </div>
+
+      {/* Confirm Modal - Payment */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen && confirmModal.type === 'pay'}
+        onClose={() => setConfirmModal({ isOpen: false, type: 'pay' })}
+        onConfirm={handleSubmitPayment}
+        title="確認已付款？"
+        description={confirmModal.debt
+          ? `你要確認已支付 $${confirmModal.debt.amount.toLocaleString()} 給 ${confirmModal.debt.toName} 嗎？確認後將通知對方確認收款。`
+          : ''
+        }
+        confirmText="確認已付款"
+        cancelText="取消"
+        isLoading={isSubmitting}
+        variant="warning"
+        icon={
+          <span className="material-icons-round text-3xl text-[#Cfb9a5]">payment</span>
+        }
+      />
+
+      {/* Confirm Modal - Receive */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen && confirmModal.type === 'confirm'}
+        onClose={() => setConfirmModal({ isOpen: false, type: 'confirm' })}
+        onConfirm={handleConfirmReceipt}
+        title="確認已收款？"
+        description="確認收到款項後，此筆帳款將標記為已結清。"
+        confirmText="確認收款"
+        cancelText="取消"
+        isLoading={isSubmitting}
+        variant="info"
+        icon={
+          <span className="material-icons-round text-3xl text-[#A5BCCF]">verified</span>
+        }
+      />
+
+      {/* Toast */}
+      <Toast
+        isOpen={toast.isOpen}
+        onClose={() => setToast({ ...toast, isOpen: false })}
+        message={toast.message}
+        variant={toast.variant}
+      />
+
+      {/* Celebration Modal */}
+      {showCelebration && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 mx-5 max-w-sm w-full shadow-2xl text-center animate-bounce-in">
+            <div className="text-6xl mb-4">🎉</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">全部結清！</h2>
+            <p className="text-gray-500 mb-6">恭喜！所有款項都已結算完成</p>
+            <button
+              onClick={() => setShowCelebration(false)}
+              className="w-full py-3.5 bg-[#Cfb9a5] hover:bg-[#c0a996] text-white rounded-xl font-bold transition-all active:scale-[0.98]"
+            >
+              太棒了！
+            </button>
+          </div>
+          <style jsx>{`
+            @keyframes bounce-in {
+              0% { transform: scale(0.5); opacity: 0; }
+              50% { transform: scale(1.05); }
+              100% { transform: scale(1); opacity: 1; }
+            }
+            .animate-bounce-in {
+              animation: bounce-in 0.4s ease-out;
+            }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 }
