@@ -168,6 +168,7 @@ export interface TripItineraryItem {
   color: string | null
   sort_order: number
   inquiry_by: string | null
+  inquiry_deadline: string | null  // ISO 8601 格式的截止時間
   created_at: string
   updated_at: string
   // 出席記錄（joined）

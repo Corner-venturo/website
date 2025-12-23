@@ -29,6 +29,7 @@ interface ItineraryItem {
   image?: string;
   // 出席詢問相關
   inquiryBy?: string; // 誰發起詢問 (participant id)
+  inquiryDeadline?: string; // 投票截止時間 (ISO 8601)
   attendanceList?: Record<string, "attending" | "not_attending" | "pending">; // 每個參與者的出席狀態
 }
 
@@ -708,6 +709,7 @@ function dbItemToItineraryItem(dbItem: TripItineraryItem): ItineraryItem {
     category: dbItem.category as ItineraryItem["category"],
     image: dbItem.image_url || undefined,
     inquiryBy: dbItem.inquiry_by || undefined,
+    inquiryDeadline: dbItem.inquiry_deadline || undefined,
     attendanceList: Object.keys(attendanceList).length > 0 ? attendanceList : undefined,
   };
 }
@@ -841,6 +843,8 @@ export default function OrderDetailPage() {
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [showItemMenu, setShowItemMenu] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ItineraryItem | null>(null);
+  const [showInquirySetupModal, setShowInquirySetupModal] = useState(false);
+  const [inquiryDeadlineInput, setInquiryDeadlineInput] = useState("");
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
   const [editingTimeItemId, setEditingTimeItemId] = useState<string | null>(null);
@@ -1039,8 +1043,16 @@ export default function OrderDetailPage() {
     setSelectedItem(null);
   };
 
+  // 開啟發起詢問設定
+  const handleOpenInquirySetup = (item: ItineraryItem) => {
+    setSelectedItem(item);
+    setInquiryDeadlineInput("");
+    setShowItemMenu(false);
+    setShowInquirySetupModal(true);
+  };
+
   // 發起出席詢問
-  const handleInitiateInquiry = (item: ItineraryItem) => {
+  const handleInitiateInquiry = (item: ItineraryItem, deadline?: string) => {
     // 更新 order state
     if (order) {
       const updatedSchedule = order.schedule.map((day) => ({
@@ -1050,6 +1062,7 @@ export default function OrderDetailPage() {
             ? {
                 ...i,
                 inquiryBy: currentUserId,
+                inquiryDeadline: deadline || undefined,
                 attendanceList: {
                   [currentUserId]: "attending" as const, // 發起者預設出席
                 },
@@ -1064,14 +1077,50 @@ export default function OrderDetailPage() {
     const updatedItem = {
       ...item,
       inquiryBy: currentUserId,
+      inquiryDeadline: deadline || undefined,
       attendanceList: {
         [currentUserId]: "attending" as const,
       },
     };
     setSelectedItem(updatedItem);
+    setShowInquirySetupModal(false);
 
     // 開啟出席 modal 顯示結果
     setShowAttendanceModal(true);
+
+    // TODO: 如果需要持久化，這裡應該呼叫 API 更新資料庫
+  };
+
+  // 取消發起詢問（限發起人）
+  const handleCancelInquiry = (item: ItineraryItem) => {
+    // 更新 order state
+    if (order) {
+      const updatedSchedule = order.schedule.map((day) => ({
+        ...day,
+        items: day.items.map((i) =>
+          i.id === item.id
+            ? {
+                ...i,
+                inquiryBy: undefined,
+                inquiryDeadline: undefined,
+                attendanceList: undefined,
+              }
+            : i
+        ),
+      }));
+      setOrder({ ...order, schedule: updatedSchedule });
+    }
+
+    // 更新 selectedItem
+    const updatedItem = {
+      ...item,
+      inquiryBy: undefined,
+      inquiryDeadline: undefined,
+      attendanceList: undefined,
+    };
+    setSelectedItem(updatedItem);
+    setShowAttendanceModal(false);
+    setShowItemMenu(false);
 
     // TODO: 如果需要持久化，這裡應該呼叫 API 更新資料庫
   };
@@ -1414,6 +1463,17 @@ export default function OrderDetailPage() {
                     由 {getInquiryByName(selectedItem)} 發起詢問
                   </p>
                 )}
+                {selectedItem.inquiryDeadline && (
+                  <p className="text-xs text-orange-500 mt-1 flex items-center gap-1">
+                    <span className="material-icons-round text-xs">schedule</span>
+                    截止：{new Date(selectedItem.inquiryDeadline).toLocaleString('zh-TW', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                )}
               </div>
               <button
                 onClick={() => setShowAttendanceModal(false)}
@@ -1552,6 +1612,77 @@ export default function OrderDetailPage() {
         </>
       )}
 
+      {/* 發起詢問設定 Modal */}
+      {showInquirySetupModal && selectedItem && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-[60]"
+            onClick={() => setShowInquirySetupModal(false)}
+          />
+          <div className="fixed inset-0 z-[61] flex items-center justify-center p-4 pointer-events-none">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden pointer-events-auto animate-fade-in">
+              {/* 標題 */}
+              <div className="flex items-center justify-between px-5 pt-5 pb-3">
+                <h2 className="text-lg font-bold text-gray-800">發起出席詢問</h2>
+                <button
+                  onClick={() => setShowInquirySetupModal(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                >
+                  <span className="material-icons-round text-gray-500 text-[18px]">close</span>
+                </button>
+              </div>
+
+              {/* 內容 */}
+              <div className="px-5 pb-5 space-y-4">
+                {/* 項目資訊 */}
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="font-bold text-gray-800">{selectedItem.title}</p>
+                  {selectedItem.time && (
+                    <p className="text-sm text-gray-500 mt-1">{selectedItem.time}</p>
+                  )}
+                </div>
+
+                {/* 截止時間（選填） */}
+                <div>
+                  <label className="text-sm font-bold text-gray-600 mb-2 block">
+                    截止時間（選填）
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={inquiryDeadlineInput}
+                    onChange={(e) => setInquiryDeadlineInput(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:border-[#Cfb9a5] focus:ring-2 focus:ring-[#Cfb9a5]/20 outline-none transition-all text-gray-800"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    設定後，成員可以看到需要在何時前決定
+                  </p>
+                </div>
+
+                {/* 按鈕 */}
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setShowInquirySetupModal(false)}
+                    className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-600 font-bold hover:bg-gray-200 transition-colors active:scale-[0.98]"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={() => handleInitiateInquiry(
+                      selectedItem,
+                      inquiryDeadlineInput ? new Date(inquiryDeadlineInput).toISOString() : undefined
+                    )}
+                    className="flex-1 py-3 rounded-xl bg-[#CFA5A5] text-white font-bold hover:bg-[#c49898] transition-colors active:scale-[0.98] flex items-center justify-center gap-2"
+                  >
+                    <span className="material-icons-round text-lg">campaign</span>
+                    發起
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* 項目選單 Modal - 置中懸浮 */}
       {showItemMenu && selectedItem && (
         <>
@@ -1580,10 +1711,7 @@ export default function OrderDetailPage() {
                 {/* 發起出席詢問 - 只有尚未發起時才顯示 */}
                 {!selectedItem.inquiryBy && (
                   <button
-                    onClick={() => {
-                      setShowItemMenu(false);
-                      handleInitiateInquiry(selectedItem);
-                    }}
+                    onClick={() => handleOpenInquirySetup(selectedItem)}
                     className="w-full flex items-center gap-4 p-4 rounded-2xl bg-[#CFA5A5]/10 hover:bg-[#CFA5A5]/20 transition-colors active:scale-[0.98]"
                   >
                     <div className="w-12 h-12 rounded-xl bg-[#CFA5A5]/20 flex items-center justify-center">
@@ -1592,6 +1720,22 @@ export default function OrderDetailPage() {
                     <div className="flex-1 text-left">
                       <div className="font-bold text-[#CFA5A5]">發起出席詢問</div>
                       <div className="text-xs text-gray-500">詢問大家是否參加此行程</div>
+                    </div>
+                  </button>
+                )}
+
+                {/* 取消出席詢問 - 只有發起人才能取消 */}
+                {selectedItem.inquiryBy === currentUserId && (
+                  <button
+                    onClick={() => handleCancelInquiry(selectedItem)}
+                    className="w-full flex items-center gap-4 p-4 rounded-2xl bg-red-50 hover:bg-red-100 transition-colors active:scale-[0.98]"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
+                      <span className="material-icons-round text-red-500 text-2xl">cancel</span>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="font-bold text-red-500">取消出席詢問</div>
+                      <div className="text-xs text-gray-500">取消此詢問，已回覆的資料將清除</div>
                     </div>
                   </button>
                 )}
