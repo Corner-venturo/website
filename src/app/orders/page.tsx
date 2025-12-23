@@ -138,10 +138,9 @@ export default function OrdersPage() {
     tripTitle: string;
   } | null>(null);
 
-  // 同步狀態
+  // 同步狀態（下拉刷新用）
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [syncMessage, setSyncMessage] = useState('');
-  const hasSyncedRef = useRef(false);
 
   // 下拉刷新狀態
   const [isPulling, setIsPulling] = useState(false);
@@ -330,18 +329,12 @@ export default function OrdersPage() {
     setTravelerInfo(null);
   };
 
-  // 取得用戶的行程 + 自動同步 ERP
+  // 取得用戶的行程
   useEffect(() => {
     if (isInitialized && user?.id) {
       fetchMyTrips(user.id);
-
-      // 進入頁面時自動同步一次（靜默，不顯示 toast）
-      if (!hasSyncedRef.current) {
-        hasSyncedRef.current = true;
-        syncOrders(false);
-      }
     }
-  }, [isInitialized, user?.id, fetchMyTrips, syncOrders]);
+  }, [isInitialized, user?.id, fetchMyTrips]);
 
   // 處理報到按鈕點擊
   const handleCheckInClick = (trip: Trip) => {
