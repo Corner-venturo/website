@@ -50,6 +50,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // 檢查是否有 ERP session（領隊登入）
       const erpSession = await getErpSession()
+
+      // 如果有主 session 且與 ERP session 用戶不同，清除 ERP session
+      // 這表示用戶用不同帳號登入了
+      if (session?.user && erpSession?.user && session.user.id !== erpSession.user.id) {
+        console.log('Session mismatch detected, clearing ERP session')
+        await clearErpSession()
+        set({
+          user: session.user,
+          session,
+          leaderInfo: null,
+          isInitialized: true,
+        })
+        return
+      }
+
       if (erpSession?.user) {
         // 驗證領隊身份是否仍然有效
         const erpClient = getErpSupabaseClient()
@@ -174,9 +189,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (error) throw error
 
+      // 清除 ERP session（如果有的話），因為這是一般用戶登入
+      await clearErpSession()
+
       set({
         user: data.user,
         session: data.session,
+        leaderInfo: null, // 清除領隊資訊
         isLoading: false,
       })
 

@@ -987,6 +987,14 @@ export default function OrderDetailPage() {
     };
   };
 
+  // 檢查當前用戶是否需要回覆詢問
+  const needsMyResponse = (item: ItineraryItem) => {
+    if (!item.inquiryBy) return false; // 沒有詢問
+    if (!item.attendanceList) return true; // 還沒有任何人回覆，我需要回覆
+    const myStatus = item.attendanceList[currentUserId];
+    return !myStatus || myStatus === "pending"; // 我還沒回覆或狀態是 pending
+  };
+
   // 取得發起詢問者名稱
   const getInquiryByName = (item: ItineraryItem) => {
     if (!item.inquiryBy) return null;
@@ -1006,8 +1014,8 @@ export default function OrderDetailPage() {
     setShowItemMenu(true);
   };
 
-  // 取得當前用戶 ID (模擬為 "1")
-  const currentUserId = "1";
+  // 取得當前用戶 ID
+  const currentUserId = user?.id || "1";
 
   // 檢查當前用戶是否為主揪
   const isOwner = order.ownerId === currentUserId;
@@ -1372,6 +1380,17 @@ export default function OrderDetailPage() {
 
                     {/* 墊付、費用和出席資訊 */}
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      {/* 需要回覆的詢問提示 */}
+                      {needsMyResponse(item) && (
+                        <button
+                          onClick={() => handleOpenAttendance(item)}
+                          className="flex items-center gap-1 px-2 py-1 rounded-md bg-orange-100 text-orange-600 border border-orange-200 animate-pulse hover:bg-orange-200 transition-colors"
+                        >
+                          <span className="material-icons-round text-[12px]">how_to_reg</span>
+                          <span className="text-[10px] font-bold">請回覆</span>
+                        </button>
+                      )}
+
                       {/* 已記錄的費用顯示 */}
                       {item.paidBy && item.amount && (
                         <div
@@ -1387,7 +1406,8 @@ export default function OrderDetailPage() {
 
                       {(() => {
                         const attendanceDisplay = getItemAttendanceDisplay(item);
-                        if (attendanceDisplay) {
+                        // 如果需要回覆，不顯示這個（已經顯示「請回覆」了）
+                        if (attendanceDisplay && !needsMyResponse(item)) {
                           return (
                             <button
                               onClick={() => handleOpenAttendance(item)}
