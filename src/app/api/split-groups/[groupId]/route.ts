@@ -35,6 +35,8 @@ export async function GET(
           nickname,
           role,
           joined_at,
+          display_name,
+          is_virtual,
           user:profiles(id, display_name, avatar_url)
         )
       `)
@@ -67,8 +69,15 @@ export async function GET(
       .order('expense_date', { ascending: false })
 
     // 計算每個成員的餘額
-    const memberBalances = (group.members || []).map((member: { user_id: string; role: string; user: { display_name: string; avatar_url: string } }) => {
+    const memberBalances = (group.members || []).map((member: {
+      user_id: string;
+      role: string;
+      display_name?: string;
+      is_virtual?: boolean;
+      user: { display_name: string; avatar_url: string } | null;
+    }) => {
       const memberId = member.user_id
+      const isVirtual = member.is_virtual || memberId.startsWith('virtual_')
 
       // 該成員支付的總額
       const totalPaid = (expenses || [])
@@ -87,9 +96,11 @@ export async function GET(
 
       return {
         userId: memberId,
-        displayName: member.user?.display_name,
-        avatarUrl: member.user?.avatar_url,
-        role: member.role, // 新增 role 欄位
+        // 虛擬成員使用 display_name，真實成員使用 profile
+        displayName: isVirtual ? member.display_name : member.user?.display_name,
+        avatarUrl: isVirtual ? null : member.user?.avatar_url,
+        role: member.role,
+        isVirtual,
         totalPaid,
         totalOwed,
         balance,

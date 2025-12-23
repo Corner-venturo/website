@@ -71,6 +71,8 @@ export default function SplitGroupDetailPage() {
   const [selectedNewMembers, setSelectedNewMembers] = useState<string[]>([]);
   const [isAddingMembers, setIsAddingMembers] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<{ userId: string; name: string } | null>(null);
+  const [addMemberTab, setAddMemberTab] = useState<'trip' | 'virtual'>('trip');
+  const [virtualMemberName, setVirtualMemberName] = useState('');
 
   // 初始化 auth
   useEffect(() => {
@@ -272,6 +274,38 @@ export default function SplitGroupDetailPage() {
     } catch (error) {
       console.error('Add members error:', error);
       setToast({ isOpen: true, message: '新增成員失敗', variant: 'info' });
+    } finally {
+      setIsAddingMembers(false);
+    }
+  };
+
+  // Add virtual member (for friends who don't use the app)
+  const handleAddVirtualMember = async () => {
+    if (!virtualMemberName.trim()) return;
+
+    setIsAddingMembers(true);
+    try {
+      const res = await fetch(`/api/split-groups/${groupId}/virtual-members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: virtualMemberName.trim() }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setToast({ isOpen: true, message: `已新增虛擬成員：${virtualMemberName}`, variant: 'success' });
+        setVirtualMemberName('');
+        setShowAddMemberModal(false);
+        // Refresh the group data
+        if (userId) {
+          fetchSplitGroupById(groupId, userId);
+        }
+      } else {
+        setToast({ isOpen: true, message: data.error || '新增失敗', variant: 'info' });
+      }
+    } catch (error) {
+      console.error('Add virtual member error:', error);
+      setToast({ isOpen: true, message: '新增虛擬成員失敗', variant: 'info' });
     } finally {
       setIsAddingMembers(false);
     }
@@ -497,13 +531,16 @@ export default function SplitGroupDetailPage() {
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className="font-bold text-gray-800 flex items-center gap-1">
+                      <p className="font-bold text-gray-800 flex items-center gap-1 flex-wrap">
                         {member.displayName || "成員"}
                         {member.userId === userId && (
                           <span className="text-xs text-[#Cfb9a5]">（你）</span>
                         )}
                         {member.role === 'owner' && (
                           <span className="text-xs bg-[#Cfb9a5]/20 text-[#Cfb9a5] px-1.5 py-0.5 rounded">建立者</span>
+                        )}
+                        {(member as { isVirtual?: boolean }).isVirtual && (
+                          <span className="text-xs bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded">虛擬</span>
                         )}
                       </p>
                       <p className="text-xs text-gray-500">
@@ -761,20 +798,18 @@ export default function SplitGroupDetailPage() {
         </div>
       )}
 
-      {/* Add Member Modal */}
+      {/* Add Member Modal - 浮動置中 */}
       {showAddMemberModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/50"
             onClick={() => setShowAddMemberModal(false)}
           />
-          <div className="relative w-full max-h-[80vh] bg-white rounded-t-3xl overflow-hidden animate-slide-up">
+          <div className="relative w-full max-w-md bg-white rounded-2xl overflow-hidden shadow-2xl animate-fade-in">
+            {/* Header */}
             <div className="p-5 border-b border-gray-100">
               <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-bold text-gray-800">新增成員</h3>
-                  <p className="text-xs text-gray-500">從行程成員中選擇</p>
-                </div>
+                <h3 className="text-lg font-bold text-gray-800">新增成員</h3>
                 <button
                   onClick={() => setShowAddMemberModal(false)}
                   className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
@@ -782,60 +817,110 @@ export default function SplitGroupDetailPage() {
                   <span className="material-icons-round text-gray-600">close</span>
                 </button>
               </div>
+
+              {/* Tabs */}
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={() => setAddMemberTab('trip')}
+                  className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${
+                    addMemberTab === 'trip'
+                      ? 'bg-[#Cfb9a5] text-white'
+                      : 'bg-gray-100 text-gray-500'
+                  }`}
+                >
+                  從行程選擇
+                </button>
+                <button
+                  onClick={() => setAddMemberTab('virtual')}
+                  className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${
+                    addMemberTab === 'virtual'
+                      ? 'bg-[#Cfb9a5] text-white'
+                      : 'bg-gray-100 text-gray-500'
+                  }`}
+                >
+                  新增虛擬成員
+                </button>
+              </div>
             </div>
-            <div className="p-5 space-y-3 overflow-y-auto max-h-[50vh]">
-              {availableMembers.length === 0 ? (
-                <div className="text-center py-8">
-                  <span className="material-icons-round text-4xl text-gray-300 mb-2">group</span>
-                  <p className="text-gray-500">沒有可新增的成員</p>
-                  <p className="text-sm text-gray-400">所有行程成員都已加入分帳群組</p>
+
+            {/* Content */}
+            <div className="max-h-[50vh] overflow-y-auto">
+              {addMemberTab === 'trip' ? (
+                <div className="p-5 space-y-3">
+                  {availableMembers.length === 0 ? (
+                    <div className="text-center py-8">
+                      <span className="material-icons-round text-4xl text-gray-300 mb-2">group</span>
+                      <p className="text-gray-500">沒有可新增的成員</p>
+                      <p className="text-sm text-gray-400">所有行程成員都已加入</p>
+                    </div>
+                  ) : (
+                    availableMembers.map((member) => (
+                      <button
+                        key={member.user_id}
+                        onClick={() => toggleNewMember(member.user_id)}
+                        className={`w-full p-4 rounded-xl border flex items-center gap-3 transition-all ${
+                          selectedNewMembers.includes(member.user_id)
+                            ? "border-[#Cfb9a5] bg-[#Cfb9a5]/10"
+                            : "border-gray-200 bg-white"
+                        }`}
+                      >
+                        <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden">
+                          {member.profile?.avatar_url ? (
+                            <img
+                              src={member.profile.avatar_url}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#Cfb9a5] to-[#B8A090]">
+                              <span className="material-icons-round text-white">person</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 text-left">
+                          <p className="font-bold text-gray-800">
+                            {member.profile?.display_name || "成員"}
+                          </p>
+                        </div>
+                        <span
+                          className={`material-icons-round text-2xl ${
+                            selectedNewMembers.includes(member.user_id)
+                              ? "text-[#Cfb9a5]"
+                              : "text-gray-300"
+                          }`}
+                        >
+                          {selectedNewMembers.includes(member.user_id)
+                            ? "check_circle"
+                            : "radio_button_unchecked"}
+                        </span>
+                      </button>
+                    ))
+                  )}
                 </div>
               ) : (
-                availableMembers.map((member) => (
-                  <button
-                    key={member.user_id}
-                    onClick={() => toggleNewMember(member.user_id)}
-                    className={`w-full p-4 rounded-xl border flex items-center gap-3 transition-all ${
-                      selectedNewMembers.includes(member.user_id)
-                        ? "border-[#Cfb9a5] bg-[#Cfb9a5]/10"
-                        : "border-gray-200 bg-white"
-                    }`}
-                  >
-                    <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden">
-                      {member.profile?.avatar_url ? (
-                        <img
-                          src={member.profile.avatar_url}
-                          alt=""
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#Cfb9a5] to-[#B8A090]">
-                          <span className="material-icons-round text-white">person</span>
-                        </div>
-                      )}
+                <div className="p-5">
+                  <p className="text-sm text-gray-500 mb-4">
+                    為不使用 App 的朋友建立虛擬帳號，方便記帳分攤
+                  </p>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">成員名稱</label>
+                      <input
+                        type="text"
+                        value={virtualMemberName}
+                        onChange={(e) => setVirtualMemberName(e.target.value)}
+                        placeholder="例如：小明"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#Cfb9a5] focus:ring-2 focus:ring-[#Cfb9a5]/20 outline-none transition-all"
+                      />
                     </div>
-                    <div className="flex-1 text-left">
-                      <p className="font-bold text-gray-800">
-                        {member.profile?.display_name || "成員"}
-                      </p>
-                    </div>
-                    <span
-                      className={`material-icons-round text-2xl ${
-                        selectedNewMembers.includes(member.user_id)
-                          ? "text-[#Cfb9a5]"
-                          : "text-gray-300"
-                      }`}
-                    >
-                      {selectedNewMembers.includes(member.user_id)
-                        ? "check_circle"
-                        : "radio_button_unchecked"}
-                    </span>
-                  </button>
-                ))
+                  </div>
+                </div>
               )}
             </div>
-            {availableMembers.length > 0 && (
-              <div className="p-5 border-t border-gray-100">
+
+            {/* Footer */}
+            <div className="p-5 border-t border-gray-100">
+              {addMemberTab === 'trip' ? (
                 <button
                   onClick={handleAddMembers}
                   disabled={selectedNewMembers.length === 0 || isAddingMembers}
@@ -853,8 +938,26 @@ export default function SplitGroupDetailPage() {
                     </>
                   )}
                 </button>
-              </div>
-            )}
+              ) : (
+                <button
+                  onClick={handleAddVirtualMember}
+                  disabled={!virtualMemberName.trim() || isAddingMembers}
+                  className="w-full py-3.5 bg-[#Cfb9a5] hover:bg-[#c0a996] disabled:bg-gray-300 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                >
+                  {isAddingMembers ? (
+                    <>
+                      <span className="material-icons-round animate-spin">sync</span>
+                      新增中...
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-icons-round">person_add</span>
+                      新增虛擬成員
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
           <style jsx>{`
             @keyframes slide-up {
