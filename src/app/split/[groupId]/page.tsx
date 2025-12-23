@@ -62,6 +62,16 @@ export default function SplitGroupDetailPage() {
   // Celebration state
   const [showCelebration, setShowCelebration] = useState(false);
 
+  // Member management states
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [availableMembers, setAvailableMembers] = useState<Array<{
+    user_id: string;
+    profile?: { display_name: string | null; avatar_url: string | null };
+  }>>([]);
+  const [selectedNewMembers, setSelectedNewMembers] = useState<string[]>([]);
+  const [isAddingMembers, setIsAddingMembers] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<{ userId: string; name: string } | null>(null);
+
   // 初始化 auth
   useEffect(() => {
     if (!isInitialized) {
@@ -196,6 +206,110 @@ export default function SplitGroupDetailPage() {
     const settlement = getSettlementForDebt(debt.from, debt.to);
     return settlement?.status === 'completed';
   }) && (currentSplitGroup?.debts?.length || 0) > 0;
+
+  // Fetch available members from trip (if linked) when opening add member modal
+  const fetchAvailableMembersFromTrip = useCallback(async () => {
+    if (!currentSplitGroup?.trip_id) {
+      setAvailableMembers([]);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/trips/${currentSplitGroup.trip_id}/members`);
+      const data = await res.json();
+      if (data.success) {
+        // Filter out existing split group members
+        const existingIds = currentSplitGroup.memberBalances?.map(m => m.userId) || [];
+        const available = (data.data || []).filter(
+          (m: { user_id: string }) => !existingIds.includes(m.user_id)
+        );
+        setAvailableMembers(available);
+      }
+    } catch (error) {
+      console.error('Failed to fetch trip members:', error);
+    }
+  }, [currentSplitGroup?.trip_id, currentSplitGroup?.memberBalances]);
+
+  // Open add member modal
+  const handleOpenAddMember = async () => {
+    setSelectedNewMembers([]);
+    await fetchAvailableMembersFromTrip();
+    setShowAddMemberModal(true);
+  };
+
+  // Toggle member selection
+  const toggleNewMember = (memberId: string) => {
+    setSelectedNewMembers(prev =>
+      prev.includes(memberId)
+        ? prev.filter(id => id !== memberId)
+        : [...prev, memberId]
+    );
+  };
+
+  // Add selected members
+  const handleAddMembers = async () => {
+    if (selectedNewMembers.length === 0) return;
+
+    setIsAddingMembers(true);
+    try {
+      const res = await fetch(`/api/split-groups/${groupId}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userIds: selectedNewMembers }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setToast({ isOpen: true, message: `已新增 ${selectedNewMembers.length} 位成員`, variant: 'success' });
+        setShowAddMemberModal(false);
+        // Refresh the group data
+        if (userId) {
+          fetchSplitGroupById(groupId, userId);
+        }
+      } else {
+        setToast({ isOpen: true, message: data.error || '新增失敗', variant: 'info' });
+      }
+    } catch (error) {
+      console.error('Add members error:', error);
+      setToast({ isOpen: true, message: '新增成員失敗', variant: 'info' });
+    } finally {
+      setIsAddingMembers(false);
+    }
+  };
+
+  // Remove member
+  const handleRemoveMember = async () => {
+    if (!memberToRemove) return;
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/split-groups/${groupId}/members?userId=${memberToRemove.userId}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setToast({ isOpen: true, message: '已移除成員', variant: 'success' });
+        setMemberToRemove(null);
+        // Refresh the group data
+        if (userId) {
+          fetchSplitGroupById(groupId, userId);
+        }
+      } else {
+        setToast({ isOpen: true, message: data.error || '移除失敗', variant: 'info' });
+      }
+    } catch (error) {
+      console.error('Remove member error:', error);
+      setToast({ isOpen: true, message: '移除成員失敗', variant: 'info' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Check if current user is owner
+  const isOwner = currentSplitGroup?.memberBalances?.some(
+    m => m.userId === userId && (m as { role?: string }).role === 'owner'
+  );
 
   if (isLoading || !currentSplitGroup) {
     return (
@@ -347,43 +461,77 @@ export default function SplitGroupDetailPage() {
         {/* 成員餘額 */}
         {activeTab === "members" && (
           <div className="space-y-3">
-            {group.memberBalances?.map((member) => (
-              <div
-                key={member.userId}
-                className="bg-white rounded-xl p-4 shadow-sm flex items-center gap-3"
+            {/* 新增成員按鈕 */}
+            {group.trip_id && (
+              <button
+                onClick={handleOpenAddMember}
+                className="w-full p-4 rounded-xl border-2 border-dashed border-gray-300 hover:border-[#Cfb9a5] text-gray-400 hover:text-[#Cfb9a5] flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
               >
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#Cfb9a5] to-[#B8A090] flex items-center justify-center overflow-hidden">
-                  {member.avatarUrl ? (
-                    <img
-                      src={member.avatarUrl}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="material-icons-round text-white">person</span>
+                <span className="material-icons-round">person_add</span>
+                <span className="font-medium">新增成員</span>
+              </button>
+            )}
+
+            {group.memberBalances?.map((member) => {
+              const memberRole = (member as { role?: string }).role;
+              const canRemove = member.userId !== userId && memberRole !== 'owner';
+
+              return (
+                <div
+                  key={member.userId}
+                  className="bg-white rounded-xl p-4 shadow-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#Cfb9a5] to-[#B8A090] flex items-center justify-center overflow-hidden">
+                      {member.avatarUrl ? (
+                        <img
+                          src={member.avatarUrl}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="material-icons-round text-white">person</span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-gray-800 flex items-center gap-1">
+                        {member.displayName || "成員"}
+                        {member.userId === userId && (
+                          <span className="text-xs text-[#Cfb9a5]">（你）</span>
+                        )}
+                        {memberRole === 'owner' && (
+                          <span className="text-xs bg-[#Cfb9a5]/20 text-[#Cfb9a5] px-1.5 py-0.5 rounded">建立者</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        已付 ${member.totalPaid.toLocaleString()} / 應付 ${member.totalOwed.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className={`text-right ${member.balance >= 0 ? "text-green-600" : "text-red-500"}`}>
+                      <p className="font-bold">
+                        {member.balance >= 0 ? "+" : "-"}${Math.abs(member.balance).toLocaleString()}
+                      </p>
+                      <p className="text-xs">
+                        {member.balance > 0 ? "可收" : member.balance < 0 ? "應付" : "已清"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 移除按鈕（只有 owner 可以移除其他人，且不能移除自己或其他 owner） */}
+                  {isOwner && canRemove && (
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <button
+                        onClick={() => setMemberToRemove({ userId: member.userId, name: member.displayName || '成員' })}
+                        className="text-sm text-red-400 hover:text-red-500 flex items-center gap-1"
+                      >
+                        <span className="material-icons-round text-sm">person_remove</span>
+                        移除成員
+                      </button>
+                    </div>
                   )}
                 </div>
-                <div className="flex-1">
-                  <p className="font-bold text-gray-800">
-                    {member.displayName || "成員"}
-                    {member.userId === userId && (
-                      <span className="ml-1 text-xs text-[#Cfb9a5]">（你）</span>
-                    )}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    已付 ${member.totalPaid.toLocaleString()} / 應付 ${member.totalOwed.toLocaleString()}
-                  </p>
-                </div>
-                <div className={`text-right ${member.balance >= 0 ? "text-green-600" : "text-red-500"}`}>
-                  <p className="font-bold">
-                    {member.balance >= 0 ? "+" : "-"}${Math.abs(member.balance).toLocaleString()}
-                  </p>
-                  <p className="text-xs">
-                    {member.balance > 0 ? "可收" : member.balance < 0 ? "應付" : "已清"}
-                  </p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -609,6 +757,129 @@ export default function SplitGroupDetailPage() {
           `}</style>
         </div>
       )}
+
+      {/* Add Member Modal */}
+      {showAddMemberModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowAddMemberModal(false)}
+          />
+          <div className="relative w-full max-h-[80vh] bg-white rounded-t-3xl overflow-hidden animate-slide-up">
+            <div className="p-5 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800">新增成員</h3>
+                  <p className="text-xs text-gray-500">從行程成員中選擇</p>
+                </div>
+                <button
+                  onClick={() => setShowAddMemberModal(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
+                >
+                  <span className="material-icons-round text-gray-600">close</span>
+                </button>
+              </div>
+            </div>
+            <div className="p-5 space-y-3 overflow-y-auto max-h-[50vh]">
+              {availableMembers.length === 0 ? (
+                <div className="text-center py-8">
+                  <span className="material-icons-round text-4xl text-gray-300 mb-2">group</span>
+                  <p className="text-gray-500">沒有可新增的成員</p>
+                  <p className="text-sm text-gray-400">所有行程成員都已加入分帳群組</p>
+                </div>
+              ) : (
+                availableMembers.map((member) => (
+                  <button
+                    key={member.user_id}
+                    onClick={() => toggleNewMember(member.user_id)}
+                    className={`w-full p-4 rounded-xl border flex items-center gap-3 transition-all ${
+                      selectedNewMembers.includes(member.user_id)
+                        ? "border-[#Cfb9a5] bg-[#Cfb9a5]/10"
+                        : "border-gray-200 bg-white"
+                    }`}
+                  >
+                    <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden">
+                      {member.profile?.avatar_url ? (
+                        <img
+                          src={member.profile.avatar_url}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#Cfb9a5] to-[#B8A090]">
+                          <span className="material-icons-round text-white">person</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-gray-800">
+                        {member.profile?.display_name || "成員"}
+                      </p>
+                    </div>
+                    <span
+                      className={`material-icons-round text-2xl ${
+                        selectedNewMembers.includes(member.user_id)
+                          ? "text-[#Cfb9a5]"
+                          : "text-gray-300"
+                      }`}
+                    >
+                      {selectedNewMembers.includes(member.user_id)
+                        ? "check_circle"
+                        : "radio_button_unchecked"}
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+            {availableMembers.length > 0 && (
+              <div className="p-5 border-t border-gray-100">
+                <button
+                  onClick={handleAddMembers}
+                  disabled={selectedNewMembers.length === 0 || isAddingMembers}
+                  className="w-full py-3.5 bg-[#Cfb9a5] hover:bg-[#c0a996] disabled:bg-gray-300 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                >
+                  {isAddingMembers ? (
+                    <>
+                      <span className="material-icons-round animate-spin">sync</span>
+                      新增中...
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-icons-round">person_add</span>
+                      新增 {selectedNewMembers.length > 0 ? `(${selectedNewMembers.length} 人)` : ''}
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+          <style jsx>{`
+            @keyframes slide-up {
+              from { transform: translateY(100%); }
+              to { transform: translateY(0); }
+            }
+            .animate-slide-up {
+              animation: slide-up 0.3s ease-out;
+            }
+          `}</style>
+        </div>
+      )}
+
+      {/* Remove Member Confirm Modal */}
+      <ConfirmModal
+        isOpen={!!memberToRemove}
+        onClose={() => setMemberToRemove(null)}
+        onConfirm={handleRemoveMember}
+        title="移除成員？"
+        description={`確定要將「${memberToRemove?.name}」從分帳群組中移除嗎？移除後對方將無法看到此群組的分帳記錄。`}
+        confirmText="移除"
+        cancelText="取消"
+        isLoading={isSubmitting}
+        variant="danger"
+        icon={
+          <span className="material-icons-round text-3xl text-red-500">person_remove</span>
+        }
+      />
     </div>
   );
 }

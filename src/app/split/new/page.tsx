@@ -19,6 +19,7 @@ function NewSplitGroupContent() {
   const [selectedTripId, setSelectedTripId] = useState<string | null>(tripIdFromUrl);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [showTripSelector, setShowTripSelector] = useState(false);
+  const [showMemberSelector, setShowMemberSelector] = useState(false);
 
   // 初始化 auth
   useEffect(() => {
@@ -168,54 +169,50 @@ function NewSplitGroupContent() {
             <label className="text-sm font-bold text-gray-600 mb-2 block">
               選擇成員
             </label>
-            <p className="text-xs text-gray-500 mb-3">
-              選擇要加入這個分帳群組的旅伴（可以之後再邀請）
-            </p>
-            <div className="space-y-2">
-              {members
-                .filter((m) => m.user_id !== userId)
-                .map((member) => (
-                  <button
-                    key={member.user_id}
-                    onClick={() => toggleMember(member.user_id)}
-                    className={`w-full p-3 rounded-xl border flex items-center gap-3 transition-all ${
-                      selectedMembers.includes(member.user_id)
-                        ? "border-[#Cfb9a5] bg-[#Cfb9a5]/10"
-                        : "border-gray-200 bg-white"
-                    }`}
-                  >
-                    <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
-                      {member.profile?.avatar_url ? (
-                        <img
-                          src={member.profile.avatar_url}
-                          alt=""
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#Cfb9a5] to-[#B8A090]">
-                          <span className="material-icons-round text-white">person</span>
+            <button
+              onClick={() => setShowMemberSelector(true)}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-left flex items-center justify-between"
+            >
+              {selectedMembers.length > 0 ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex -space-x-2">
+                    {selectedMembers.slice(0, 4).map((memberId) => {
+                      const member = members.find((m) => m.user_id === memberId);
+                      return (
+                        <div
+                          key={memberId}
+                          className="w-8 h-8 rounded-full bg-gradient-to-br from-[#Cfb9a5] to-[#B8A090] border-2 border-white flex items-center justify-center overflow-hidden"
+                        >
+                          {member?.profile?.avatar_url ? (
+                            <img
+                              src={member.profile.avatar_url}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="material-icons-round text-white text-sm">person</span>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="font-medium text-gray-800">
-                        {member.nickname || member.profile?.display_name || "旅伴"}
-                      </p>
-                    </div>
-                    <span
-                      className={`material-icons-round ${
-                        selectedMembers.includes(member.user_id)
-                          ? "text-[#Cfb9a5]"
-                          : "text-gray-300"
-                      }`}
-                    >
-                      {selectedMembers.includes(member.user_id)
-                        ? "check_circle"
-                        : "radio_button_unchecked"}
-                    </span>
-                  </button>
-                ))}
-            </div>
+                      );
+                    })}
+                    {selectedMembers.length > 4 && (
+                      <div className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center">
+                        <span className="text-xs font-bold text-gray-600">+{selectedMembers.length - 4}</span>
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-sm text-gray-600">
+                    已選擇 {selectedMembers.length} 人
+                  </span>
+                </div>
+              ) : (
+                <span className="text-gray-400">點擊選擇要加入的旅伴</span>
+              )}
+              <span className="material-icons-round text-gray-400">chevron_right</span>
+            </button>
+            <p className="text-xs text-gray-500 mt-2">
+              可以之後再邀請更多成員
+            </p>
           </div>
         )}
       </div>
@@ -304,6 +301,92 @@ function NewSplitGroupContent() {
                   </button>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 成員選擇器 Modal */}
+      {showMemberSelector && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowMemberSelector(false)}
+          />
+          <div className="relative w-full max-h-[80vh] bg-white rounded-t-3xl overflow-hidden animate-slide-up">
+            <div className="p-5 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800">選擇成員</h3>
+                  <p className="text-xs text-gray-500">已選擇 {selectedMembers.length} 人</p>
+                </div>
+                <button
+                  onClick={() => setShowMemberSelector(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
+                >
+                  <span className="material-icons-round text-gray-600">close</span>
+                </button>
+              </div>
+            </div>
+            <div className="p-5 space-y-3 overflow-y-auto max-h-[50vh]">
+              {members.filter((m) => m.user_id !== userId).length === 0 ? (
+                <p className="text-center text-gray-500 py-8">
+                  這個行程還沒有其他成員
+                </p>
+              ) : (
+                members
+                  .filter((m) => m.user_id !== userId)
+                  .map((member) => (
+                    <button
+                      key={member.user_id}
+                      onClick={() => toggleMember(member.user_id)}
+                      className={`w-full p-4 rounded-xl border flex items-center gap-3 transition-all ${
+                        selectedMembers.includes(member.user_id)
+                          ? "border-[#Cfb9a5] bg-[#Cfb9a5]/10"
+                          : "border-gray-200 bg-white"
+                      }`}
+                    >
+                      <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden">
+                        {member.profile?.avatar_url ? (
+                          <img
+                            src={member.profile.avatar_url}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#Cfb9a5] to-[#B8A090]">
+                            <span className="material-icons-round text-white">person</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="font-bold text-gray-800">
+                          {member.nickname || member.profile?.display_name || "旅伴"}
+                        </p>
+                      </div>
+                      <span
+                        className={`material-icons-round text-2xl ${
+                          selectedMembers.includes(member.user_id)
+                            ? "text-[#Cfb9a5]"
+                            : "text-gray-300"
+                        }`}
+                      >
+                        {selectedMembers.includes(member.user_id)
+                          ? "check_circle"
+                          : "radio_button_unchecked"}
+                      </span>
+                    </button>
+                  ))
+              )}
+            </div>
+            <div className="p-5 border-t border-gray-100">
+              <button
+                onClick={() => setShowMemberSelector(false)}
+                className="w-full py-3.5 bg-[#Cfb9a5] hover:bg-[#c0a996] text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+              >
+                <span className="material-icons-round">check</span>
+                確定 ({selectedMembers.length} 人)
+              </button>
             </div>
           </div>
         </div>
