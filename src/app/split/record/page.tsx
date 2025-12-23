@@ -297,7 +297,7 @@ function SplitRecordContent() {
                         )}
                       </div>
                       <span className={isPayer ? 'text-sm font-bold text-[#5C5C5C]' : 'text-sm text-[#949494]'}>
-                        {member.user_id === userId ? '我' : member.user?.display_name || '成員'}
+                        {member.user_id === userId ? '我' : ((member as { is_virtual?: boolean; display_name?: string }).is_virtual ? (member as { display_name?: string }).display_name : member.user?.display_name) || '成員'}
                       </span>
                     </button>
                   );
@@ -335,7 +335,7 @@ function SplitRecordContent() {
                       )}
                     </div>
                     <span className="flex-1 text-left font-medium text-gray-800">
-                      {member.user_id === userId ? '我' : member.user?.display_name || '成員'}
+                      {member.user_id === userId ? '我' : ((member as { is_virtual?: boolean; display_name?: string }).is_virtual ? (member as { display_name?: string }).display_name : member.user?.display_name) || '成員'}
                     </span>
                     <span className={`material-icons-round ${isSelected ? 'text-[#A5BCCF]' : 'text-gray-300'}`}>
                       {isSelected ? 'check_circle' : 'radio_button_unchecked'}

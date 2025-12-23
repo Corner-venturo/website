@@ -701,10 +701,13 @@ export const useTripStore = create<TripState>()(
     }
   },
 
-  fetchSplitGroupById: async (groupId: string, userId?: string) => {
-    // 只有沒有快取時才顯示載入中
-    const hasCache = get().currentSplitGroup?.id === groupId
-    if (!hasCache) {
+  fetchSplitGroupById: async (groupId: string, userId?: string, forceRefresh = false) => {
+    // 如果有快取且不是強制刷新，背景靜默刷新
+    const cachedGroup = get().currentSplitGroup
+    const hasValidCache = cachedGroup?.id === groupId
+
+    // 只有完全沒有快取或強制刷新時才顯示載入中
+    if (!hasValidCache && !forceRefresh) {
       set({ isLoading: true, error: null })
     }
 
@@ -724,7 +727,13 @@ export const useTripStore = create<TripState>()(
       set({ currentSplitGroup: data.data, isLoading: false })
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '載入分帳群組失敗'
-      set({ isLoading: false, error: message })
+      // 如果有快取，保持快取資料，只記錄錯誤
+      if (hasValidCache) {
+        set({ isLoading: false })
+        console.error('Background refresh failed:', message)
+      } else {
+        set({ isLoading: false, error: message })
+      }
     }
   },
 

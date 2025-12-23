@@ -345,7 +345,25 @@ export default function SplitGroupDetailPage() {
     m => m.userId === userId && m.role === 'owner'
   );
 
-  if (isLoading || !currentSplitGroup) {
+  // 只有在沒有任何快取資料時才顯示完整載入畫面
+  // 如果有快取（即使 ID 不同），先顯示舊資料，背景刷新
+  const showFullLoading = isLoading && !currentSplitGroup;
+
+  if (showFullLoading) {
+    return (
+      <div className="min-h-[100dvh] bg-[#F0EEE6] flex items-center justify-center">
+        <div className="text-center">
+          <span className="material-icons-round text-4xl text-[#Cfb9a5] animate-spin">
+            sync
+          </span>
+          <p className="mt-2 text-gray-500">載入中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 如果有快取但 ID 不匹配，仍然顯示快取，等待背景刷新
+  if (!currentSplitGroup) {
     return (
       <div className="min-h-[100dvh] bg-[#F0EEE6] flex items-center justify-center">
         <div className="text-center">
@@ -363,6 +381,13 @@ export default function SplitGroupDetailPage() {
 
   return (
     <div className="min-h-[100dvh] bg-[#F0EEE6] font-sans pb-32">
+      {/* 背景刷新指示器 */}
+      {isLoading && currentSplitGroup && (
+        <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-[#Cfb9a5]/20">
+          <div className="h-full bg-[#Cfb9a5] animate-pulse" style={{ width: '100%' }} />
+        </div>
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-20 bg-[#F0EEE6]/95 backdrop-blur-sm px-5 py-4 flex items-center gap-4 border-b border-gray-200/50">
         <Link
