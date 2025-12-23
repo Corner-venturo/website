@@ -848,6 +848,7 @@ export default function OrderDetailPage() {
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
   const [editingTimeItemId, setEditingTimeItemId] = useState<string | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null); // 正在編輯的項目 ID
   const [showScanner, setShowScanner] = useState(false);
   const [showMemberList, setShowMemberList] = useState(false);
   const [newItem, setNewItem] = useState({
@@ -1451,7 +1452,11 @@ export default function OrderDetailPage() {
             </div>
             <div className="flex-1">
               <button
-                onClick={() => setShowAddItemModal(true)}
+                onClick={() => {
+                  setEditingItemId(null); // 確保是新增模式
+                  setNewItem({ time: "", title: "", description: "", category: "景點" });
+                  setShowAddItemModal(true);
+                }}
                 className="w-full py-3 rounded-full border border-dashed border-[#Cfb9a5]/50 text-[#Cfb9a5] bg-[#Cfb9a5]/5 hover:bg-[#Cfb9a5]/10 transition-all flex items-center justify-center gap-2 font-bold text-sm shadow-sm active:scale-[0.98]"
               >
                 <span className="material-icons-round text-[20px]">add_circle</span>
@@ -1814,6 +1819,8 @@ export default function OrderDetailPage() {
                 <button
                   onClick={() => {
                     setShowItemMenu(false);
+                    // 設定編輯模式
+                    setEditingItemId(selectedItem.id);
                     // 預填表單資料
                     setNewItem({
                       time: selectedItem.time,
@@ -1867,9 +1874,14 @@ export default function OrderDetailPage() {
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col pointer-events-auto animate-fade-in">
               {/* 標題列 */}
               <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
-                <h2 className="text-lg font-bold text-gray-800">新增行程項目</h2>
+                <h2 className="text-lg font-bold text-gray-800">
+                  {editingItemId ? '編輯行程項目' : '新增行程項目'}
+                </h2>
                 <button
-                  onClick={() => setShowAddItemModal(false)}
+                  onClick={() => {
+                    setShowAddItemModal(false);
+                    setEditingItemId(null); // 關閉時清除編輯狀態
+                  }}
                   className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
                 >
                   <span className="material-icons-round text-gray-500 text-[18px]">close</span>
@@ -1963,21 +1975,37 @@ export default function OrderDetailPage() {
 
                     // 如果是資料庫行程，寫入資料庫
                     if (!mockOrder && currentTrip) {
-                      const result = await createItineraryItem({
-                        trip_id: orderId,
-                        day_number: selectedDay,
-                        item_date: itemDate.toISOString().split('T')[0],
-                        start_time: newItem.time + ':00',
-                        title: newItem.title,
-                        description: newItem.description || null,
-                        category: newItem.category,
-                        icon: 'place',
-                        color: 'primary',
-                      });
+                      if (editingItemId) {
+                        // 編輯模式：更新現有項目
+                        const result = await updateItineraryItem(editingItemId, {
+                          start_time: newItem.time + ':00',
+                          title: newItem.title,
+                          description: newItem.description || null,
+                          category: newItem.category,
+                        });
 
-                      if (!result.success) {
-                        alert(result.error || '新增失敗');
-                        return;
+                        if (!result.success) {
+                          alert(result.error || '更新失敗');
+                          return;
+                        }
+                      } else {
+                        // 新增模式：建立新項目
+                        const result = await createItineraryItem({
+                          trip_id: orderId,
+                          day_number: selectedDay,
+                          item_date: itemDate.toISOString().split('T')[0],
+                          start_time: newItem.time + ':00',
+                          title: newItem.title,
+                          description: newItem.description || null,
+                          category: newItem.category,
+                          icon: 'place',
+                          color: 'primary',
+                        });
+
+                        if (!result.success) {
+                          alert(result.error || '新增失敗');
+                          return;
+                        }
                       }
                       // 資料庫已更新，itineraryItems 會自動更新
                     } else {
@@ -2006,13 +2034,16 @@ export default function OrderDetailPage() {
                     }
 
                     setNewItem({ time: "", title: "", description: "", category: "景點" });
+                    setEditingItemId(null); // 清除編輯狀態
                     setShowAddItemModal(false);
                   }}
                   disabled={!newItem.time || !newItem.title}
                   className="w-full py-3.5 bg-[#Cfb9a5] hover:bg-[#c0a996] disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-[#Cfb9a5]/30 disabled:shadow-none"
                 >
-                  <span className="material-icons-round text-[20px]">add</span>
-                  新增行程
+                  <span className="material-icons-round text-[20px]">
+                    {editingItemId ? 'check' : 'add'}
+                  </span>
+                  {editingItemId ? '儲存變更' : '新增行程'}
                 </button>
               </div>
             </div>
@@ -2047,6 +2078,8 @@ export default function OrderDetailPage() {
                 <button
                   onClick={() => {
                     setShowHeaderMenu(false);
+                    setEditingItemId(null); // 確保是新增模式
+                    setNewItem({ time: "", title: "", description: "", category: "景點" });
                     setShowAddItemModal(true);
                   }}
                   className="w-full flex items-center gap-4 p-4 rounded-2xl bg-[#Cfb9a5]/10 hover:bg-[#Cfb9a5]/20 transition-colors active:scale-[0.98]"
