@@ -133,6 +133,7 @@ export interface SplitGroupDetail extends SplitGroup {
     userId: string
     displayName: string | null
     avatarUrl: string | null
+    role: 'owner' | 'admin' | 'member'
     totalPaid: number
     totalOwed: number
     balance: number

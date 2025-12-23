@@ -67,7 +67,7 @@ export async function GET(
       .order('expense_date', { ascending: false })
 
     // 計算每個成員的餘額
-    const memberBalances = (group.members || []).map((member: { user_id: string; user: { display_name: string; avatar_url: string } }) => {
+    const memberBalances = (group.members || []).map((member: { user_id: string; role: string; user: { display_name: string; avatar_url: string } }) => {
       const memberId = member.user_id
 
       // 該成員支付的總額
@@ -89,6 +89,7 @@ export async function GET(
         userId: memberId,
         displayName: member.user?.display_name,
         avatarUrl: member.user?.avatar_url,
+        role: member.role, // 新增 role 欄位
         totalPaid,
         totalOwed,
         balance,

@@ -308,7 +308,7 @@ export default function SplitGroupDetailPage() {
 
   // Check if current user is owner
   const isOwner = currentSplitGroup?.memberBalances?.some(
-    m => m.userId === userId && (m as { role?: string }).role === 'owner'
+    m => m.userId === userId && m.role === 'owner'
   );
 
   if (isLoading || !currentSplitGroup) {
@@ -473,8 +473,7 @@ export default function SplitGroupDetailPage() {
             )}
 
             {group.memberBalances?.map((member) => {
-              const memberRole = (member as { role?: string }).role;
-              const canRemove = member.userId !== userId && memberRole !== 'owner';
+              const canRemove = member.userId !== userId && member.role !== 'owner';
 
               return (
                 <div
@@ -499,7 +498,7 @@ export default function SplitGroupDetailPage() {
                         {member.userId === userId && (
                           <span className="text-xs text-[#Cfb9a5]">（你）</span>
                         )}
-                        {memberRole === 'owner' && (
+                        {member.role === 'owner' && (
                           <span className="text-xs bg-[#Cfb9a5]/20 text-[#Cfb9a5] px-1.5 py-0.5 rounded">建立者</span>
                         )}
                       </p>
