@@ -65,7 +65,7 @@ export default function HomePage() {
     <div className="font-display text-charcoal antialiased bg-bone-white h-screen overflow-hidden">
       <div className="relative h-full w-full flex flex-col overflow-y-auto">
         {/* Header + Category Tabs Container */}
-        <div className="sticky top-0 z-50 bg-bone-white/95 backdrop-blur-md">
+        <div className="sticky top-0 z-50 bg-bone-white">
           {/* Header */}
           <header className="pt-12 pb-3 px-4 border-b border-[var(--divider)]">
             <div className="flex justify-between items-center max-w-md mx-auto relative">

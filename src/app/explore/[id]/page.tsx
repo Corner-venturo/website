@@ -211,7 +211,7 @@ export default function PostDetailPage() {
   return (
     <div className="font-display text-charcoal antialiased bg-bone-white min-h-screen pb-20">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-bone-white/95 backdrop-blur-md border-b border-[var(--divider)]">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-bone-white border-b border-[var(--divider)]">
         <div className="pt-12 pb-3 px-4 max-w-md mx-auto">
           <div className="flex items-center justify-between">
             <button

@@ -138,7 +138,7 @@ export default function TravelerProfilePage() {
   return (
     <div className="font-display text-charcoal antialiased bg-bone-white min-h-screen">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-bone-white/80 backdrop-blur-md pt-12 pb-3 px-6">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-bone-white border-b border-[var(--divider)] pt-12 pb-3 px-6">
         <div className="flex justify-between items-center max-w-md mx-auto">
           <button
             onClick={() => router.back()}
