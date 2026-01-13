@@ -235,9 +235,9 @@ export default function PostDetailPage() {
       </header>
 
       {/* Content */}
-      <main className="pt-[88px] max-w-md mx-auto">
+      <main className="pt-[88px] px-3 max-w-md mx-auto">
         {/* Image Carousel */}
-        <div className="relative aspect-square bg-[var(--divider-light)]">
+        <div className="relative aspect-square bg-[var(--divider-light)] rounded-lg overflow-hidden">
           <Image
             src={post.images[currentImageIndex]}
             alt={post.title}
