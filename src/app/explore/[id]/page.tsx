@@ -216,7 +216,7 @@ export default function PostDetailPage() {
           <div className="flex items-center justify-between relative">
             <button
               onClick={() => router.back()}
-              className="flex items-center justify-center text-charcoal"
+              className="flex items-center justify-start text-charcoal"
             >
               <span className="material-symbols-outlined text-[24px] font-light">arrow_back</span>
             </button>
@@ -226,17 +226,12 @@ export default function PostDetailPage() {
               </p>
               <h1 className="text-[15px] font-medium tracking-[0.1em] text-charcoal">探索生活</h1>
             </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={handleShare}
-                className="flex items-center justify-center text-charcoal"
-              >
-                <span className="material-symbols-outlined text-[24px] font-light">share</span>
-              </button>
-              <button className="flex items-center justify-center text-charcoal">
-                <span className="material-symbols-outlined text-[24px] font-light">more_horiz</span>
-              </button>
-            </div>
+            <button
+              onClick={handleShare}
+              className="flex items-center justify-end text-charcoal"
+            >
+              <span className="material-symbols-outlined text-[24px] font-light">share</span>
+            </button>
           </div>
         </div>
       </header>

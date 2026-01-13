@@ -143,7 +143,7 @@ export default function TravelerProfilePage() {
           <div className="flex justify-between items-center relative">
             <button
               onClick={() => router.back()}
-              className="flex items-center justify-center text-charcoal"
+              className="flex items-center justify-start text-charcoal"
             >
               <span className="material-symbols-outlined text-[24px] font-light">arrow_back</span>
             </button>
@@ -155,7 +155,7 @@ export default function TravelerProfilePage() {
             </div>
             <button
               onClick={handleShare}
-              className="flex items-center justify-center text-charcoal"
+              className="flex items-center justify-end text-charcoal"
             >
               <span className="material-symbols-outlined text-[24px] font-light">share</span>
             </button>
