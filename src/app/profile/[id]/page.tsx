@@ -138,28 +138,26 @@ export default function TravelerProfilePage() {
   return (
     <div className="font-display text-charcoal antialiased bg-bone-white min-h-screen">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-bone-white border-b border-[var(--divider)]">
-        <div className="pt-12 pb-3 px-4 max-w-md mx-auto">
-          <div className="flex justify-between items-center relative">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center justify-start text-charcoal"
-            >
-              <span className="material-symbols-outlined text-[24px] font-light">arrow_back</span>
-            </button>
-            <div className="absolute left-1/2 -translate-x-1/2 text-center">
-              <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-ocean-teal leading-none mb-0.5">
-                Venturo
-              </p>
-              <h1 className="text-[15px] font-medium tracking-[0.1em] text-charcoal">旅人誌</h1>
-            </div>
-            <button
-              onClick={handleShare}
-              className="flex items-center justify-end text-charcoal"
-            >
-              <span className="material-symbols-outlined text-[24px] font-light">share</span>
-            </button>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-bone-white pt-12 pb-3 px-4 border-b border-[var(--divider)]">
+        <div className="flex justify-between items-center max-w-md mx-auto relative">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center justify-start text-charcoal"
+          >
+            <span className="material-symbols-outlined text-[24px] font-light">arrow_back</span>
+          </button>
+          <div className="absolute left-1/2 -translate-x-1/2 text-center">
+            <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-ocean-teal leading-none mb-0.5">
+              Venturo
+            </p>
+            <h1 className="text-[15px] font-medium tracking-[0.1em] text-charcoal">旅人誌</h1>
           </div>
+          <button
+            onClick={handleShare}
+            className="flex items-center justify-end text-charcoal"
+          >
+            <span className="material-symbols-outlined text-[24px] font-light">share</span>
+          </button>
         </div>
       </header>
 
