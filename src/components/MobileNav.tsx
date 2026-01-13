@@ -1,65 +1,87 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 interface NavItem {
-  href: string;
-  icon: string;
-  activeIcon: string;
-  label: string;
+  href: string
+  icon: string
+  activeIcon: string
+  label: string
 }
 
 const navItems: NavItem[] = [
   { href: '/', icon: 'home', activeIcon: 'home', label: '首頁' },
-  // { href: '/explore', icon: 'explore', activeIcon: 'explore', label: '探索' }, // 暫時隱藏
-  { href: '/split', icon: 'account_balance_wallet', activeIcon: 'account_balance_wallet', label: '分帳' },
-  { href: '/orders', icon: 'confirmation_number', activeIcon: 'confirmation_number', label: '訂單' },
-  { href: '/my', icon: 'person_outline', activeIcon: 'person', label: '我的' },
-];
+  { href: '/explore', icon: 'explore', activeIcon: 'explore', label: '發現' },
+  { href: '/my/chat', icon: 'chat_bubble', activeIcon: 'chat_bubble', label: '訊息' },
+  { href: '/my', icon: 'person', activeIcon: 'person', label: '我的' },
+]
 
 export default function MobileNav() {
-  const pathname = usePathname();
-
-  // 不顯示漸變遮罩的頁面（首頁、探索頁、有自己底部按鈕的頁面）
-  const hideGradientPages = ['/', '/explore', '/my/footprint/record'];
-  const showGradient = !hideGradientPages.some(page => pathname === page || pathname.startsWith(page + '/'));
+  const pathname = usePathname()
 
   return (
-    <>
-      {/* 漸變遮罩 */}
-      {showGradient && (
-        <div className="fixed bottom-0 left-0 right-0 h-44 bg-gradient-to-t from-[#F0EEE6] from-30% via-[#F0EEE6]/90 via-50% to-transparent pointer-events-none z-40 xl:hidden" />
-      )}
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#E2E8F0]">
+      <div className="max-w-md mx-auto h-[72px] flex items-center justify-around px-2">
+        {/* Home */}
+        <Link
+          href="/"
+          className={`flex flex-col items-center gap-1 ${
+            pathname === '/' ? 'text-primary' : 'text-[#64748B]'
+          }`}
+        >
+          <span className={`material-symbols-outlined text-[24px] ${pathname === '/' ? 'font-medium' : 'font-light'}`}>
+            home
+          </span>
+          <span className={`text-[10px] ${pathname === '/' ? 'font-bold' : 'font-medium'}`}>首頁</span>
+        </Link>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 xl:hidden flex justify-center pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-        <div className="bg-white/85 backdrop-blur-xl rounded-full px-6 py-3.5 flex items-center gap-6 shadow-[0_8px_32px_rgba(0,0,0,0.18)] border border-white/40">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href ||
-            (item.href !== '/' && pathname.startsWith(item.href));
+        {/* Explore */}
+        <Link
+          href="/explore"
+          className={`flex flex-col items-center gap-1 ${
+            pathname.startsWith('/explore') ? 'text-primary' : 'text-[#64748B]'
+          }`}
+        >
+          <span className={`material-symbols-outlined text-[24px] ${pathname.startsWith('/explore') ? 'font-medium' : 'font-light'}`}>
+            explore
+          </span>
+          <span className={`text-[10px] ${pathname.startsWith('/explore') ? 'font-bold' : 'font-medium'}`}>發現</span>
+        </Link>
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`transition-colors relative ${
-                isActive
-                  ? 'text-primary transform scale-110'
-                  : 'text-gray-400 hover:text-gray-600'
-              }`}
-              aria-label={item.label}
-            >
-              <span className="material-icons-round text-2xl">
-                {isActive ? item.activeIcon : item.icon}
-              </span>
-              {isActive && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-morandi-pink rounded-full border border-white" />
-              )}
-            </Link>
-          );
-        })}
+        {/* Add Button */}
+        <Link href="/explore/create" className="flex flex-col items-center justify-center">
+          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white">
+            <span className="material-symbols-outlined !text-[24px]">add</span>
+          </div>
+        </Link>
+
+        {/* Messages */}
+        <Link
+          href="/my/chat"
+          className={`flex flex-col items-center gap-1 ${
+            pathname.startsWith('/my/chat') ? 'text-primary' : 'text-[#64748B]'
+          }`}
+        >
+          <span className={`material-symbols-outlined text-[24px] ${pathname.startsWith('/my/chat') ? 'font-medium' : 'font-light'}`}>
+            chat_bubble
+          </span>
+          <span className={`text-[10px] ${pathname.startsWith('/my/chat') ? 'font-bold' : 'font-medium'}`}>訊息</span>
+        </Link>
+
+        {/* Profile */}
+        <Link
+          href="/my"
+          className={`flex flex-col items-center gap-1 ${
+            pathname === '/my' || (pathname.startsWith('/my') && !pathname.startsWith('/my/chat')) ? 'text-primary' : 'text-[#64748B]'
+          }`}
+        >
+          <span className={`material-symbols-outlined text-[24px] ${pathname === '/my' || (pathname.startsWith('/my') && !pathname.startsWith('/my/chat')) ? 'font-medium' : 'font-light'}`}>
+            person
+          </span>
+          <span className={`text-[10px] ${pathname === '/my' || (pathname.startsWith('/my') && !pathname.startsWith('/my/chat')) ? 'font-bold' : 'font-medium'}`}>我的</span>
+        </Link>
       </div>
-      </nav>
-    </>
-  );
+    </nav>
+  )
 }

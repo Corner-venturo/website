@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import MobileNav from '@/components/MobileNav'
 import { useAuthStore } from '@/stores/auth-store'
 
-const categories = ['熱門', '露營', '美食', '攝影', '城市漫步', '秘境探索']
+const categories = ['全部', '行程', '創作者', '主題', '活動']
 
-const posts = [
+const searchResults = [
   {
     id: 1,
     title: '奢華露營：星空下的秘境體驗',
@@ -20,54 +21,57 @@ const posts = [
   },
   {
     id: 2,
-    title: '巷弄裡的琥珀色時光',
-    image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&h=600&fit=crop',
-    author: 'Coffee_Soul',
+    title: '森林露營小食指南：大自然的美味時光',
+    image: 'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=600&h=600&fit=crop',
+    author: 'Outdoor_Chef',
     avatar: '',
-    likes: '2.4k',
+    likes: '1.5k',
     aspectRatio: '1/1',
   },
   {
     id: 3,
-    title: '京都晨間：尋找城市最深處的寧靜',
-    image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=600&h=800&fit=crop',
-    author: 'Ariel_Travels',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-    likes: '1.2k',
-    aspectRatio: '3/4',
+    title: '湖畔露營：晨霧中的寧靜時刻',
+    image: 'https://images.unsplash.com/photo-1487730116445-4f28e6f8b176?w=600&h=600&fit=crop',
+    author: 'Nature_Soul',
+    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
+    likes: '3.2k',
+    aspectRatio: '1/1',
   },
   {
     id: 4,
-    title: '台北深夜食堂巡禮',
-    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&h=600&fit=crop',
-    author: 'Food_Hunter',
+    title: '山谷秘境：被遺忘的露營天堂',
+    image: 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=600&h=800&fit=crop',
+    author: 'Wild_Explorer',
     avatar: '',
-    likes: '3.5k',
-    aspectRatio: '1/1',
-  },
-  {
-    id: 5,
-    title: '蘭嶼：遇見最純粹的藍',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&h=800&fit=crop',
-    author: 'Island_Life',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
-    likes: '5.2k',
+    likes: '4.1k',
     aspectRatio: '3/4',
   },
   {
-    id: 6,
-    title: '底片攝影：記錄生活的溫度',
-    image: 'https://images.unsplash.com/photo-1495745966610-2a67f2297e5e?w=600&h=600&fit=crop',
-    author: 'Film_Daily',
-    avatar: '',
-    likes: '1.8k',
+    id: 5,
+    title: '露營裝備清單：從入門到專業',
+    image: 'https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?w=600&h=600&fit=crop',
+    author: 'Gear_Pro',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
+    likes: '987',
     aspectRatio: '1/1',
+  },
+  {
+    id: 6,
+    title: '親子露營：與孩子一起探索自然',
+    image: 'https://images.unsplash.com/photo-1537905569824-f89f14cceb68?w=600&h=800&fit=crop',
+    author: 'Family_Camp',
+    avatar: '',
+    likes: '2.1k',
+    aspectRatio: '3/4',
   },
 ]
 
-export default function ExplorePage() {
+function ExploreSearchContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const { initialize, isInitialized } = useAuthStore()
-  const [activeCategory, setActiveCategory] = useState('熱門')
+  const [activeCategory, setActiveCategory] = useState('全部')
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '露營')
 
   useEffect(() => {
     if (!isInitialized) {
@@ -76,33 +80,44 @@ export default function ExplorePage() {
   }, [initialize, isInitialized])
 
   // Split posts into two columns for masonry effect
-  const leftPosts = posts.filter((_, i) => i % 2 === 0)
-  const rightPosts = posts.filter((_, i) => i % 2 === 1)
+  const leftPosts = searchResults.filter((_, i) => i % 2 === 0)
+  const rightPosts = searchResults.filter((_, i) => i % 2 === 1)
 
   return (
     <div className="font-display text-primary antialiased bg-[#F4F5F7]">
       <div className="relative min-h-screen w-full flex flex-col">
-        {/* Header */}
+        {/* Header with Search */}
         <header className="fixed top-0 left-0 right-0 z-50 bg-[#F4F5F7] border-b border-[#E2E8F0] pt-12 pb-3 px-4">
-          <div className="flex justify-between items-center max-w-md mx-auto">
-            <h1 className="text-[20px] font-bold tracking-tight">發現</h1>
-            <Link href="/explore/search" className="flex items-center justify-end text-primary">
-              <span className="material-symbols-outlined text-[24px] font-light">search</span>
-            </Link>
+          <div className="flex items-center gap-3 max-w-md mx-auto">
+            <button onClick={() => router.back()} className="text-primary">
+              <span className="material-symbols-outlined text-[24px] font-light">arrow_back</span>
+            </button>
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="搜尋行程、創作者、主題..."
+                className="w-full h-10 pl-10 pr-4 rounded-full bg-white border border-[#E2E8F0] text-[14px] focus:outline-none focus:border-primary"
+              />
+              <span className="material-symbols-outlined text-[20px] text-[#64748B] absolute left-3 top-1/2 -translate-y-1/2">
+                search
+              </span>
+            </div>
           </div>
         </header>
 
-        {/* Category Tabs */}
+        {/* Category Filters */}
         <div className="mt-[88px] sticky top-[88px] z-40 bg-[#F4F5F7] border-b border-[#E2E8F0]">
-          <div className="px-4 py-3 flex items-center gap-6 overflow-x-auto no-scrollbar max-w-md mx-auto">
+          <div className="px-4 py-3 flex items-center gap-3 overflow-x-auto no-scrollbar max-w-md mx-auto">
             {categories.map(cat => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`text-[14px] shrink-0 relative ${
+                className={`px-4 py-1.5 rounded-full text-[13px] shrink-0 transition-all ${
                   activeCategory === cat
-                    ? "font-bold text-primary after:content-[''] after:absolute after:bottom-[-12px] after:left-0 after:right-0 after:h-[2px] after:bg-primary"
-                    : 'font-normal text-[#64748B]'
+                    ? 'bg-primary text-white font-bold'
+                    : 'bg-white border border-[#E2E8F0] text-[#64748B] font-medium'
                 }`}
               >
                 {cat}
@@ -111,8 +126,15 @@ export default function ExplorePage() {
           </div>
         </div>
 
+        {/* Search Results Header */}
+        <div className="px-4 pt-4 pb-2 max-w-md mx-auto w-full">
+          <p className="text-[12px] text-[#64748B]">
+            找到 <span className="font-bold text-primary">{searchResults.length}</span> 個關於「{searchQuery}」的結果
+          </p>
+        </div>
+
         {/* Main Content - Masonry Grid */}
-        <main className="relative z-10 flex-1 px-3 py-4 pb-24 max-w-md mx-auto w-full">
+        <main className="relative z-10 flex-1 px-3 py-2 pb-24 max-w-md mx-auto w-full">
           <div className="grid grid-cols-2 gap-3">
             {/* Left Column */}
             <div className="flex flex-col gap-3">
@@ -204,5 +226,17 @@ export default function ExplorePage() {
         <MobileNav />
       </div>
     </div>
+  )
+}
+
+export default function ExploreSearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#F4F5F7] flex items-center justify-center">
+        <div className="text-[#64748B]">載入中...</div>
+      </div>
+    }>
+      <ExploreSearchContent />
+    </Suspense>
   )
 }
