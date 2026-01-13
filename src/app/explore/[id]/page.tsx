@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import { logger } from '@/lib/logger';
 import { useAuthStore } from '@/stores/auth-store';
 import { useGroupStore, Group } from '@/stores/group-store';
 import { getSupabaseClient } from '@/lib/supabase';
@@ -57,9 +58,9 @@ export default function GroupDetailPage() {
   // Debug log
   useEffect(() => {
     if (group) {
-      console.log('Group loaded:', group.id, 'created_by:', group.created_by);
-      console.log('Current user:', user?.id);
-      console.log('Is organizer:', isOrganizer);
+      logger.log('Group loaded:', group.id, 'created_by:', group.created_by);
+      logger.log('Current user:', user?.id);
+      logger.log('Is organizer:', isOrganizer);
     }
   }, [group, user, isOrganizer]);
 
@@ -93,7 +94,7 @@ export default function GroupDetailPage() {
       // 從資料庫直接抓取（包含私人和任何狀態的揪團）
       const supabase = getSupabaseClient();
       const { data, error } = await supabase
-        .from('groups')
+        .from('social_groups')
         .select(`
           *,
           creator:profiles!created_by(id, display_name, avatar_url)
@@ -105,7 +106,7 @@ export default function GroupDetailPage() {
         setGroup(data as Group);
       } else {
         // 找不到，可能是無效 ID
-        console.log('Group not found:', groupId, error);
+        logger.log('Group not found:', groupId, error);
       }
       setIsLoadingGroup(false);
     };
@@ -121,7 +122,7 @@ export default function GroupDetailPage() {
       setIsLoadingMembers(true);
       const supabase = getSupabaseClient();
       const { data, error } = await supabase
-        .from('group_members')
+        .from('social_group_members')
         .select(`
           id,
           user_id,

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { getSupabaseClient } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 
 export interface Group {
   id: string
@@ -82,7 +83,7 @@ export const useGroupStore = create<GroupState>((set, get) => ({
     try {
       // 恢復 JOIN 查詢（RLS 已修復）
       let query = supabase
-        .from('groups')
+        .from('social_groups')
         .select(`
           *,
           creator:profiles!created_by(id, display_name, avatar_url)
@@ -101,7 +102,7 @@ export const useGroupStore = create<GroupState>((set, get) => ({
 
       const { data, error } = await query
 
-      console.log('fetchGroups result:', data, error)
+      logger.log('fetchGroups result:', data, error)
 
       if (error) throw error
 
@@ -118,7 +119,7 @@ export const useGroupStore = create<GroupState>((set, get) => ({
 
     try {
       const { data, error } = await supabase
-        .from('groups')
+        .from('social_groups')
         .select(`
           *,
           creator:profiles!created_by(id, display_name, avatar_url)
@@ -126,7 +127,7 @@ export const useGroupStore = create<GroupState>((set, get) => ({
         .eq('created_by', userId)
         .order('created_at', { ascending: false })
 
-      console.log('fetchMyGroups result:', data, error)
+      logger.log('fetchMyGroups result:', data, error)
 
       if (error) throw error
 
@@ -141,18 +142,18 @@ export const useGroupStore = create<GroupState>((set, get) => ({
     const supabase = getSupabaseClient()
     set({ isLoading: true, error: null })
 
-    console.log('createGroup called with userId:', userId)
-    console.log('createGroup data:', data)
+    logger.log('createGroup called with userId:', userId)
+    logger.log('createGroup data:', data)
 
     try {
       // 檢查是否可以創建更多活動
       const { data: canCreate, error: checkError } = await supabase
         .rpc('can_create_group', { user_id: userId })
 
-      console.log('can_create_group result:', canCreate, 'error:', checkError)
+      logger.log('can_create_group result:', canCreate, 'error:', checkError)
 
       if (checkError) {
-        console.error('Check create group error:', checkError)
+        logger.error('Check create group error:', checkError)
       } else if (canCreate === false) {
         set({ isLoading: false })
         return {
@@ -183,21 +184,21 @@ export const useGroupStore = create<GroupState>((set, get) => ({
         created_by: userId,
         published_at: new Date().toISOString(),
       }
-      console.log('Inserting group data:', insertData)
+      logger.log('Inserting group data:', insertData)
 
       const { data: group, error: groupError } = await supabase
-        .from('groups')
+        .from('social_groups')
         .insert(insertData)
         .select()
         .single()
 
-      console.log('Insert result - group:', group, 'error:', groupError)
+      logger.log('Insert result - group:', group, 'error:', groupError)
 
       if (groupError) throw groupError
 
       // 將創建者加入成員（作為 organizer）
       const { error: memberError } = await supabase
-        .from('group_members')
+        .from('social_group_members')
         .insert({
           group_id: group.id,
           user_id: userId,
@@ -207,7 +208,7 @@ export const useGroupStore = create<GroupState>((set, get) => ({
         })
 
       if (memberError) {
-        console.error('Failed to add organizer as member:', memberError)
+        logger.error('Failed to add organizer as member:', memberError)
       }
 
       // 新增標籤
@@ -217,7 +218,7 @@ export const useGroupStore = create<GroupState>((set, get) => ({
           tag: tag.replace('#', ''),
         }))
 
-        await supabase.from('group_tags').insert(tagInserts)
+        await supabase.from('social_group_tags').insert(tagInserts)
       }
 
       // 嘗試授予徽章（揪團小白）
@@ -229,7 +230,7 @@ export const useGroupStore = create<GroupState>((set, get) => ({
         })
       } catch {
         // 徽章授予失敗不影響主流程
-        console.log('Badge grant skipped')
+        logger.log('Badge grant skipped')
       }
 
       set({ isLoading: false })
@@ -247,7 +248,7 @@ export const useGroupStore = create<GroupState>((set, get) => ({
 
     try {
       const { error } = await supabase
-        .from('groups')
+        .from('social_groups')
         .update(data)
         .eq('id', groupId)
 
@@ -268,7 +269,7 @@ export const useGroupStore = create<GroupState>((set, get) => ({
 
     try {
       const { error } = await supabase
-        .from('groups')
+        .from('social_groups')
         .delete()
         .eq('id', groupId)
 
@@ -297,7 +298,7 @@ export const useGroupStore = create<GroupState>((set, get) => ({
     try {
       // 先檢查活動設定
       const { data: group, error: groupError } = await supabase
-        .from('groups')
+        .from('social_groups')
         .select('require_approval, max_members, current_members')
         .eq('id', groupId)
         .single()
@@ -310,7 +311,7 @@ export const useGroupStore = create<GroupState>((set, get) => ({
 
       // 加入成員
       const { error: memberError } = await supabase
-        .from('group_members')
+        .from('social_group_members')
         .insert({
           group_id: groupId,
           user_id: userId,

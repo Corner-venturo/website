@@ -4,5 +4,8 @@ export { default as TravelBuddies } from "./TravelBuddies";
 export { default as QuickActions } from "./QuickActions";
 export { default as TravelManager } from "./TravelManager";
 export { default as SettingsLink } from "./SettingsLink";
+export { default as GrowthProgress } from "./GrowthProgress";
+export { default as IntegratedLeaderboard } from "./IntegratedLeaderboard";
+export { default as EmployeeStatus } from "./EmployeeStatus";
 export * from "./types";
 export * from "./data";

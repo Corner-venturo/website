@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getOnlineSupabase } from '@/lib/supabase-server'
 import { jsonResponse, errorResponse, CACHE_CONFIGS } from '@/lib/api-utils'
+import { logger } from '@/lib/logger'
 
 // GET: 取得我的所有分帳群組
 export async function GET(request: Request) {
@@ -17,12 +18,12 @@ export async function GET(request: Request) {
 
     // 取得用戶所屬的群組 ID
     const { data: memberOf, error: memberError } = await supabase
-      .from('split_group_members')
+      .from('traveler_split_group_members')
       .select('group_id')
       .eq('user_id', userId)
 
     if (memberError) {
-      console.error('Query member groups error:', memberError)
+      logger.error('Query member groups error:', memberError)
       return errorResponse('取得群組失敗', 500)
     }
 
@@ -34,7 +35,7 @@ export async function GET(request: Request) {
 
     // 平行取得所有需要的資料（避免 N+1 查詢）
     let groupQuery = supabase
-      .from('split_groups')
+      .from('traveler_split_groups')
       .select(`
         *,
         trip:trips(id, title, cover_image, start_date, end_date),
@@ -58,18 +59,18 @@ export async function GET(request: Request) {
       groupQuery,
       // 一次取得所有群組的費用
       supabase
-        .from('expenses')
+        .from('traveler_expenses')
         .select('id, amount, paid_by, split_group_id')
         .in('split_group_id', groupIds),
       // 一次取得用戶在所有群組的分攤
       supabase
-        .from('expense_splits')
+        .from('traveler_expense_splits')
         .select('amount, is_settled, expense_id')
         .eq('user_id', userId)
     ])
 
     if (groupsResult.error) {
-      console.error('Query groups error:', groupsResult.error)
+      logger.error('Query groups error:', groupsResult.error)
       return errorResponse('取得群組失敗', 500)
     }
 
@@ -109,7 +110,7 @@ export async function GET(request: Request) {
       data: groupsWithBalance,
     }, { cache: CACHE_CONFIGS.privateShort })
   } catch (error) {
-    console.error('Get split groups error:', error)
+    logger.error('Get split groups error:', error)
     return errorResponse('系統錯誤', 500)
   }
 }
@@ -139,7 +140,7 @@ export async function POST(request: Request) {
 
     // 建立群組
     const { data: group, error: groupError } = await supabase
-      .from('split_groups')
+      .from('traveler_split_groups')
       .insert({
         name,
         description,
@@ -152,7 +153,7 @@ export async function POST(request: Request) {
       .single()
 
     if (groupError) {
-      console.error('Insert group error:', groupError)
+      logger.error('Insert group error:', groupError)
       return NextResponse.json(
         { error: '建立群組失敗' },
         { status: 500 }
@@ -172,17 +173,17 @@ export async function POST(request: Request) {
     ]
 
     const { error: memberError } = await supabase
-      .from('split_group_members')
+      .from('traveler_split_group_members')
       .insert(allMembers)
 
     if (memberError) {
-      console.error('Insert members error:', memberError)
+      logger.error('Insert members error:', memberError)
       // 不中斷，群組已建立
     }
 
     // 回傳完整群組資料
     const { data: fullGroup } = await supabase
-      .from('split_groups')
+      .from('traveler_split_groups')
       .select(`
         *,
         trip:trips(id, title, cover_image),
@@ -201,7 +202,7 @@ export async function POST(request: Request) {
       data: fullGroup,
     })
   } catch (error) {
-    console.error('Create split group error:', error)
+    logger.error('Create split group error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }

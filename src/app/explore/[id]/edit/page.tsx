@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
+import { logger } from '@/lib/logger';
 import LocationPicker, { LocationData } from '@/components/LocationPicker';
 import { useGroupStore, CreateGroupData } from '@/stores/group-store';
 import { useAuthStore } from '@/stores/auth-store';
@@ -98,7 +99,7 @@ export default function EditGroupPage() {
 
       try {
         const { data, error } = await supabase
-          .from('groups')
+          .from('social_groups')
           .select('*')
           .eq('id', groupId)
           .single();
@@ -151,7 +152,7 @@ export default function EditGroupPage() {
           tags: data.tags || [],
         });
       } catch (err) {
-        console.error('Failed to fetch group:', err);
+        logger.error('Failed to fetch group:', err);
         showError('載入失敗', '無法載入活動資料');
       } finally {
         setIsLoadingGroup(false);
@@ -247,7 +248,7 @@ export default function EditGroupPage() {
         showError('更新失敗', result.error || '請稍後再試');
       }
     } catch (error) {
-      console.error('Update group error:', error);
+      logger.error('Update group error:', error);
       showError('更新失敗', '發生未知錯誤，請稍後再試');
     } finally {
       setIsSubmitting(false);
@@ -264,7 +265,7 @@ export default function EditGroupPage() {
         showError('刪除失敗', result.error || '請稍後再試');
       }
     } catch (error) {
-      console.error('Delete group error:', error);
+      logger.error('Delete group error:', error);
       showError('刪除失敗', '發生未知錯誤，請稍後再試');
     } finally {
       setIsDeleting(false);

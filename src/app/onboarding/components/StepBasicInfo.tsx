@@ -172,7 +172,7 @@ export default function StepBasicInfo({
           {errors.display_name && (
             <p className="text-xs text-[var(--error-text)] mt-1">{errors.display_name}</p>
           )}
-          <p className="text-xs text-[var(--neutral-400)] mt-1">這是其他旅伴看到的名稱</p>
+          <p className="text-xs text-[var(--neutral-400)] mt-1">這是其他朋友看到的名稱</p>
         </div>
 
         <div>

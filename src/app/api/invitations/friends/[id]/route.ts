@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 import { getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 async function getAuthSupabase() {
   const cookieStore = await cookies()
@@ -42,7 +43,7 @@ export async function PUT(
 
     // 取得邀請
     const { data: invitation, error: fetchError } = await serviceSupabase
-      .from('friends')
+      .from('traveler_friends')
       .select('*')
       .eq('id', id)
       .single()
@@ -64,7 +65,7 @@ export async function PUT(
     // 檢查是否過期
     if (invitation.expires_at && new Date(invitation.expires_at) < new Date()) {
       await serviceSupabase
-        .from('friends')
+        .from('traveler_friends')
         .update({ status: 'rejected' })
         .eq('id', id)
       return NextResponse.json({ error: '邀請已過期' }, { status: 400 })
@@ -74,7 +75,7 @@ export async function PUT(
 
     // 更新狀態
     const { data, error } = await serviceSupabase
-      .from('friends')
+      .from('traveler_friends')
       .update({ status: newStatus })
       .eq('id', id)
       .select(`
@@ -93,7 +94,7 @@ export async function PUT(
       data,
     })
   } catch (error) {
-    console.error('Update friend invitation error:', error)
+    logger.error('Update friend invitation error:', error)
     return NextResponse.json({ error: '處理失敗' }, { status: 500 })
   }
 }
@@ -116,7 +117,7 @@ export async function DELETE(
 
     // 取得邀請
     const { data: invitation, error: fetchError } = await serviceSupabase
-      .from('friends')
+      .from('traveler_friends')
       .select('*')
       .eq('id', id)
       .single()
@@ -136,7 +137,7 @@ export async function DELETE(
 
     // 刪除邀請
     const { error } = await serviceSupabase
-      .from('friends')
+      .from('traveler_friends')
       .delete()
       .eq('id', id)
 
@@ -147,7 +148,7 @@ export async function DELETE(
       message: '已撤回邀請',
     })
   } catch (error) {
-    console.error('Delete friend invitation error:', error)
+    logger.error('Delete friend invitation error:', error)
     return NextResponse.json({ error: '撤回失敗' }, { status: 500 })
   }
 }

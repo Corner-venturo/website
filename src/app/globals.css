@@ -3,7 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --primary: #cfb9a5;
+  --primary: #1A1C1E;
   --primary-dark: #b09b88;
   --primary-light: #e8ded4;
   --morandi-blue: #a5bccf;
@@ -11,6 +11,15 @@
   --morandi-green: #a8bfa6;
   --morandi-yellow: #e0d6a8;
   --card-dark: #1e1e1e;
+
+  /* New Expense Design System */
+  --base-bg: #F9F9F9;
+  --slate-muted: #8E8E93;
+  --divider: #EFEFEF;
+  --accent-gold: #C5A358;
+  --expense-red: #FF3B30;
+  --income-green: #34C759;
+  --venturo-bone: #F2F0EB;
 }
 
 @theme inline {
@@ -197,6 +206,76 @@ body {
 
 .shadow-soft {
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* === New Expense Design System Classes === */
+.bg-base-bg {
+  background-color: var(--base-bg);
+}
+
+.text-slate-muted {
+  color: var(--slate-muted);
+}
+
+.bg-divider {
+  background-color: var(--divider);
+}
+
+.border-divider {
+  border-color: var(--divider);
+}
+
+.bg-accent-gold {
+  background-color: var(--accent-gold);
+}
+
+.text-accent-gold {
+  color: var(--accent-gold);
+}
+
+.stroke-accent-gold {
+  stroke: var(--accent-gold);
+}
+
+.stroke-primary {
+  stroke: var(--primary);
+}
+
+.stroke-divider {
+  stroke: var(--divider);
+}
+
+.bg-venturo-bone {
+  background-color: var(--venturo-bone);
+}
+
+.text-expense-red {
+  color: var(--expense-red);
+}
+
+.text-income-green {
+  color: var(--income-green);
+}
+
+.glass-panel {
+  background: white;
+  border: 1px solid var(--divider);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border-radius: 16px;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Font display */
+.font-display {
+  font-family: "Plus Jakarta Sans", "Noto Sans TC", sans-serif;
 }
 
 /* iPhone 模擬器內強制手機版佈局 */

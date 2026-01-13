@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { logger } from '@/lib/logger';
 
 interface SavedItem {
   id: string;
@@ -38,7 +39,7 @@ export default function UIGeneratorPage() {
 
   const examplePrompts = [
     "建立一個旅遊景點詳情頁面，包含大圖、標題、評分、描述、開放時間和門票資訊",
-    "建立一個旅伴邀請頁面，可以輸入手機號碼或掃 QR Code",
+    "建立一個朋友邀請頁面，可以輸入手機號碼或掃 QR Code",
     "建立一個行程回顧頁面，用時間軸顯示旅行照片和備註",
     "建立一個費用統計卡片，顯示圓餅圖和分類支出",
   ];
@@ -56,7 +57,7 @@ export default function UIGeneratorPage() {
         setSavedItems(data.items || []);
       }
     } catch {
-      console.error("Failed to fetch saved items");
+      logger.error("Failed to fetch saved items");
     }
   };
 

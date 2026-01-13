@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 // GET: 取得行程的所有成員
 export async function GET(
@@ -20,7 +21,7 @@ export async function GET(
 
     // 取得成員列表（含用戶資訊）
     const { data: members, error } = await supabase
-      .from('trip_members')
+      .from('traveler_trip_members')
       .select(`
         id,
         trip_id,
@@ -34,7 +35,7 @@ export async function GET(
       .order('joined_at', { ascending: true })
 
     if (error) {
-      console.error('Query members error:', error)
+      logger.error('Query members error:', error)
       return NextResponse.json(
         { error: '取得成員失敗' },
         { status: 500 }
@@ -46,7 +47,7 @@ export async function GET(
       data: members,
     })
   } catch (error) {
-    console.error('Get members error:', error)
+    logger.error('Get members error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }
@@ -75,7 +76,7 @@ export async function POST(
 
     // 檢查是否已經是成員
     const { data: existing } = await supabase
-      .from('trip_members')
+      .from('traveler_trip_members')
       .select('id, role')
       .eq('trip_id', tripId)
       .eq('user_id', userId)
@@ -87,7 +88,7 @@ export async function POST(
     if (existing) {
       // 已存在：更新角色和暱稱
       const { data: updated, error: updateError } = await supabase
-        .from('trip_members')
+        .from('traveler_trip_members')
         .update({
           role,
           nickname,
@@ -106,7 +107,7 @@ export async function POST(
         .single()
 
       if (updateError) {
-        console.error('Update member error:', updateError)
+        logger.error('Update member error:', updateError)
         return NextResponse.json(
           { error: '更新成員失敗' },
           { status: 500 }
@@ -117,7 +118,7 @@ export async function POST(
     } else {
       // 新增成員
       const { data: inserted, error: insertError } = await supabase
-        .from('trip_members')
+        .from('traveler_trip_members')
         .insert({
           trip_id: tripId,
           user_id: userId,
@@ -136,7 +137,7 @@ export async function POST(
         .single()
 
       if (insertError) {
-        console.error('Insert member error:', insertError)
+        logger.error('Insert member error:', insertError)
         return NextResponse.json(
           { error: '新增成員失敗' },
           { status: 500 }
@@ -152,7 +153,7 @@ export async function POST(
       message: isUpdate ? '已經加入過此行程' : '已加入行程',
     })
   } catch (error) {
-    console.error('Add member error:', error)
+    logger.error('Add member error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }
@@ -180,13 +181,13 @@ export async function DELETE(
     const supabase = getOnlineSupabase()
 
     const { error } = await supabase
-      .from('trip_members')
+      .from('traveler_trip_members')
       .delete()
       .eq('trip_id', tripId)
       .eq('user_id', userId)
 
     if (error) {
-      console.error('Delete member error:', error)
+      logger.error('Delete member error:', error)
       return NextResponse.json(
         { error: '移除成員失敗' },
         { status: 500 }
@@ -198,7 +199,7 @@ export async function DELETE(
       message: '已移除成員',
     })
   } catch (error) {
-    console.error('Remove member error:', error)
+    logger.error('Remove member error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }

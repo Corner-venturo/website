@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { logger } from '@/lib/logger';
 import { useAuthStore } from '@/stores/auth-store';
 import { useProfileStore } from '@/stores/profile-store';
 import {
@@ -168,7 +169,7 @@ export default function OnboardingPage() {
       if (uploadResult.success && uploadResult.url) {
         avatarUrl = uploadResult.url;
       } else {
-        console.error('Avatar upload failed:', uploadResult.error);
+        logger.error('Avatar upload failed:', uploadResult.error);
       }
     }
 

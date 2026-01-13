@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 // GET: 取得單筆費用詳情
 export async function GET(
@@ -19,7 +20,7 @@ export async function GET(
     const supabase = getOnlineSupabase()
 
     const { data: expense, error } = await supabase
-      .from('expenses')
+      .from('traveler_expenses')
       .select(`
         *,
         paid_by_profile:profiles!expenses_paid_by_fkey(id, display_name, avatar_url),
@@ -35,7 +36,7 @@ export async function GET(
       .single()
 
     if (error) {
-      console.error('Query expense error:', error)
+      logger.error('Query expense error:', error)
       return NextResponse.json(
         { error: '找不到此費用記錄' },
         { status: 404 }
@@ -47,7 +48,7 @@ export async function GET(
       data: expense,
     })
   } catch (error) {
-    console.error('Get expense error:', error)
+    logger.error('Get expense error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }
@@ -99,14 +100,14 @@ export async function PUT(
 
     // 更新費用記錄
     const { data: expense, error: updateError } = await supabase
-      .from('expenses')
+      .from('traveler_expenses')
       .update(updateData)
       .eq('id', id)
       .select()
       .single()
 
     if (updateError) {
-      console.error('Update expense error:', updateError)
+      logger.error('Update expense error:', updateError)
       return NextResponse.json(
         { error: '更新費用失敗' },
         { status: 500 }
@@ -117,7 +118,7 @@ export async function PUT(
     if (splitWith && Array.isArray(splitWith)) {
       // 刪除舊的分攤記錄
       await supabase
-        .from('expense_splits')
+        .from('traveler_expense_splits')
         .delete()
         .eq('expense_id', id)
 
@@ -133,11 +134,11 @@ export async function PUT(
         }))
 
         const { error: splitError } = await supabase
-          .from('expense_splits')
+          .from('traveler_expense_splits')
           .insert(splits)
 
         if (splitError) {
-          console.error('Update splits error:', splitError)
+          logger.error('Update splits error:', splitError)
         }
       }
     }
@@ -148,7 +149,7 @@ export async function PUT(
       message: '費用已更新',
     })
   } catch (error) {
-    console.error('Update expense error:', error)
+    logger.error('Update expense error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }
@@ -175,18 +176,18 @@ export async function DELETE(
 
     // 先刪除相關的分攤記錄（CASCADE 應該會自動處理，但保險起見）
     await supabase
-      .from('expense_splits')
+      .from('traveler_expense_splits')
       .delete()
       .eq('expense_id', id)
 
     // 刪除費用記錄
     const { error: deleteError } = await supabase
-      .from('expenses')
+      .from('traveler_expenses')
       .delete()
       .eq('id', id)
 
     if (deleteError) {
-      console.error('Delete expense error:', deleteError)
+      logger.error('Delete expense error:', deleteError)
       return NextResponse.json(
         { error: '刪除費用失敗' },
         { status: 500 }
@@ -198,7 +199,7 @@ export async function DELETE(
       message: '費用已刪除',
     })
   } catch (error) {
-    console.error('Delete expense error:', error)
+    logger.error('Delete expense error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }

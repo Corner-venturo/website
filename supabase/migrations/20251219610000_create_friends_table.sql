@@ -1,4 +1,4 @@
--- 好友/旅伴關係表
+-- 好友/朋友關係表
 CREATE TABLE IF NOT EXISTS friends (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,

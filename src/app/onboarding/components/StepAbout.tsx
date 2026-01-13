@@ -12,7 +12,7 @@ export default function StepAbout({ formData, avatarPreview, onFormChange }: Ste
     <div className="space-y-8">
       <div className="text-center">
         <h1 className="text-3xl font-bold text-[var(--neutral-700)] mb-3">關於你</h1>
-        <p className="text-[var(--neutral-400)]">讓其他旅伴更認識你（選填）</p>
+        <p className="text-[var(--neutral-400)]">讓其他朋友更認識你（選填）</p>
       </div>
 
       <div className="space-y-5">

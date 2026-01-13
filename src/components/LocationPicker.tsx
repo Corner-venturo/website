@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@/lib/logger';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 
@@ -87,7 +88,7 @@ async function searchPlaces(query: string): Promise<SearchResult[]> {
       };
     }) || [];
   } catch (error) {
-    console.error('Search places error:', error);
+    logger.error('Search places error:', error);
     return [];
   }
 }
@@ -126,7 +127,7 @@ async function reverseGeocode(lat: number, lng: number): Promise<{ name: string;
       address: addressParts.join('') || data.display_name || '未知地址',
     };
   } catch (error) {
-    console.error('Reverse geocode error:', error);
+    logger.error('Reverse geocode error:', error);
     return null;
   }
 }
@@ -241,7 +242,7 @@ export default function LocationPicker({ value, onChange, placeholder = '搜尋�
         setIsGettingLocation(false);
       },
       (error) => {
-        console.error('Geolocation error:', error);
+        logger.error('Geolocation error:', error);
         let message = '無法取得位置';
         if (error.code === error.PERMISSION_DENIED) {
           message = '請允許存取位置權限';

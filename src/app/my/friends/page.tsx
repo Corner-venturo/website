@@ -2,14 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import MobileNav from '@/components/MobileNav';
 import { useAuthStore } from '@/stores/auth-store';
 import { useFriendsStore, Friend } from '@/stores/friends-store';
+import { useChatStore } from '@/stores/chat-store';
 
 type TabType = 'friends' | 'received' | 'sent';
 
 export default function FriendsPage() {
+  const router = useRouter();
   const { user, initialize, isInitialized } = useAuthStore();
   const {
     friends,
@@ -22,10 +25,12 @@ export default function FriendsPage() {
     removeFriend,
     cancelFriendRequest,
   } = useFriendsStore();
+  const { startDirectChat } = useChatStore();
 
   const [activeTab, setActiveTab] = useState<TabType>('friends');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [isStartingChat, setIsStartingChat] = useState(false);
 
   const showNotification = (message: string) => {
     setToastMessage(message);
@@ -86,8 +91,24 @@ export default function FriendsPage() {
     }
   };
 
-  const handleChat = () => {
-    showNotification('聊天功能尚未開放');
+  const handleChat = async (friend: Friend) => {
+    if (isStartingChat) return;
+
+    const friendUserId = friend.user_id === user?.id ? friend.friend_id : friend.user_id;
+
+    setIsStartingChat(true);
+    try {
+      const conversationId = await startDirectChat(friendUserId);
+      if (conversationId) {
+        router.push(`/my/chat/${conversationId}`);
+      } else {
+        showNotification('無法開啟聊天');
+      }
+    } catch {
+      showNotification('開啟聊天失敗');
+    } finally {
+      setIsStartingChat(false);
+    }
   };
 
   // 計算 badge 數量
@@ -139,7 +160,7 @@ export default function FriendsPage() {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            旅伴 {friends.length > 0 && `(${friends.length})`}
+            朋友 {friends.length > 0 && `(${friends.length})`}
           </button>
           <button
             onClick={() => setActiveTab('received')}
@@ -179,7 +200,7 @@ export default function FriendsPage() {
           </div>
         ) : (
           <>
-            {/* 旅伴列表 */}
+            {/* 朋友列表 */}
             {activeTab === 'friends' && (
               <section className="mb-6">
                 {friends.length > 0 ? (
@@ -219,8 +240,9 @@ export default function FriendsPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={handleChat}
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-gray-300 hover:text-[#cfb9a5] hover:bg-[#cfb9a5]/10 transition-all"
+                            onClick={() => handleChat(friend)}
+                            disabled={isStartingChat}
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-gray-300 hover:text-[#cfb9a5] hover:bg-[#cfb9a5]/10 transition-all disabled:opacity-50"
                           >
                             <span className="material-icons-round">chat_bubble</span>
                           </button>
@@ -239,7 +261,7 @@ export default function FriendsPage() {
                     <span className="material-icons-round text-5xl text-[#D6CDC8] mb-3 block">
                       group_off
                     </span>
-                    <p className="text-[#949494] text-sm mb-1">還沒有旅伴</p>
+                    <p className="text-[#949494] text-sm mb-1">還沒有朋友</p>
                     <p className="text-[#B0B0B0] text-xs">快邀請好友一起探索世界吧！</p>
                   </div>
                 )}
@@ -280,7 +302,7 @@ export default function FriendsPage() {
                               {request.profile?.display_name || request.profile?.full_name || '未知用戶'}
                             </h4>
                             <p className="text-xs text-[#949494] truncate">
-                              想成為你的旅伴
+                              想成為你的朋友
                             </p>
                           </div>
                         </div>
@@ -307,7 +329,7 @@ export default function FriendsPage() {
                       inbox
                     </span>
                     <p className="text-[#949494] text-sm mb-1">沒有待處理的邀請</p>
-                    <p className="text-[#B0B0B0] text-xs">當有人邀請你成為旅伴時會顯示在這裡</p>
+                    <p className="text-[#B0B0B0] text-xs">當有人邀請你成為朋友時會顯示在這裡</p>
                   </div>
                 )}
               </section>
@@ -384,7 +406,7 @@ export default function FriendsPage() {
           className="w-full py-4 rounded-3xl bg-[#cfb9a5] hover:bg-[#b09b88] text-white font-bold text-lg shadow-lg shadow-[#cfb9a5]/30 flex items-center justify-center gap-2 transition-transform active:scale-95"
         >
           <span className="material-icons-round">person_add</span>
-          邀請更多旅伴
+          邀請更多朋友
         </Link>
       </div>
 

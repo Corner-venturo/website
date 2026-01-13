@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 // POST: 領隊掃碼報到
 export async function POST(
@@ -22,7 +23,7 @@ export async function POST(
 
     // 1. 驗證領隊權限（必須是 owner 或 admin）
     const { data: leaderMember, error: leaderError } = await supabase
-      .from('trip_members')
+      .from('traveler_trip_members')
       .select('id, role, nickname')
       .eq('trip_id', tripId)
       .eq('user_id', leaderUserId)
@@ -44,7 +45,7 @@ export async function POST(
 
     // 2. 驗證旅客是否為此行程的成員
     const { data: travelerMember, error: travelerError } = await supabase
-      .from('trip_members')
+      .from('traveler_trip_members')
       .select('id, nickname, checked_in, checked_in_at')
       .eq('trip_id', tripId)
       .eq('user_id', travelerUserId)
@@ -73,7 +74,7 @@ export async function POST(
     // 4. 更新報到狀態
     const now = new Date().toISOString()
     const { error: updateError } = await supabase
-      .from('trip_members')
+      .from('traveler_trip_members')
       .update({
         checked_in: true,
         checked_in_at: now,
@@ -82,7 +83,7 @@ export async function POST(
       .eq('id', travelerMember.id)
 
     if (updateError) {
-      console.error('Update check-in error:', updateError)
+      logger.error('Update check-in error:', updateError)
       return NextResponse.json(
         { error: '報到失敗，請稍後再試' },
         { status: 500 }
@@ -100,7 +101,7 @@ export async function POST(
       message: `✅ ${travelerMember.nickname || '旅客'} 報到成功！`,
     })
   } catch (error) {
-    console.error('Check-in error:', error)
+    logger.error('Check-in error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }
@@ -127,14 +128,14 @@ export async function GET(
 
     // 取得所有成員的報到狀態
     const { data: members, error } = await supabase
-      .from('trip_members')
+      .from('traveler_trip_members')
       .select('id, user_id, nickname, role, checked_in, checked_in_at')
       .eq('trip_id', tripId)
       .order('checked_in', { ascending: false })
       .order('nickname', { ascending: true })
 
     if (error) {
-      console.error('Query check-in status error:', error)
+      logger.error('Query check-in status error:', error)
       return NextResponse.json(
         { error: '取得報到狀態失敗' },
         { status: 500 }
@@ -154,7 +155,7 @@ export async function GET(
       },
     })
   } catch (error) {
-    console.error('Get check-in status error:', error)
+    logger.error('Get check-in status error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }

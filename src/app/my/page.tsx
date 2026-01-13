@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import MobileNav from "@/components/MobileNav";
 import { useAuthStore } from "@/stores/auth-store";
-import { useProfileStore, getDisplayAvatar } from "@/stores/profile-store";
+import { useProfileStore, getDisplayAvatar, isEmployee, isLeader } from "@/stores/profile-store";
 import {
   ProfileHeader,
   AchievementBadges,
@@ -11,6 +11,8 @@ import {
   QuickActions,
   TravelManager,
   SettingsLink,
+  GrowthProgress,
+  EmployeeStatus,
   Achievement,
   demoAchievements,
   demoQuickActions,
@@ -46,19 +48,48 @@ export default function ProfilePage() {
 
   // 根據登入狀態選擇資料
   const quickActions = isLoggedIn ? realQuickActions : demoQuickActions;
-  const achievements: Achievement[] = isLoggedIn
-    ? profile?.is_founding_member
-      ? [
-          {
-            icon: "workspace_premium",
-            label: "創始會員",
-            color: "bg-gradient-to-r from-[#FFD700] to-[#FFA500]",
-            rotate: "rotate-0",
-            isFounder: true,
-          },
-        ]
-      : []
-    : demoAchievements;
+
+  // 建構成就徽章列表
+  const buildAchievements = (): Achievement[] => {
+    if (!isLoggedIn) return demoAchievements;
+
+    const badges: Achievement[] = [];
+
+    // 創始會員徽章
+    if (profile?.is_founding_member) {
+      badges.push({
+        icon: "workspace_premium",
+        label: "創始會員",
+        color: "bg-gradient-to-r from-[#FFD700] to-[#FFA500]",
+        rotate: "rotate-0",
+        isFounder: true,
+      });
+    }
+
+    // 領隊徽章
+    if (isLeader(profile)) {
+      badges.push({
+        icon: "tour",
+        label: "領隊",
+        color: "bg-gradient-to-r from-emerald-500 to-teal-500",
+        rotate: "rotate-0",
+      });
+    }
+
+    // 員工徽章（非領隊的員工）
+    if (isEmployee(profile) && !isLeader(profile)) {
+      badges.push({
+        icon: "badge",
+        label: "員工",
+        color: "bg-gradient-to-r from-blue-500 to-indigo-500",
+        rotate: "rotate-0",
+      });
+    }
+
+    return badges;
+  };
+
+  const achievements: Achievement[] = buildAchievements();
 
   return (
     <div className="h-[100dvh] max-h-[100dvh] overflow-hidden relative bg-[#F5F4F0] font-sans antialiased text-[#5C5C5C] transition-colors duration-300">
@@ -81,9 +112,17 @@ export default function ProfilePage() {
           <AchievementBadges achievements={achievements} />
 
           <div className="px-5 space-y-4">
+            <GrowthProgress isLoggedIn={isLoggedIn} />
             <TravelBuddies isLoggedIn={isLoggedIn} />
             <QuickActions actions={quickActions} />
             <TravelManager isLoggedIn={isLoggedIn} />
+            {isLoggedIn && (
+              <EmployeeStatus
+                isEmployee={isEmployee(profile)}
+                employeeNumber={profile?.employee_number}
+                employeeRoles={profile?.employee_roles}
+              />
+            )}
             <SettingsLink />
           </div>
         </main>

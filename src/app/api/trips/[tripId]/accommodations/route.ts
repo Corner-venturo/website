@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 // GET: 取得行程的住宿資訊
 export async function GET(
@@ -19,13 +20,13 @@ export async function GET(
     const supabase = getOnlineSupabase()
 
     const { data: accommodations, error } = await supabase
-      .from('trip_accommodations')
+      .from('traveler_trip_accommodations')
       .select('*')
       .eq('trip_id', tripId)
       .order('check_in_date', { ascending: true })
 
     if (error) {
-      console.error('Query accommodations error:', error)
+      logger.error('Query accommodations error:', error)
       return NextResponse.json(
         { error: '取得住宿資料失敗' },
         { status: 500 }
@@ -37,7 +38,7 @@ export async function GET(
       data: accommodations,
     })
   } catch (error) {
-    console.error('Get accommodations error:', error)
+    logger.error('Get accommodations error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }
@@ -91,7 +92,7 @@ export async function POST(
     const supabase = getOnlineSupabase()
 
     const { data: accommodation, error } = await supabase
-      .from('trip_accommodations')
+      .from('traveler_trip_accommodations')
       .insert({
         trip_id: tripId,
         name,
@@ -116,7 +117,7 @@ export async function POST(
       .single()
 
     if (error) {
-      console.error('Insert accommodation error:', error)
+      logger.error('Insert accommodation error:', error)
       return NextResponse.json(
         { error: '新增住宿資料失敗' },
         { status: 500 }
@@ -128,7 +129,7 @@ export async function POST(
       data: accommodation,
     })
   } catch (error) {
-    console.error('Create accommodation error:', error)
+    logger.error('Create accommodation error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }
@@ -179,7 +180,7 @@ export async function PUT(
     if (updateData.notes !== undefined) dbData.notes = updateData.notes
 
     const { data: accommodation, error } = await supabase
-      .from('trip_accommodations')
+      .from('traveler_trip_accommodations')
       .update(dbData)
       .eq('id', accommodationId)
       .eq('trip_id', tripId)
@@ -187,7 +188,7 @@ export async function PUT(
       .single()
 
     if (error) {
-      console.error('Update accommodation error:', error)
+      logger.error('Update accommodation error:', error)
       return NextResponse.json(
         { error: '更新住宿資料失敗' },
         { status: 500 }
@@ -199,7 +200,7 @@ export async function PUT(
       data: accommodation,
     })
   } catch (error) {
-    console.error('Update accommodation error:', error)
+    logger.error('Update accommodation error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }
@@ -227,13 +228,13 @@ export async function DELETE(
     const supabase = getOnlineSupabase()
 
     const { error } = await supabase
-      .from('trip_accommodations')
+      .from('traveler_trip_accommodations')
       .delete()
       .eq('id', accommodationId)
       .eq('trip_id', tripId)
 
     if (error) {
-      console.error('Delete accommodation error:', error)
+      logger.error('Delete accommodation error:', error)
       return NextResponse.json(
         { error: '刪除住宿資料失敗' },
         { status: 500 }
@@ -245,7 +246,7 @@ export async function DELETE(
       message: '住宿資料已刪除',
     })
   } catch (error) {
-    console.error('Delete accommodation error:', error)
+    logger.error('Delete accommodation error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }

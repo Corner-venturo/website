@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
+import { logger } from '@/lib/logger'
 
 // POST: 儲存預覽代碼
 export async function POST(request: Request) {
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
       path: '/dev/ui-generator/preview',
     })
   } catch (error) {
-    console.error('Preview save error:', error)
+    logger.error('Preview save error:', error)
     return NextResponse.json(
       { error: '儲存預覽失敗' },
       { status: 500 }

@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { getSupabaseClient } from '@/lib/supabase'
 import { dedup, invalidateCacheByPrefix } from '@/lib/request-dedup'
+import { logger } from '@/lib/logger'
 
 // 快取設定
 const CACHE_DURATION = 2 * 60 * 1000 // 2 分鐘內直接用快取
@@ -348,7 +349,7 @@ export const useTripStore = create<TripState>()(
 
     try {
       const { data: trip, error } = await supabase
-        .from('trips')
+        .from('traveler_trips')
         .insert({
           ...data,
           created_by: userId,
@@ -360,7 +361,7 @@ export const useTripStore = create<TripState>()(
 
       // Add creator as owner member
       await supabase
-        .from('trip_members')
+        .from('traveler_trip_members')
         .insert({
           trip_id: trip.id,
           user_id: userId,
@@ -396,7 +397,7 @@ export const useTripStore = create<TripState>()(
 
       set({ members: data })
     } catch (error: unknown) {
-      console.error('Failed to fetch trip members:', error)
+      logger.error('Failed to fetch trip members:', error)
     }
   },
 
@@ -406,7 +407,7 @@ export const useTripStore = create<TripState>()(
     try {
       // 先檢查是否已經是成員
       const { data: existing } = await supabase
-        .from('trip_members')
+        .from('traveler_trip_members')
         .select('id')
         .eq('trip_id', tripId)
         .eq('user_id', userId)
@@ -417,7 +418,7 @@ export const useTripStore = create<TripState>()(
       }
 
       const { error } = await supabase
-        .from('trip_members')
+        .from('traveler_trip_members')
         .insert({
           trip_id: tripId,
           user_id: userId,
@@ -441,7 +442,7 @@ export const useTripStore = create<TripState>()(
 
     try {
       const { data, error } = await supabase
-        .from('expenses')
+        .from('traveler_expenses')
         .select(`
           *,
           payer:profiles!paid_by(display_name, avatar_url),
@@ -457,7 +458,7 @@ export const useTripStore = create<TripState>()(
 
       set({ expenses: data || [] })
     } catch (error: unknown) {
-      console.error('Failed to fetch expenses:', error)
+      logger.error('Failed to fetch expenses:', error)
     }
   },
 
@@ -467,7 +468,7 @@ export const useTripStore = create<TripState>()(
     try {
       // Create expense
       const { data: expense, error: expenseError } = await supabase
-        .from('expenses')
+        .from('traveler_expenses')
         .insert({
           trip_id: data.trip_id,
           title: data.title,
@@ -491,7 +492,7 @@ export const useTripStore = create<TripState>()(
       }))
 
       const { error: splitError } = await supabase
-        .from('expense_splits')
+        .from('traveler_expense_splits')
         .insert(splits)
 
       if (splitError) throw splitError
@@ -522,7 +523,7 @@ export const useTripStore = create<TripState>()(
 
       set({ itineraryItems: data })
     } catch (error: unknown) {
-      console.error('Failed to fetch itinerary items:', error)
+      logger.error('Failed to fetch itinerary items:', error)
     }
   },
 
@@ -531,7 +532,7 @@ export const useTripStore = create<TripState>()(
 
     try {
       const { data: item, error } = await supabase
-        .from('trip_itinerary_items')
+        .from('traveler_trip_itinerary_items')
         .insert(data)
         .select()
         .single()
@@ -555,7 +556,7 @@ export const useTripStore = create<TripState>()(
 
     try {
       const { error } = await supabase
-        .from('trip_itinerary_items')
+        .from('traveler_trip_itinerary_items')
         .update(data)
         .eq('id', itemId)
 
@@ -585,7 +586,7 @@ export const useTripStore = create<TripState>()(
       const tripId = item?.trip_id
 
       const { error } = await supabase
-        .from('trip_itinerary_items')
+        .from('traveler_trip_itinerary_items')
         .delete()
         .eq('id', itemId)
 
@@ -650,7 +651,7 @@ export const useTripStore = create<TripState>()(
 
     try {
       const { data, error } = await supabase
-        .from('settlements')
+        .from('traveler_settlements')
         .select('*')
         .eq('trip_id', tripId)
         .order('created_at', { ascending: false })
@@ -659,7 +660,7 @@ export const useTripStore = create<TripState>()(
 
       set({ settlements: data || [] })
     } catch (error: unknown) {
-      console.error('Failed to fetch settlements:', error)
+      logger.error('Failed to fetch settlements:', error)
     }
   },
 
@@ -668,7 +669,7 @@ export const useTripStore = create<TripState>()(
 
     try {
       const { error } = await supabase
-        .from('settlements')
+        .from('traveler_settlements')
         .insert({
           trip_id: data.trip_id,
           from_user: data.from_user,
@@ -768,7 +769,7 @@ export const useTripStore = create<TripState>()(
       // 如果有快取，保持快取資料，只記錄錯誤
       if (hasValidCache) {
         set({ isLoading: false })
-        console.error('Background refresh failed:', message)
+        logger.error('Background refresh failed:', message)
       } else {
         set({ isLoading: false, error: message })
       }

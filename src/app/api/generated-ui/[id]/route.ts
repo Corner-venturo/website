@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 // GET: 取得單一 UI 代碼
 export async function GET(
@@ -22,7 +23,7 @@ export async function GET(
       item: data,
     })
   } catch (error) {
-    console.error('Get generated UI error:', error)
+    logger.error('Get generated UI error:', error)
     return NextResponse.json(
       { error: '讀取失敗' },
       { status: 500 }
@@ -59,7 +60,7 @@ export async function PUT(
       item: data,
     })
   } catch (error) {
-    console.error('Update generated UI error:', error)
+    logger.error('Update generated UI error:', error)
     return NextResponse.json(
       { error: '更新失敗' },
       { status: 500 }
@@ -86,7 +87,7 @@ export async function DELETE(
       success: true,
     })
   } catch (error) {
-    console.error('Delete generated UI error:', error)
+    logger.error('Delete generated UI error:', error)
     return NextResponse.json(
       { error: '刪除失敗' },
       { status: 500 }

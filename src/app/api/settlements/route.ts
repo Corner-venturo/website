@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 // GET: 取得結算記錄
 export async function GET(request: Request) {
@@ -19,7 +20,7 @@ export async function GET(request: Request) {
     const supabase = getOnlineSupabase()
 
     let query = supabase
-      .from('settlements')
+      .from('traveler_settlements')
       .select(`
         *,
         from_profile:profiles!settlements_from_user_fkey(id, display_name, avatar_url),
@@ -40,7 +41,7 @@ export async function GET(request: Request) {
     const { data: settlements, error } = await query
 
     if (error) {
-      console.error('Query settlements error:', error)
+      logger.error('Query settlements error:', error)
       return NextResponse.json(
         { error: '取得結算記錄失敗' },
         { status: 500 }
@@ -52,7 +53,7 @@ export async function GET(request: Request) {
       data: settlements,
     })
   } catch (error) {
-    console.error('Get settlements error:', error)
+    logger.error('Get settlements error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }
@@ -87,7 +88,7 @@ export async function POST(request: Request) {
     let effectiveTripId = tripId
     if (groupId && !tripId) {
       const { data: group } = await supabase
-        .from('split_groups')
+        .from('traveler_split_groups')
         .select('trip_id')
         .eq('id', groupId)
         .single()
@@ -95,7 +96,7 @@ export async function POST(request: Request) {
     }
 
     const { data: settlement, error } = await supabase
-      .from('settlements')
+      .from('traveler_settlements')
       .insert({
         trip_id: effectiveTripId,
         split_group_id: groupId || null,
@@ -114,7 +115,7 @@ export async function POST(request: Request) {
       .single()
 
     if (error) {
-      console.error('Insert settlement error:', error)
+      logger.error('Insert settlement error:', error)
       return NextResponse.json(
         { error: '建立結算記錄失敗' },
         { status: 500 }
@@ -126,7 +127,7 @@ export async function POST(request: Request) {
       data: settlement,
     })
   } catch (error) {
-    console.error('Create settlement error:', error)
+    logger.error('Create settlement error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }
@@ -155,14 +156,14 @@ export async function PUT(request: Request) {
     }
 
     const { data: settlement, error } = await supabase
-      .from('settlements')
+      .from('traveler_settlements')
       .update(updateData)
       .eq('id', settlementId)
       .select()
       .single()
 
     if (error) {
-      console.error('Update settlement error:', error)
+      logger.error('Update settlement error:', error)
       return NextResponse.json(
         { error: '更新結算記錄失敗' },
         { status: 500 }
@@ -174,7 +175,7 @@ export async function PUT(request: Request) {
       data: settlement,
     })
   } catch (error) {
-    console.error('Update settlement error:', error)
+    logger.error('Update settlement error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }

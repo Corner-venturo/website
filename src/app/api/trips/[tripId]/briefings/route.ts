@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 // GET: 取得行程的行前說明會
 export async function GET(
@@ -19,13 +20,13 @@ export async function GET(
     const supabase = getOnlineSupabase()
 
     const { data: briefings, error } = await supabase
-      .from('trip_briefings')
+      .from('traveler_trip_briefings')
       .select('*')
       .eq('trip_id', tripId)
       .order('meeting_date', { ascending: true })
 
     if (error) {
-      console.error('Query briefings error:', error)
+      logger.error('Query briefings error:', error)
       return NextResponse.json(
         { error: '取得說明會資料失敗' },
         { status: 500 }
@@ -37,7 +38,7 @@ export async function GET(
       data: briefings,
     })
   } catch (error) {
-    console.error('Get briefings error:', error)
+    logger.error('Get briefings error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }
@@ -79,7 +80,7 @@ export async function POST(
     const supabase = getOnlineSupabase()
 
     const { data: briefing, error } = await supabase
-      .from('trip_briefings')
+      .from('traveler_trip_briefings')
       .insert({
         trip_id: tripId,
         title,
@@ -99,7 +100,7 @@ export async function POST(
       .single()
 
     if (error) {
-      console.error('Insert briefing error:', error)
+      logger.error('Insert briefing error:', error)
       return NextResponse.json(
         { error: '新增說明會失敗' },
         { status: 500 }
@@ -111,7 +112,7 @@ export async function POST(
       data: briefing,
     })
   } catch (error) {
-    console.error('Create briefing error:', error)
+    logger.error('Create briefing error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }
@@ -158,7 +159,7 @@ export async function PUT(
     if (updateData.status !== undefined) dbData.status = updateData.status
 
     const { data: briefing, error } = await supabase
-      .from('trip_briefings')
+      .from('traveler_trip_briefings')
       .update(dbData)
       .eq('id', briefingId)
       .eq('trip_id', tripId)
@@ -166,7 +167,7 @@ export async function PUT(
       .single()
 
     if (error) {
-      console.error('Update briefing error:', error)
+      logger.error('Update briefing error:', error)
       return NextResponse.json(
         { error: '更新說明會失敗' },
         { status: 500 }
@@ -178,7 +179,7 @@ export async function PUT(
       data: briefing,
     })
   } catch (error) {
-    console.error('Update briefing error:', error)
+    logger.error('Update briefing error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }
@@ -206,13 +207,13 @@ export async function DELETE(
     const supabase = getOnlineSupabase()
 
     const { error } = await supabase
-      .from('trip_briefings')
+      .from('traveler_trip_briefings')
       .delete()
       .eq('id', briefingId)
       .eq('trip_id', tripId)
 
     if (error) {
-      console.error('Delete briefing error:', error)
+      logger.error('Delete briefing error:', error)
       return NextResponse.json(
         { error: '刪除說明會失敗' },
         { status: 500 }
@@ -224,7 +225,7 @@ export async function DELETE(
       message: '說明會已刪除',
     })
   } catch (error) {
-    console.error('Delete briefing error:', error)
+    logger.error('Delete briefing error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }

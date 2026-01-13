@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getErpSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: Request) {
   try {
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
       .limit(100) // 取得所有員工來比對
 
     if (queryError) {
-      console.error('Query error:', queryError)
+      logger.error('Query error:', queryError)
       return NextResponse.json(
         { error: '系統錯誤，請稍後再試' },
         { status: 500 }
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
     })
 
     if (authError) {
-      console.error('Auth error:', authError)
+      logger.error('Auth error:', authError)
       return NextResponse.json(
         { error: '密碼錯誤' },
         { status: 401 }
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
       session: authData.session,
     })
   } catch (error) {
-    console.error('Leader login error:', error)
+    logger.error('Leader login error:', error)
     return NextResponse.json(
       { error: '登入失敗，請稍後再試' },
       { status: 500 }

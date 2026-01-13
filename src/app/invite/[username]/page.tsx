@@ -23,7 +23,7 @@ export default function InvitePage() {
   const username = params.username as string;
 
   const { user, initialize, isInitialized } = useAuthStore();
-  const { sendFriendRequest } = useFriendsStore();
+  const { acceptInviteLink } = useFriendsStore();
 
   const [inviter, setInviter] = useState<InviterProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,7 +49,7 @@ export default function InvitePage() {
 
       try {
         const { data, error: fetchError } = await supabase
-          .from('profiles')
+          .from('traveler_profiles')
           .select('id, username, display_name, full_name, avatar_url, bio')
           .eq('username', username)
           .maybeSingle();
@@ -71,7 +71,7 @@ export default function InvitePage() {
     fetchInviter();
   }, [username]);
 
-  // 發送好友邀請
+  // 透過邀請連結直接成為好友
   const handleAddFriend = async () => {
     if (!user?.id || !inviter?.id) return;
 
@@ -85,12 +85,14 @@ export default function InvitePage() {
     setRequestStatus('sending');
     setRequestError(null);
 
-    const result = await sendFriendRequest(user.id, inviter.id);
+    const result = await acceptInviteLink(user.id, inviter.id);
 
     if (result.success) {
       setRequestStatus('sent');
+      // 清除 localStorage 中的 redirect 記錄
+      localStorage.removeItem('redirect_after_login');
     } else {
-      setRequestError(result.error || '發送失敗');
+      setRequestError(result.error || '加入好友失敗');
       setRequestStatus('error');
     }
   };
@@ -179,7 +181,7 @@ export default function InvitePage() {
               <p className="text-gray-600">
                 <span className="font-bold text-gray-800">{displayName}</span> 邀請你一起使用 Venturo
               </p>
-              <p className="text-sm text-[#949494] mt-2">成為旅伴，一起探索世界！</p>
+              <p className="text-sm text-[#949494] mt-2">成為朋友，一起探索世界！</p>
             </div>
 
             {/* Bio */}
@@ -198,14 +200,22 @@ export default function InvitePage() {
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#A8BFA6]/20 flex items-center justify-center">
                       <span className="material-icons-round text-3xl text-[#A8BFA6]">check_circle</span>
                     </div>
-                    <p className="text-lg font-bold text-gray-800 mb-2">已發送邀請！</p>
-                    <p className="text-sm text-[#949494] mb-6">等待 {displayName} 確認</p>
-                    <Link
-                      href="/my/friends"
-                      className="inline-block px-6 py-3 rounded-full bg-[#cfb9a5] text-white font-medium hover:bg-[#b09b88] transition-colors"
-                    >
-                      查看好友列表
-                    </Link>
+                    <p className="text-lg font-bold text-gray-800 mb-2">已成為好友！</p>
+                    <p className="text-sm text-[#949494] mb-6">你和 {displayName} 現在是朋友了</p>
+                    <div className="space-y-3">
+                      <Link
+                        href="/"
+                        className="block w-full px-6 py-3 rounded-full bg-[#cfb9a5] text-white font-medium hover:bg-[#b09b88] transition-colors"
+                      >
+                        開始探索
+                      </Link>
+                      <Link
+                        href="/my/friends"
+                        className="block w-full px-6 py-3 rounded-full bg-white/70 backdrop-blur-sm border border-white/60 text-gray-600 font-medium hover:bg-white/90 transition-colors"
+                      >
+                        查看好友列表
+                      </Link>
+                    </div>
                   </div>
                 ) : requestStatus === 'error' ? (
                   <div className="text-center">

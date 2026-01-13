@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 import { getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 async function getAuthSupabase() {
   const cookieStore = await cookies()
@@ -45,7 +46,7 @@ export async function GET(request: Request) {
     const serviceSupabase = getOnlineSupabase()
 
     let query = serviceSupabase
-      .from('split_group_invitations')
+      .from('traveler_split_group_invitations')
       .select(`
         id,
         group_id,
@@ -83,7 +84,7 @@ export async function GET(request: Request) {
       data: data || [],
     })
   } catch (error) {
-    console.error('Get split group invitations error:', error)
+    logger.error('Get split group invitations error:', error)
     return NextResponse.json({ error: '讀取失敗' }, { status: 500 })
   }
 }
@@ -115,7 +116,7 @@ export async function POST(request: Request) {
 
     // 驗證是群組成員
     const { data: membership } = await serviceSupabase
-      .from('split_group_members')
+      .from('traveler_split_group_members')
       .select('role')
       .eq('group_id', groupId)
       .eq('user_id', user.id)
@@ -134,7 +135,7 @@ export async function POST(request: Request) {
       const inviteCode = generateInviteCode()
 
       const { data, error } = await serviceSupabase
-        .from('split_group_invitations')
+        .from('traveler_split_group_invitations')
         .insert({
           group_id: groupId,
           inviter_id: user.id,
@@ -164,7 +165,7 @@ export async function POST(request: Request) {
 
     if (!targetUserId && username) {
       const { data: profile } = await serviceSupabase
-        .from('profiles')
+        .from('traveler_profiles')
         .select('id')
         .eq('username', username)
         .single()
@@ -186,13 +187,13 @@ export async function POST(request: Request) {
     // 平行檢查是否已是成員 + 是否已有邀請
     const [memberResult, inviteResult] = await Promise.all([
       serviceSupabase
-        .from('split_group_members')
+        .from('traveler_split_group_members')
         .select('id')
         .eq('group_id', groupId)
         .eq('user_id', targetUserId)
         .single(),
       serviceSupabase
-        .from('split_group_invitations')
+        .from('traveler_split_group_invitations')
         .select('id, status')
         .eq('group_id', groupId)
         .eq('invitee_id', targetUserId)
@@ -210,7 +211,7 @@ export async function POST(request: Request) {
 
     // 建立邀請
     const { data, error } = await serviceSupabase
-      .from('split_group_invitations')
+      .from('traveler_split_group_invitations')
       .insert({
         group_id: groupId,
         inviter_id: user.id,
@@ -234,7 +235,7 @@ export async function POST(request: Request) {
       data,
     })
   } catch (error) {
-    console.error('Send split group invitation error:', error)
+    logger.error('Send split group invitation error:', error)
     return NextResponse.json({ error: '發送邀請失敗' }, { status: 500 })
   }
 }

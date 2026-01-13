@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 // GET: 取得群組成員
 export async function GET(
@@ -11,7 +12,7 @@ export async function GET(
     const supabase = getOnlineSupabase()
 
     const { data: members, error } = await supabase
-      .from('split_group_members')
+      .from('traveler_split_group_members')
       .select(`
         id,
         user_id,
@@ -24,7 +25,7 @@ export async function GET(
       .order('joined_at', { ascending: true })
 
     if (error) {
-      console.error('Query members error:', error)
+      logger.error('Query members error:', error)
       return NextResponse.json(
         { error: '取得成員失敗' },
         { status: 500 }
@@ -36,7 +37,7 @@ export async function GET(
       data: members,
     })
   } catch (error) {
-    console.error('Get group members error:', error)
+    logger.error('Get group members error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }
@@ -75,7 +76,7 @@ export async function POST(
     }))
 
     const { data: members, error } = await supabase
-      .from('split_group_members')
+      .from('traveler_split_group_members')
       .upsert(membersToInsert, {
         onConflict: 'group_id,user_id',
         ignoreDuplicates: true,
@@ -90,7 +91,7 @@ export async function POST(
       `)
 
     if (error) {
-      console.error('Insert member error:', error)
+      logger.error('Insert member error:', error)
       return NextResponse.json(
         { error: '邀請成員失敗' },
         { status: 500 }
@@ -102,7 +103,7 @@ export async function POST(
       data: members,
     })
   } catch (error) {
-    console.error('Invite member error:', error)
+    logger.error('Invite member error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }
@@ -131,7 +132,7 @@ export async function DELETE(
 
     // 檢查是否為 owner，owner 不能被移除
     const { data: member } = await supabase
-      .from('split_group_members')
+      .from('traveler_split_group_members')
       .select('role')
       .eq('group_id', groupId)
       .eq('user_id', userId)
@@ -145,13 +146,13 @@ export async function DELETE(
     }
 
     const { error } = await supabase
-      .from('split_group_members')
+      .from('traveler_split_group_members')
       .delete()
       .eq('group_id', groupId)
       .eq('user_id', userId)
 
     if (error) {
-      console.error('Delete member error:', error)
+      logger.error('Delete member error:', error)
       return NextResponse.json(
         { error: '移除成員失敗' },
         { status: 500 }
@@ -162,7 +163,7 @@ export async function DELETE(
       success: true,
     })
   } catch (error) {
-    console.error('Remove member error:', error)
+    logger.error('Remove member error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }

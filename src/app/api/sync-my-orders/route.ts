@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getErpSupabase, getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 // POST: 用身分證同步所有 ERP 訂單到 Online
 export async function POST(request: Request) {
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
 
     // 1. 從 Online 取得用戶的身分證
     const { data: profile, error: profileError } = await onlineSupabase
-      .from('profiles')
+      .from('traveler_profiles')
       .select('id_number, display_name')
       .eq('id', userId)
       .single()
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
       .eq('id_number', profile.id_number)
 
     if (erpError) {
-      console.error('ERP query error:', erpError)
+      logger.error('ERP query error:', erpError)
       return NextResponse.json(
         { error: 'ERP 查詢失敗' },
         { status: 500 }
@@ -87,7 +88,7 @@ export async function POST(request: Request) {
 
     // 3. 取得用戶已加入的行程（用 tour_code 比對）
     const { data: existingMemberships } = await onlineSupabase
-      .from('trip_members')
+      .from('traveler_trip_members')
       .select('trip_id, trips!inner(tour_code)')
       .eq('user_id', userId)
 
@@ -137,7 +138,7 @@ export async function POST(request: Request) {
 
         // 嘗試用 tour_code 查找
         const { data: existingTrip } = await onlineSupabase
-          .from('trips')
+          .from('traveler_trips')
           .select('id, title')
           .eq('tour_code', order.code)
           .single()
@@ -155,7 +156,7 @@ export async function POST(request: Request) {
 
           const syncData = await syncResponse.json()
           if (!syncResponse.ok || !syncData.success) {
-            console.error(`Sync failed for ${order.code}:`, syncData)
+            logger.error(`Sync failed for ${order.code}:`, syncData)
             continue
           }
           tripId = syncData.data.tripId
@@ -168,7 +169,7 @@ export async function POST(request: Request) {
         const nickname = erpMember.chinese_name || erpMember.passport_name || profile.display_name
 
         const { error: memberError } = await onlineSupabase
-          .from('trip_members')
+          .from('traveler_trip_members')
           .upsert({
             trip_id: tripId,
             user_id: userId,
@@ -179,14 +180,14 @@ export async function POST(request: Request) {
           })
 
         if (memberError) {
-          console.error(`Add member failed for trip ${tripId}:`, memberError)
+          logger.error(`Add member failed for trip ${tripId}:`, memberError)
           continue
         }
 
         syncedCount++
         syncedTrips.push({ tripId, title: tripTitle, role })
       } catch (err) {
-        console.error(`Error syncing order ${order.code}:`, err)
+        logger.error(`Error syncing order ${order.code}:`, err)
         continue
       }
     }
@@ -204,7 +205,7 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
-    console.error('Sync my orders error:', errorMessage, error)
+    logger.error('Sync my orders error:', errorMessage, error)
     return NextResponse.json(
       { error: `同步失敗: ${errorMessage}` },
       { status: 500 }

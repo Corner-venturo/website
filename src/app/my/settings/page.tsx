@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth-store';
@@ -12,6 +12,12 @@ const settingsItems = [
     label: '個人資料',
     description: '編輯你的基本資訊',
     href: '/my/profile',
+  },
+  {
+    icon: 'translate',
+    label: '旅遊便利小卡',
+    description: '飲食限制、過敏等多語言小卡',
+    href: '/my/travel-cards',
   },
   {
     icon: 'lock',
@@ -37,6 +43,25 @@ export default function SettingsPage() {
   const router = useRouter();
   const { signOut, isLoading } = useAuthStore();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [tapCount, setTapCount] = useState(0);
+  const [showLearnFeature, setShowLearnFeature] = useState(false);
+
+  // 點擊版本號 7 次顯示隱藏功能
+  useEffect(() => {
+    if (tapCount >= 7) {
+      setShowLearnFeature(true);
+    }
+  }, [tapCount]);
+
+  const handleVersionTap = () => {
+    setTapCount((prev) => prev + 1);
+    if (tapCount === 6) {
+      // 即將解鎖時震動提示（如果支援）
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }
+  };
 
   const handleLogout = async () => {
     await signOut();
@@ -108,9 +133,39 @@ export default function SettingsPage() {
           variant="warning"
         />
 
+        {/* Hidden Learn Feature */}
+        {showLearnFeature && (
+          <Link
+            href="/learn"
+            className="w-full mt-6 bg-gradient-to-r from-purple-500/10 to-indigo-500/10 backdrop-blur-xl rounded-2xl border border-purple-500/20 shadow-sm p-4 flex items-center gap-4 hover:from-purple-500/20 hover:to-indigo-500/20 transition-all active:scale-[0.98]"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white">
+              <span className="material-icons-round">school</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-purple-700 text-sm">語言學習 (Beta)</div>
+              <div className="text-xs text-purple-500">情境式日文學習系統</div>
+            </div>
+            <span className="material-icons-round text-purple-400">chevron_right</span>
+          </Link>
+        )}
+
         {/* Version Info */}
-        <div className="mt-8 text-center text-xs text-[#949494]">
+        <div
+          className="mt-8 text-center text-xs text-[#949494] cursor-pointer select-none"
+          onClick={handleVersionTap}
+        >
           <p>VENTURO v1.0.0</p>
+          {tapCount > 0 && tapCount < 7 && (
+            <p className="text-[10px] mt-1 text-[#C5B6AF]">
+              {7 - tapCount} 次後解鎖開發者功能
+            </p>
+          )}
+          {showLearnFeature && (
+            <p className="text-[10px] mt-1 text-purple-500">
+              已解鎖開發者功能
+            </p>
+          )}
         </div>
       </main>
     </div>

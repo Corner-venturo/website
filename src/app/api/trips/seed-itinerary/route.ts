@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 // POST: 建立沖繩聖誕團行程資料
 export async function POST(request: Request) {
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
 
     // 優先使用已有成員加入的舊 trip
     let { data: trip } = await supabase
-      .from('trips')
+      .from('traveler_trips')
       .select('id')
       .or('title.ilike.%沖繩%,title.ilike.%聖誕%')
       .single()
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
     if (!trip) {
       // 建立新 trip
       const { data: newTrip, error: insertError } = await supabase
-        .from('trips')
+        .from('traveler_trips')
         .insert({
           title: '2025沖繩聖誕趴踢趴踢',
           description: '沖繩五日遊 - 美麗海水族館、美國村、國際通',
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
         .single()
 
       if (insertError || !newTrip) {
-        console.error('Create trip error:', insertError)
+        logger.error('Create trip error:', insertError)
         return NextResponse.json(
           { error: '建立行程失敗' },
           { status: 500 }
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
       tripId = trip.id
       // 更新 trip 資訊
       await supabase
-        .from('trips')
+        .from('traveler_trips')
         .update({
           title: '2025沖繩聖誕趴踢趴踢',
           description: '沖繩五日遊 - 美麗海水族館、美國村、國際通',
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
 
     // 2. 刪除舊的行程項目
     await supabase
-      .from('trip_itinerary_items')
+      .from('traveler_trip_itinerary_items')
       .delete()
       .eq('trip_id', tripId)
 
@@ -123,11 +124,11 @@ export async function POST(request: Request) {
     }))
 
     const { error: itemsError } = await supabase
-      .from('trip_itinerary_items')
+      .from('traveler_trip_itinerary_items')
       .insert(itemsWithTripId)
 
     if (itemsError) {
-      console.error('Insert items error:', itemsError)
+      logger.error('Insert items error:', itemsError)
       return NextResponse.json(
         { error: '建立行程項目失敗: ' + itemsError.message },
         { status: 500 }
@@ -137,12 +138,12 @@ export async function POST(request: Request) {
     // 4. 建立航班資訊（如果表存在）
     try {
       await supabase
-        .from('trip_flights')
+        .from('traveler_trip_flights')
         .delete()
         .eq('trip_id', tripId)
 
       await supabase
-        .from('trip_flights')
+        .from('traveler_trip_flights')
         .insert([
           {
             trip_id: tripId,
@@ -175,7 +176,7 @@ export async function POST(request: Request) {
         ])
     } catch {
       // trip_flights 表可能不存在，跳過
-      console.log('trip_flights table may not exist, skipping')
+      logger.log('trip_flights table may not exist, skipping')
     }
 
     return NextResponse.json({
@@ -187,7 +188,7 @@ export async function POST(request: Request) {
       },
     })
   } catch (error) {
-    console.error('Seed error:', error)
+    logger.error('Seed error:', error)
     return NextResponse.json(
       { error: '建立失敗' },
       { status: 500 }
@@ -211,7 +212,7 @@ export async function GET(request: Request) {
     const supabase = getOnlineSupabase()
 
     const { data: trip } = await supabase
-      .from('trips')
+      .from('traveler_trips')
       .select('id, title, status, start_date, end_date')
       .eq('title', '2024沖繩聖誕趴踢趴踢')
       .single()
@@ -221,7 +222,7 @@ export async function GET(request: Request) {
     }
 
     const { data: items } = await supabase
-      .from('trip_itinerary_items')
+      .from('traveler_trip_itinerary_items')
       .select('id')
       .eq('trip_id', trip.id)
 
@@ -231,7 +232,7 @@ export async function GET(request: Request) {
       itemCount: items?.length || 0,
     })
   } catch (error) {
-    console.error('Get error:', error)
+    logger.error('Get error:', error)
     return NextResponse.json(
       { error: '查詢失敗' },
       { status: 500 }

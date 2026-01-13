@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { logger } from '@/lib/logger';
 import { useTripStore } from "@/stores/trip-store";
 import { useAuthStore } from "@/stores/auth-store";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -102,7 +103,7 @@ export default function SplitGroupDetailPage() {
         setSettlements(data.data || []);
       }
     } catch (error) {
-      console.error('Failed to fetch settlements:', error);
+      logger.error('Failed to fetch settlements:', error);
     } finally {
       setLoadingSettlements(false);
     }
@@ -161,7 +162,7 @@ export default function SplitGroupDetailPage() {
         setToast({ isOpen: true, message: '已通知對方確認收款', variant: 'info' });
       }
     } catch (error) {
-      console.error('Submit payment error:', error);
+      logger.error('Submit payment error:', error);
     } finally {
       setIsSubmitting(false);
       setConfirmModal({ isOpen: false, type: 'pay' });
@@ -197,7 +198,7 @@ export default function SplitGroupDetailPage() {
         }
       }
     } catch (error) {
-      console.error('Confirm receipt error:', error);
+      logger.error('Confirm receipt error:', error);
     } finally {
       setIsSubmitting(false);
       setConfirmModal({ isOpen: false, type: 'confirm' });
@@ -230,7 +231,7 @@ export default function SplitGroupDetailPage() {
         setAvailableMembers(available);
       }
     } catch (error) {
-      console.error('Failed to fetch trip members:', error);
+      logger.error('Failed to fetch trip members:', error);
     } finally {
       setIsLoadingMembers(false);
     }
@@ -277,7 +278,7 @@ export default function SplitGroupDetailPage() {
         setToast({ isOpen: true, message: data.error || '新增失敗', variant: 'info' });
       }
     } catch (error) {
-      console.error('Add members error:', error);
+      logger.error('Add members error:', error);
       setToast({ isOpen: true, message: '新增成員失敗', variant: 'info' });
     } finally {
       setIsAddingMembers(false);
@@ -309,7 +310,7 @@ export default function SplitGroupDetailPage() {
         setToast({ isOpen: true, message: data.error || '新增失敗', variant: 'info' });
       }
     } catch (error) {
-      console.error('Add virtual member error:', error);
+      logger.error('Add virtual member error:', error);
       setToast({ isOpen: true, message: '新增虛擬成員失敗', variant: 'info' });
     } finally {
       setIsAddingMembers(false);
@@ -338,7 +339,7 @@ export default function SplitGroupDetailPage() {
         setToast({ isOpen: true, message: data.error || '移除失敗', variant: 'info' });
       }
     } catch (error) {
-      console.error('Remove member error:', error);
+      logger.error('Remove member error:', error);
       setToast({ isOpen: true, message: '移除成員失敗', variant: 'info' });
     } finally {
       setIsSubmitting(false);

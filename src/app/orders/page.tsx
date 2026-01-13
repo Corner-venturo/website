@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
+import { logger } from '@/lib/logger';
 import MobileNav from "@/components/MobileNav";
 import { OrderCard, FilterTabs, FilterType, Order } from "./components";
 import { useAuthStore } from "@/stores/auth-store";
@@ -276,9 +277,9 @@ export default function OrdersPage() {
 
   // 確認加入行程
   const handleConfirmJoin = async () => {
-    console.log('handleConfirmJoin called', { travelerInfo, user });
+    logger.log('handleConfirmJoin called', { travelerInfo, user });
     if (!travelerInfo) {
-      console.log('No travelerInfo');
+      logger.log('No travelerInfo');
       return;
     }
     if (!user?.id) {
@@ -288,7 +289,7 @@ export default function OrdersPage() {
 
     setIsVerifying(true);
     try {
-      console.log('Calling API:', `/api/trips/${travelerInfo.tripId}/members`);
+      logger.log('Calling API:', `/api/trips/${travelerInfo.tripId}/members`);
       const response = await fetch(`/api/trips/${travelerInfo.tripId}/members`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -296,7 +297,7 @@ export default function OrdersPage() {
       });
 
       const data = await response.json();
-      console.log('API response:', { ok: response.ok, data });
+      logger.log('API response:', { ok: response.ok, data });
       if (response.ok) {
         if (data.alreadyMember) {
           setVerifyError('已經加入過此行程');
@@ -311,7 +312,7 @@ export default function OrdersPage() {
         setJoinStep('input');
       }
     } catch (err) {
-      console.error('API error:', err);
+      logger.error('API error:', err);
       setVerifyError('網路錯誤');
       setJoinStep('input');
     } finally {
@@ -509,10 +510,10 @@ export default function OrdersPage() {
                   {/* 有行程時才顯示的選項 */}
                   {hasTrips && (
                     <>
-                      {/* 邀請旅伴 - 領隊不需要此功能 */}
+                      {/* 邀請朋友 - 領隊不需要此功能 */}
                       {!isLeader && (
                         <Link
-                          href="/my/friends/invite"
+                          href="/my/friends/invite?returnUrl=/orders"
                           onClick={() => setShowMenu(false)}
                           className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors active:scale-[0.98]"
                         >
@@ -520,7 +521,7 @@ export default function OrdersPage() {
                             <span className="material-icons-round text-[#A5BCCF] text-2xl">person_add</span>
                           </div>
                           <div className="flex-1">
-                            <div className="font-bold text-gray-800">邀請旅伴</div>
+                            <div className="font-bold text-gray-800">邀請朋友</div>
                             <div className="text-xs text-gray-500">分享連結或 QR Code 邀請好友</div>
                           </div>
                           <span className="material-icons-round text-gray-300">chevron_right</span>

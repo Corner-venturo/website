@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
+import { logger } from '@/lib/logger';
 import MobileNav from "@/components/MobileNav";
 import { useTripStore, Trip, TripItineraryItem } from "@/stores/trip-store";
 import { useAuthStore } from "@/stores/auth-store";
@@ -916,7 +917,7 @@ export default function OrderDetailPage() {
         alert(data.error || '儲存失敗');
       }
     } catch (error) {
-      console.error('Save expense error:', error);
+      logger.error('Save expense error:', error);
       alert('儲存失敗，請稍後再試');
     } finally {
       setIsSavingExpense(false);
@@ -2093,7 +2094,7 @@ export default function OrderDetailPage() {
                   </div>
                 </button>
 
-                {/* 邀請旅伴 */}
+                {/* 邀請朋友 */}
                 <Link
                   href={`/my/friends/invite?tripId=${orderId}`}
                   onClick={() => setShowHeaderMenu(false)}
@@ -2103,7 +2104,7 @@ export default function OrderDetailPage() {
                     <span className="material-icons-round text-[#A5BCCF] text-2xl">person_add</span>
                   </div>
                   <div className="flex-1 text-left">
-                    <div className="font-bold text-[#A5BCCF]">邀請旅伴</div>
+                    <div className="font-bold text-[#A5BCCF]">邀請朋友</div>
                     <div className="text-xs text-gray-500">邀請朋友加入這趟旅程</div>
                   </div>
                 </Link>

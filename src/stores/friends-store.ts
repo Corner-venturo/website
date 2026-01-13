@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { getSupabaseClient } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 
 // 資料庫返回的好友關係記錄
 interface FriendshipRecord {
@@ -63,7 +64,7 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
     try {
       // 取得已接受的好友（我發起或對方發起）
       const { data: acceptedData, error: acceptedError } = await supabase
-        .from('friends')
+        .from('traveler_friends')
         .select(`
           id,
           user_id,
@@ -79,7 +80,7 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
 
       // 取得收到的待處理邀請
       const { data: receivedData, error: receivedError } = await supabase
-        .from('friends')
+        .from('traveler_friends')
         .select(`
           id,
           user_id,
@@ -95,7 +96,7 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
 
       // 取得發出的待處理邀請
       const { data: sentData, error: sentError } = await supabase
-        .from('friends')
+        .from('traveler_friends')
         .select(`
           id,
           user_id,
@@ -119,7 +120,7 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
 
       // 批次查詢 profiles
       const { data: profiles } = await supabase
-        .from('profiles')
+        .from('traveler_profiles')
         .select('id, display_name, full_name, avatar_url, bio, location')
         .in('id', Array.from(userIds))
 
@@ -159,7 +160,7 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
     try {
       // 檢查是否已經有好友關係
       const { data: existing } = await supabase
-        .from('friends')
+        .from('traveler_friends')
         .select('id, status')
         .or(`and(user_id.eq.${userId},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${userId})`)
         .maybeSingle()
@@ -174,7 +175,7 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
       }
 
       const { error } = await supabase
-        .from('friends')
+        .from('traveler_friends')
         .insert({
           user_id: userId,
           friend_id: friendId,
@@ -203,13 +204,13 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
     try {
       // 先查詢這個邀請的狀態
       const { data: existingRequest, error: fetchError } = await supabase
-        .from('friends')
+        .from('traveler_friends')
         .select('*')
         .eq('id', requestId)
         .maybeSingle()
 
       if (fetchError) {
-        console.error('Fetch error:', fetchError)
+        logger.error('Fetch error:', fetchError)
         throw fetchError
       }
 
@@ -227,14 +228,14 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
 
       // 執行更新
       const { data, error } = await supabase
-        .from('friends')
+        .from('traveler_friends')
         .update({ status: 'accepted' })
         .eq('id', requestId)
         .select()
         .maybeSingle()
 
       if (error) {
-        console.error('Update error:', error)
+        logger.error('Update error:', error)
         throw error
       }
 
@@ -245,7 +246,7 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
       await get().fetchFriends(user.id)
       return { success: true }
     } catch (error: unknown) {
-      console.error('acceptFriendRequest error:', error)
+      logger.error('acceptFriendRequest error:', error)
       const message = error instanceof Error ? error.message : '接受邀請失敗'
       return { success: false, error: message }
     }
@@ -261,7 +262,7 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
 
     try {
       const { data, error } = await supabase
-        .from('friends')
+        .from('traveler_friends')
         .update({ status: 'rejected' })
         .eq('id', requestId)
         .eq('friend_id', user.id)
@@ -289,7 +290,7 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
 
     try {
       const { error } = await supabase
-        .from('friends')
+        .from('traveler_friends')
         .delete()
         .eq('id', friendshipId)
 
@@ -316,7 +317,7 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
     try {
       // 驗證是自己發出的邀請且狀態為 pending
       const { data: request, error: fetchError } = await supabase
-        .from('friends')
+        .from('traveler_friends')
         .select('*')
         .eq('id', requestId)
         .eq('user_id', user.id)
@@ -331,7 +332,7 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
 
       // 刪除邀請
       const { error } = await supabase
-        .from('friends')
+        .from('traveler_friends')
         .delete()
         .eq('id', requestId)
 
@@ -356,7 +357,7 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
 
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('traveler_profiles')
         .select('id, username, display_name, avatar_url')
         .neq('id', currentUserId)
         .or(`username.ilike.%${cleanQuery}%,display_name.ilike.%${cleanQuery}%,full_name.ilike.%${cleanQuery}%`)
@@ -376,7 +377,7 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
     try {
       // 檢查是否已經有好友關係
       const { data: existing } = await supabase
-        .from('friends')
+        .from('traveler_friends')
         .select('id, status, user_id, friend_id')
         .or(`and(user_id.eq.${userId},friend_id.eq.${inviterId}),and(user_id.eq.${inviterId},friend_id.eq.${userId})`)
         .maybeSingle()
@@ -388,12 +389,12 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
         // 如果有 pending 或 rejected 的記錄，更新為 accepted
         if (existing.status === 'pending' || existing.status === 'rejected') {
           const { error: updateError } = await supabase
-            .from('friends')
+            .from('traveler_friends')
             .update({ status: 'accepted' })
             .eq('id', existing.id)
 
           if (updateError) {
-            console.error('Update existing friendship error:', updateError)
+            logger.error('Update existing friendship error:', updateError)
             throw updateError
           }
           await get().fetchFriends(userId)
@@ -404,7 +405,7 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
       // 沒有現有關係，直接建立 accepted 的好友關係
       // 注意：RLS 要求 auth.uid() = user_id，所以登入者要是 user_id
       const { error } = await supabase
-        .from('friends')
+        .from('traveler_friends')
         .insert({
           user_id: userId,     // 登入者（接受邀請的人）
           friend_id: inviterId, // 邀請者
@@ -416,7 +417,7 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
       await get().fetchFriends(userId)
       return { success: true }
     } catch (error: unknown) {
-      console.error('acceptInviteLink error:', error)
+      logger.error('acceptInviteLink error:', error)
       let message = '加入好友失敗'
       if (error instanceof Error) {
         message = error.message

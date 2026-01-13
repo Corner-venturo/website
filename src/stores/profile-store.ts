@@ -18,8 +18,23 @@ export interface Profile {
   is_profile_complete: boolean
   is_founding_member: boolean      // 創始會員 (前100名用戶)
   member_number: number | null     // 創始會員編號 (1-100)
+  // 員工驗證欄位
+  employee_id: string | null       // ERP 員工 ID
+  employee_number: string | null   // 員工編號 (如 E001)
+  employee_roles: string[]         // 員工角色 (如 ['leader', 'manager'])
+  employee_verified_at: string | null // 驗證時間
   created_at: string
   updated_at: string
+}
+
+// 判斷是否為員工
+export function isEmployee(profile: Profile | null): boolean {
+  return !!profile?.employee_id
+}
+
+// 判斷是否為領隊
+export function isLeader(profile: Profile | null): boolean {
+  return profile?.employee_roles?.includes('leader') ?? false
 }
 
 // 取得顯示用頭像：優先自訂 > Google 頭像

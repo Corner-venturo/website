@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getErpSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: Request) {
   try {
@@ -95,7 +96,7 @@ export async function GET(request: Request) {
       },
     })
   } catch (error) {
-    console.error('Final itinerary error:', error)
+    logger.error('Final itinerary error:', error)
     return NextResponse.json(
       { error: '取得最終行程失敗' },
       { status: 500 }

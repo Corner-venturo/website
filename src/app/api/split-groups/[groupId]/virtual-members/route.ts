@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 import { getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 // POST: 新增虛擬成員（不需要真實帳號的成員）
 export async function POST(
@@ -26,7 +27,7 @@ export async function POST(
 
     // 新增成員到分帳群組
     const { error: memberError } = await supabase
-      .from('split_group_members')
+      .from('traveler_split_group_members')
       .insert({
         group_id: groupId,
         user_id: virtualUserId,
@@ -36,7 +37,7 @@ export async function POST(
       })
 
     if (memberError) {
-      console.error('Insert virtual member error:', memberError)
+      logger.error('Insert virtual member error:', memberError)
       return NextResponse.json(
         { success: false, error: '新增虛擬成員失敗' },
         { status: 500 }
@@ -53,7 +54,7 @@ export async function POST(
       message: '虛擬成員已新增',
     })
   } catch (error) {
-    console.error('Create virtual member error:', error)
+    logger.error('Create virtual member error:', error)
     return NextResponse.json(
       { success: false, error: '系統錯誤' },
       { status: 500 }

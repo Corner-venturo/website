@@ -14,6 +14,14 @@ import { useInvitations } from '@/hooks/useInvitations';
 function InvitePageContent() {
   const searchParams = useSearchParams();
   const tripId = searchParams.get('tripId');
+  const returnUrl = searchParams.get('returnUrl');
+
+  // 智慧返回：優先 returnUrl > 有 tripId 則回行程 > 預設回好友頁
+  const getBackUrl = () => {
+    if (returnUrl) return returnUrl;
+    if (tripId) return `/orders/${tripId}`;
+    return '/my/friends';
+  };
 
   const { user, initialize, isInitialized } = useAuthStore();
   const { profile, fetchProfile } = useProfileStore();
@@ -202,14 +210,14 @@ function InvitePageContent() {
       {/* Header - absolute 定位 */}
       <header className="absolute top-0 left-0 right-0 z-20 px-6 pt-4 pb-4 flex items-center justify-between">
         <Link
-          href={tripId ? `/orders/${tripId}` : '/my/friends'}
+          href={getBackUrl()}
           className="w-10 h-10 bg-white/70 backdrop-blur-xl border border-white/60 rounded-full shadow-sm text-gray-600 hover:text-[#Cfb9a5] transition-colors flex items-center justify-center"
         >
           <span className="material-icons-round text-xl">close</span>
         </Link>
         <div className="text-center">
           <h1 className="text-lg font-bold text-gray-800 tracking-wide">
-            {tripId ? '邀請旅伴' : '邀請夥伴'}
+            {tripId ? '邀請朋友' : '邀請夥伴'}
           </h1>
           {tripId && currentTrip && (
             <p className="text-xs text-gray-500">{currentTrip.title}</p>
@@ -462,7 +470,7 @@ function InvitePageContent() {
       {/* 底部完成按鈕 */}
       <div className="fixed bottom-0 left-0 w-full p-6 pb-10 bg-gradient-to-t from-[#F0EEE6] via-[#F0EEE6] via-70% to-transparent z-40">
         <Link
-          href={tripId ? `/orders/${tripId}` : '/my/friends'}
+          href={getBackUrl()}
           className="w-full py-4 rounded-3xl bg-[#cfb9a5] hover:bg-[#b09b88] text-white font-bold text-lg shadow-lg shadow-[#cfb9a5]/30 flex items-center justify-center gap-2 transition-transform active:scale-95"
         >
           完成

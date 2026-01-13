@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getOnlineSupabase } from '@/lib/supabase-server'
 import { jsonResponse, errorResponse, CACHE_CONFIGS } from '@/lib/api-utils'
+import { logger } from '@/lib/logger'
 
 // GET: 取得群組詳情（含費用、成員餘額）
 export async function GET(
@@ -18,7 +19,7 @@ export async function GET(
     const [groupResult, expensesResult] = await Promise.all([
       // 查詢 1: 群組基本資料
       supabase
-        .from('split_groups')
+        .from('traveler_split_groups')
         .select(`
           *,
           trip:trips(id, title, cover_image, start_date, end_date),
@@ -38,7 +39,7 @@ export async function GET(
 
       // 查詢 2: 費用（簡化，不 join profile）
       supabase
-        .from('expenses')
+        .from('traveler_expenses')
         .select(`
           *,
           expense_splits(
@@ -56,7 +57,7 @@ export async function GET(
     const { data: expenses } = expensesResult
 
     if (groupError) {
-      console.error('Query group error:', groupError)
+      logger.error('Query group error:', groupError)
       return NextResponse.json(
         { error: '群組不存在' },
         { status: 404 }
@@ -132,7 +133,7 @@ export async function GET(
       },
     }, { cache: CACHE_CONFIGS.privateShort })
   } catch (error) {
-    console.error('Get split group error:', error)
+    logger.error('Get split group error:', error)
     return errorResponse('系統錯誤', 500)
   }
 }
@@ -156,14 +157,14 @@ export async function PUT(
     if (defaultCurrency !== undefined) updateData.default_currency = defaultCurrency
 
     const { data: group, error } = await supabase
-      .from('split_groups')
+      .from('traveler_split_groups')
       .update(updateData)
       .eq('id', groupId)
       .select()
       .single()
 
     if (error) {
-      console.error('Update group error:', error)
+      logger.error('Update group error:', error)
       return NextResponse.json(
         { error: '更新群組失敗' },
         { status: 500 }
@@ -175,7 +176,7 @@ export async function PUT(
       data: group,
     })
   } catch (error) {
-    console.error('Update split group error:', error)
+    logger.error('Update split group error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }
@@ -193,12 +194,12 @@ export async function DELETE(
     const supabase = getOnlineSupabase()
 
     const { error } = await supabase
-      .from('split_groups')
+      .from('traveler_split_groups')
       .delete()
       .eq('id', groupId)
 
     if (error) {
-      console.error('Delete group error:', error)
+      logger.error('Delete group error:', error)
       return NextResponse.json(
         { error: '刪除群組失敗' },
         { status: 500 }
@@ -209,7 +210,7 @@ export async function DELETE(
       success: true,
     })
   } catch (error) {
-    console.error('Delete split group error:', error)
+    logger.error('Delete split group error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getErpSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 export const revalidate = 0; // Force dynamic rendering, no caching
 
@@ -73,7 +74,7 @@ export async function GET(request: Request) {
       .order('start_date', { ascending: false })
 
     if (toursError) {
-      console.error('Error fetching tours:', toursError)
+      logger.error('Error fetching tours:', toursError)
       return NextResponse.json(
         { error: '無法取得團資料' },
         { status: 500 }
@@ -106,7 +107,7 @@ export async function GET(request: Request) {
       },
     })
   } catch (error) {
-    console.error('My tours error:', error)
+    logger.error('My tours error:', error)
     return NextResponse.json(
       { error: '取得我的團資料失敗' },
       { status: 500 }

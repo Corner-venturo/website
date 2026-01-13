@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { logger } from '@/lib/logger';
 import BadgeNotification, { BADGES } from '@/components/BadgeNotification';
 import LocationPicker, { LocationData } from '@/components/LocationPicker';
 import { useGroupStore, CreateGroupData } from '@/stores/group-store';
@@ -629,7 +630,7 @@ function CreateExplorePageContent() {
 
       try {
         const { data, error } = await supabase
-          .from('groups')
+          .from('social_groups')
           .select('*')
           .eq('id', editGroupId)
           .single();
@@ -682,7 +683,7 @@ function CreateExplorePageContent() {
           tags: data.tags || [],
         });
       } catch (err) {
-        console.error('Failed to fetch group:', err);
+        logger.error('Failed to fetch group:', err);
         showError('載入失敗', '無法載入活動資料');
       } finally {
         setIsLoadingGroup(false);
@@ -773,7 +774,7 @@ function CreateExplorePageContent() {
 
         if (isEditMode && editGroupId) {
           // 編輯模式：更新活動
-          console.log('Updating group:', editGroupId);
+          logger.log('Updating group:', editGroupId);
           const result = await updateGroup(editGroupId, groupData);
 
           if (result.success) {
@@ -783,7 +784,7 @@ function CreateExplorePageContent() {
           }
         } else {
           // 創建模式：新建活動
-          console.log('Creating group with user:', user.id);
+          logger.log('Creating group with user:', user.id);
           const result = await createGroup(user.id, groupData);
 
           if (result.success) {
@@ -798,7 +799,7 @@ function CreateExplorePageContent() {
           }
         }
       } catch (error) {
-        console.error(isEditMode ? 'Update group error:' : 'Create group error:', error);
+        logger.error(isEditMode ? 'Update group error:' : 'Create group error:', error);
         showError(isEditMode ? '更新失敗' : '創建失敗', '發生未知錯誤，請稍後再試');
       } finally {
         setIsSubmitting(false);

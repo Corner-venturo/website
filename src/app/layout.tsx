@@ -13,17 +13,17 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Venturo",
-  description: "探索世界，結交旅伴",
+  description: "探索世界，結交朋友",
   openGraph: {
     title: "Venturo",
-    description: "探索世界，結交旅伴",
+    description: "探索世界，結交朋友",
     siteName: "Venturo",
     type: "website",
   },
   twitter: {
     card: "summary",
     title: "Venturo",
-    description: "探索世界，結交旅伴",
+    description: "探索世界，結交朋友",
   },
 };
 

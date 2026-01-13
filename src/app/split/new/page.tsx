@@ -206,7 +206,7 @@ function NewSplitGroupContent() {
                   </span>
                 </div>
               ) : (
-                <span className="text-gray-400">點擊選擇要加入的旅伴</span>
+                <span className="text-gray-400">點擊選擇要加入的朋友</span>
               )}
               <span className="material-icons-round text-gray-400">chevron_right</span>
             </button>
@@ -361,7 +361,7 @@ function NewSplitGroupContent() {
                       </div>
                       <div className="flex-1 text-left">
                         <p className="font-bold text-gray-800">
-                          {member.nickname || member.profile?.display_name || "旅伴"}
+                          {member.nickname || member.profile?.display_name || "朋友"}
                         </p>
                       </div>
                       <span

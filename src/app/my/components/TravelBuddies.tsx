@@ -36,7 +36,7 @@ export default function TravelBuddies({ isLoggedIn }: TravelBuddiesProps) {
       <div className="flex justify-between items-center mb-3">
         <h3 className="font-bold text-[#5C5C5C] text-sm flex items-center gap-1.5">
           <span className="material-icons-round text-[#C5B6AF] text-base">favorite</span>
-          我的旅伴
+          我的朋友
           {pendingCount > 0 && (
             <span className="w-4 h-4 rounded-full bg-[#CFA5A5] text-white text-[10px] font-bold flex items-center justify-center">
               {pendingCount}
@@ -80,7 +80,7 @@ export default function TravelBuddies({ isLoggedIn }: TravelBuddiesProps) {
               </Link>
             ))
           ) : (
-            <span className="text-sm text-[#949494]">還沒有旅伴，快來邀請好友吧！</span>
+            <span className="text-sm text-[#949494]">還沒有朋友，快來邀請好友吧！</span>
           )
         ) : (
           // 展示模式顯示假資料

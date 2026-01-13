@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { DESIGN_SYSTEM, UI_GENERATION_PROMPT } from '@/lib/design-system'
+import { logger } from '@/lib/logger'
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 
@@ -57,7 +58,7 @@ ${prompt}
     let lastError = null
     for (const model of GEMINI_MODELS) {
       try {
-        console.log(`Trying model: ${model}`)
+        logger.log(`Trying model: ${model}`)
         const response = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
           {
@@ -104,7 +105,7 @@ ${prompt}
         }
 
         const errorData = await response.json()
-        console.error(`Model ${model} error:`, JSON.stringify(errorData))
+        logger.error(`Model ${model} error:`, JSON.stringify(errorData))
 
         // 如果是配額問題，嘗試下一個模型
         if (errorData.error?.code === 429 || errorData.error?.code === 404) {
@@ -118,7 +119,7 @@ ${prompt}
           { status: 500 }
         )
       } catch (fetchError) {
-        console.error(`Model ${model} fetch error:`, fetchError)
+        logger.error(`Model ${model} fetch error:`, fetchError)
         lastError = fetchError
         continue
       }
@@ -138,7 +139,7 @@ ${prompt}
       { status: 500 }
     )
   } catch (error) {
-    console.error('Generate UI error:', error)
+    logger.error('Generate UI error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }

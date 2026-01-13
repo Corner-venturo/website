@@ -1,16 +1,31 @@
 # Claude Code 工作規範 (Venturo Online)
 
-> **最後更新**: 2025-12-24 (新增 RSC 邊界 + Console 規範)
+> **最後更新**: 2026-01-11 (新增 VENTURO_VISION.md)
 > **專案類型**: 客戶端 App (旅客、領隊使用)
 
 ---
 
-## 📍 必讀：專案網站地圖
+## 🚨🚨🚨 對話開始必做 (P0) 🚨🚨🚨
 
-**在探索專案結構前，請先查閱：**
+### 第一步：理解 Venturo 願景
 
+**首先閱讀 VENTURO_VISION.md：**
 ```
-/Users/williamchien/Projects/SITEMAP.md
+Read /Users/williamchien/Projects/venturo-online/.claude/VENTURO_VISION.md
+```
+
+**核心概念**：
+- Venturo 是一個**雙平台生態系統**（ERP + Online）
+- **venturo-erp**：旅行社員工內部營運系統（資料來源）
+- **venturo-online**：旅客會員體驗系統（你在這裡）
+- 兩個系統**共享 Supabase 資料庫**，但 Online **只能讀取 ERP 資料庫**
+- 價值飛輪：銷售 → 出發 → 回憶 → 推薦 → 新客戶
+
+### 第二步：閱讀 SITEMAP
+
+**查閱完整系統地圖：**
+```
+Read /Users/williamchien/Projects/SITEMAP.md
 ```
 
 此檔案包含：
@@ -21,6 +36,24 @@
 - 資料庫連接關係
 
 **避免重複探索整個 codebase，先查 SITEMAP！**
+
+---
+
+## 📍 必讀清單（開發前必看）
+
+### 0. Venturo 願景文件（最重要！）
+```
+/Users/williamchien/Projects/venturo-online/.claude/VENTURO_VISION.md
+```
+- 雙平台架構（ERP + Online）
+- Online 在價值飛輪中的角色
+- 雙資料庫規則（ERP 唯讀、Online 可寫）
+- 效能優化策略
+
+### 1. 專案網站地圖
+```
+/Users/williamchien/Projects/SITEMAP.md
+```
 
 ---
 

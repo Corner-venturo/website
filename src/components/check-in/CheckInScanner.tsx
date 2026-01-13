@@ -1,5 +1,6 @@
 'use client'
 
+import { logger } from '@/lib/logger'
 import { useEffect, useRef, useState } from 'react'
 import { Html5Qrcode } from 'html5-qrcode'
 
@@ -52,7 +53,7 @@ export function CheckInScanner({ tripId, leaderUserId, onClose, onSuccess, onChe
       setIsScanning(true)
       setError(null)
     } catch (err) {
-      console.error('Scanner error:', err)
+      logger.error('Scanner error:', err)
       setError('無法啟動相機，請確認已授權相機權限')
     }
   }
@@ -64,7 +65,7 @@ export function CheckInScanner({ tripId, leaderUserId, onClose, onSuccess, onChe
         scannerRef.current = null
         setIsScanning(false)
       } catch (err) {
-        console.error('Stop scanner error:', err)
+        logger.error('Stop scanner error:', err)
       }
     }
   }
@@ -130,7 +131,7 @@ export function CheckInScanner({ tripId, leaderUserId, onClose, onSuccess, onChe
         onCheckInSuccess?.()
       }
     } catch (err) {
-      console.error('Process QR error:', err)
+      logger.error('Process QR error:', err)
       setResult({
         success: false,
         message: '無效的 QR Code 格式',

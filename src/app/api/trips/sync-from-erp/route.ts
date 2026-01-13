@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getErpSupabase, getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 interface ErpItinerary {
   id: string
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
       .single()
 
     if (tourError || !erpTour) {
-      console.error('ERP tour query error:', tourError)
+      logger.error('ERP tour query error:', tourError)
       return NextResponse.json(
         { error: '找不到此團號' },
         { status: 404 }
@@ -79,7 +80,7 @@ export async function POST(request: Request) {
 
     // 3. 檢查 Online 是否已有此行程（用團號或標題+日期查詢）
     const { data: existingTrip } = await getOnlineSupabase()
-      .from('trips')
+      .from('traveler_trips')
       .select('id')
       .eq('title', tripTitle)
       .eq('start_date', tripStartDate)
@@ -92,7 +93,7 @@ export async function POST(request: Request) {
       tripId = existingTrip.id
 
       const { error: updateError } = await getOnlineSupabase()
-        .from('trips')
+        .from('traveler_trips')
         .update({
           title: tripTitle,
           description: tripDescription,
@@ -106,12 +107,12 @@ export async function POST(request: Request) {
         .eq('id', tripId)
 
       if (updateError) {
-        console.error('Update trip error:', updateError)
+        logger.error('Update trip error:', updateError)
       }
     } else {
       // 建立新行程
       const { data: newTrip, error: insertError } = await getOnlineSupabase()
-        .from('trips')
+        .from('traveler_trips')
         .insert({
           title: tripTitle,
           description: tripDescription,
@@ -127,7 +128,7 @@ export async function POST(request: Request) {
         .single()
 
       if (insertError || !newTrip) {
-        console.error('Insert trip error:', insertError)
+        logger.error('Insert trip error:', insertError)
         return NextResponse.json(
           { error: `建立行程失敗: ${insertError?.message || '未知錯誤'}` },
           { status: 500 }
@@ -139,7 +140,7 @@ export async function POST(request: Request) {
       // 如果有 userId，將其加為 owner
       if (userId) {
         await getOnlineSupabase()
-          .from('trip_members')
+          .from('traveler_trip_members')
           .insert({
             trip_id: tripId,
             user_id: userId,
@@ -155,7 +156,7 @@ export async function POST(request: Request) {
     if (itinerary?.outbound_flight || itinerary?.return_flight) {
       // 先刪除舊的航班
       await getOnlineSupabase()
-        .from('trip_flights')
+        .from('traveler_trip_flights')
         .delete()
         .eq('trip_id', tripId)
 
@@ -199,7 +200,7 @@ export async function POST(request: Request) {
 
       if (flights.length > 0) {
         await getOnlineSupabase()
-          .from('trip_flights')
+          .from('traveler_trip_flights')
           .insert(flights)
       }
     }
@@ -215,7 +216,7 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
-    console.error('Sync error:', errorMessage, error)
+    logger.error('Sync error:', errorMessage, error)
     return NextResponse.json(
       { error: `同步失敗: ${errorMessage}` },
       { status: 500 }

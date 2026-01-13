@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getOnlineSupabase, getErpSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 // GET: 從 ERP 取得行程的每日行程
 export async function GET(
@@ -21,7 +22,7 @@ export async function GET(
 
     // 1. 從 Online 取得 trip 資訊（用來找 tour_code）
     const { data: trip } = await onlineSupabase
-      .from('trips')
+      .from('traveler_trips')
       .select('id, title, tour_code')
       .eq('id', tripId)
       .single()
@@ -110,7 +111,7 @@ export async function GET(
       data: items,
     })
   } catch (error) {
-    console.error('Get itinerary items error:', error)
+    logger.error('Get itinerary items error:', error)
     return NextResponse.json(
       { error: '系統錯誤' },
       { status: 500 }

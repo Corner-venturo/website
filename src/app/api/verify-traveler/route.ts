@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getErpSupabase, getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 // POST: 驗證團號 + 身分證字號，並綁定身分證到用戶帳號
 export async function POST(request: Request) {
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
     // 0. 檢查身分證是否已被其他帳號綁定
     if (userId) {
       const { data: existingBinding } = await onlineSupabase
-        .from('profiles')
+        .from('traveler_profiles')
         .select('id, display_name')
         .eq('id_number', idNumber)
         .single()
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
       .single()
 
     if (orderError || !erpOrder) {
-      console.error('ERP order query error:', orderError)
+      logger.error('ERP order query error:', orderError)
       return NextResponse.json(
         { error: '找不到此團號' },
         { status: 404 }
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
       .single()
 
     if (memberError || !erpMember) {
-      console.error('ERP member query error:', memberError)
+      logger.error('ERP member query error:', memberError)
       return NextResponse.json(
         { error: '找不到此身分證字號的成員' },
         { status: 404 }
@@ -84,7 +85,7 @@ export async function POST(request: Request) {
 
     // 嘗試用 tour_code 查找
     const { data: tripByTourCode } = await onlineSupabase
-      .from('trips')
+      .from('traveler_trips')
       .select('id, title')
       .eq('tour_code', tourCode)
       .single()
@@ -94,7 +95,7 @@ export async function POST(request: Request) {
     } else {
       // 嘗試用標題包含團號查找
       const { data: tripByTitle } = await onlineSupabase
-        .from('trips')
+        .from('traveler_trips')
         .select('id, title')
         .ilike('title', `%${tourCode}%`)
         .limit(1)
@@ -118,7 +119,7 @@ export async function POST(request: Request) {
 
       const syncData = await syncResponse.json()
       if (!syncResponse.ok || !syncData.success) {
-        console.error('Sync failed:', syncData)
+        logger.error('Sync failed:', syncData)
         return NextResponse.json(
           { error: `行程同步失敗: ${syncData.error || '未知錯誤'}` },
           { status: 500 }
@@ -131,7 +132,7 @@ export async function POST(request: Request) {
     // 4. 綁定身分證到用戶帳號（如果有提供 userId 且尚未綁定）
     if (userId) {
       const { data: currentProfile } = await onlineSupabase
-        .from('profiles')
+        .from('traveler_profiles')
         .select('id_number')
         .eq('id', userId)
         .single()
@@ -139,11 +140,11 @@ export async function POST(request: Request) {
       if (!currentProfile?.id_number) {
         // 尚未綁定，進行綁定
         await onlineSupabase
-          .from('profiles')
+          .from('traveler_profiles')
           .update({ id_number: idNumber })
           .eq('id', userId)
 
-        console.log(`已綁定身分證 ${idNumber} 到用戶 ${userId}`)
+        logger.log(`已綁定身分證 ${idNumber} 到用戶 ${userId}`)
       }
     }
 
@@ -162,7 +163,7 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
-    console.error('Verify traveler error:', errorMessage, error)
+    logger.error('Verify traveler error:', errorMessage, error)
     return NextResponse.json(
       { error: `驗證失敗: ${errorMessage}` },
       { status: 500 }

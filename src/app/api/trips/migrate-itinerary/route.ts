@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 // POST: 將行程項目從新 trip 轉移到舊 trip，並清理重複資料
 export async function POST() {
@@ -11,7 +12,7 @@ export async function POST() {
 
     // 1. 更新舊 trip 的資訊
     const { error: updateError } = await supabase
-      .from('trips')
+      .from('traveler_trips')
       .update({
         title: '2024沖繩聖誕趴踢趴踢',
         description: '沖繩五日遊 - 美麗海水族館、美國村、國際通',
@@ -22,23 +23,23 @@ export async function POST() {
       .eq('id', OLD_TRIP_ID)
 
     if (updateError) {
-      console.error('Update old trip error:', updateError)
+      logger.error('Update old trip error:', updateError)
     }
 
     // 2. 刪除舊 trip 的行程項目（如果有）
     await supabase
-      .from('trip_itinerary_items')
+      .from('traveler_trip_itinerary_items')
       .delete()
       .eq('trip_id', OLD_TRIP_ID)
 
     // 3. 將新 trip 的行程項目轉移到舊 trip
     const { error: migrateError } = await supabase
-      .from('trip_itinerary_items')
+      .from('traveler_trip_itinerary_items')
       .update({ trip_id: OLD_TRIP_ID })
       .eq('trip_id', NEW_TRIP_ID)
 
     if (migrateError) {
-      console.error('Migrate items error:', migrateError)
+      logger.error('Migrate items error:', migrateError)
       return NextResponse.json(
         { error: '轉移行程項目失敗: ' + migrateError.message },
         { status: 500 }
@@ -47,18 +48,18 @@ export async function POST() {
 
     // 4. 刪除新的空 trip
     await supabase
-      .from('trips')
+      .from('traveler_trips')
       .delete()
       .eq('id', NEW_TRIP_ID)
 
     // 5. 驗證結果
     const { data: items } = await supabase
-      .from('trip_itinerary_items')
+      .from('traveler_trip_itinerary_items')
       .select('id')
       .eq('trip_id', OLD_TRIP_ID)
 
     const { data: trip } = await supabase
-      .from('trips')
+      .from('traveler_trips')
       .select('id, title, status, start_date')
       .eq('id', OLD_TRIP_ID)
       .single()
@@ -73,7 +74,7 @@ export async function POST() {
       }
     })
   } catch (error) {
-    console.error('Migration error:', error)
+    logger.error('Migration error:', error)
     return NextResponse.json(
       { error: '合併失敗' },
       { status: 500 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 import { getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 async function getAuthSupabase() {
   const cookieStore = await cookies()
@@ -42,7 +43,7 @@ export async function PUT(
 
     // 取得邀請
     const { data: invitation, error: fetchError } = await serviceSupabase
-      .from('split_group_invitations')
+      .from('traveler_split_group_invitations')
       .select('*, group:split_groups(id, name)')
       .eq('id', id)
       .single()
@@ -61,7 +62,7 @@ export async function PUT(
       }
 
       const { error } = await serviceSupabase
-        .from('split_group_invitations')
+        .from('traveler_split_group_invitations')
         .update({ status: 'cancelled' })
         .eq('id', id)
 
@@ -85,7 +86,7 @@ export async function PUT(
     // 檢查是否過期
     if (invitation.expires_at && new Date(invitation.expires_at) < new Date()) {
       await serviceSupabase
-        .from('split_group_invitations')
+        .from('traveler_split_group_invitations')
         .update({ status: 'expired' })
         .eq('id', id)
       return NextResponse.json({ error: '邀請已過期' }, { status: 400 })
@@ -95,7 +96,7 @@ export async function PUT(
 
     // 更新邀請狀態
     const { error: updateError } = await serviceSupabase
-      .from('split_group_invitations')
+      .from('traveler_split_group_invitations')
       .update({
         status: newStatus,
         responded_at: new Date().toISOString(),
@@ -107,7 +108,7 @@ export async function PUT(
     // 如果接受，加入群組成員
     if (action === 'accept') {
       const { error: memberError } = await serviceSupabase
-        .from('split_group_members')
+        .from('traveler_split_group_members')
         .insert({
           group_id: invitation.group_id,
           user_id: user.id,
@@ -128,7 +129,7 @@ export async function PUT(
       groupId: invitation.group_id,
     })
   } catch (error) {
-    console.error('Update split group invitation error:', error)
+    logger.error('Update split group invitation error:', error)
     return NextResponse.json({ error: '處理失敗' }, { status: 500 })
   }
 }
@@ -151,7 +152,7 @@ export async function DELETE(
 
     // 取得邀請
     const { data: invitation } = await serviceSupabase
-      .from('split_group_invitations')
+      .from('traveler_split_group_invitations')
       .select('inviter_id')
       .eq('id', id)
       .single()
@@ -165,7 +166,7 @@ export async function DELETE(
     }
 
     const { error } = await serviceSupabase
-      .from('split_group_invitations')
+      .from('traveler_split_group_invitations')
       .delete()
       .eq('id', id)
 
@@ -176,7 +177,7 @@ export async function DELETE(
       message: '已刪除邀請',
     })
   } catch (error) {
-    console.error('Delete split group invitation error:', error)
+    logger.error('Delete split group invitation error:', error)
     return NextResponse.json({ error: '刪除失敗' }, { status: 500 })
   }
 }

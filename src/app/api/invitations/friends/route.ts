@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 import { getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 async function getAuthSupabase() {
   const cookieStore = await cookies()
@@ -34,7 +35,7 @@ export async function GET(request: Request) {
     const serviceSupabase = getOnlineSupabase()
 
     let query = serviceSupabase
-      .from('friends')
+      .from('traveler_friends')
       .select(`
         id,
         user_id,
@@ -65,7 +66,7 @@ export async function GET(request: Request) {
       data: data || [],
     })
   } catch (error) {
-    console.error('Get friend invitations error:', error)
+    logger.error('Get friend invitations error:', error)
     return NextResponse.json({ error: '讀取失敗' }, { status: 500 })
   }
 }
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
     // 如果提供 username，查找對應用戶
     if (!targetUserId && username) {
       const { data: profile } = await serviceSupabase
-        .from('profiles')
+        .from('traveler_profiles')
         .select('id')
         .eq('username', username)
         .single()
@@ -109,7 +110,7 @@ export async function POST(request: Request) {
 
     // 檢查是否已有邀請或好友關係
     const { data: existing } = await serviceSupabase
-      .from('friends')
+      .from('traveler_friends')
       .select('id, status')
       .or(`and(user_id.eq.${user.id},friend_id.eq.${targetUserId}),and(user_id.eq.${targetUserId},friend_id.eq.${user.id})`)
       .single()
@@ -129,7 +130,7 @@ export async function POST(request: Request) {
 
     // 建立邀請
     const { data, error } = await serviceSupabase
-      .from('friends')
+      .from('traveler_friends')
       .insert({
         user_id: user.id,
         friend_id: targetUserId,
@@ -152,7 +153,7 @@ export async function POST(request: Request) {
       data,
     })
   } catch (error) {
-    console.error('Send friend invitation error:', error)
+    logger.error('Send friend invitation error:', error)
     return NextResponse.json({ error: '發送邀請失敗' }, { status: 500 })
   }
 }

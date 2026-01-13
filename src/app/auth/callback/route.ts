@@ -37,7 +37,7 @@ export async function GET(request: Request) {
     if (!error && data.user) {
       // 檢查是否已完成個人資料
       const { data: profile } = await supabase
-        .from('profiles')
+        .from('traveler_profiles')
         .select('is_profile_complete')
         .eq('id', data.user.id)
         .maybeSingle() // 使用 maybeSingle，profile 不存在時返回 null

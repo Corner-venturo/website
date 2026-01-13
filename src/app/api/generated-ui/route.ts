@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 // GET: 取得所有儲存的 UI 代碼
 export async function GET() {
@@ -17,7 +18,7 @@ export async function GET() {
       items: data,
     })
   } catch (error) {
-    console.error('Get generated UI error:', error)
+    logger.error('Get generated UI error:', error)
     return NextResponse.json(
       { error: '讀取失敗' },
       { status: 500 }
@@ -55,7 +56,7 @@ export async function POST(request: Request) {
       item: data,
     })
   } catch (error) {
-    console.error('Save generated UI error:', error)
+    logger.error('Save generated UI error:', error)
     return NextResponse.json(
       { error: '儲存失敗' },
       { status: 500 }

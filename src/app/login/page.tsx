@@ -136,7 +136,7 @@ export default function LoginPage() {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const { data: profile } = await supabase
-            .from('profiles')
+            .from('traveler_profiles')
             .select('is_profile_complete')
             .eq('id', user.id)
             .single();

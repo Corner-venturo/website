@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase";
+import { getSupabaseClient } from "@/lib/supabase";
 
 type MainTab = "flight" | "stay";
 type FlightTab = "outbound" | "return";
@@ -119,12 +119,12 @@ export default function FlightInfoPage() {
   // 載入資料
   useEffect(() => {
     async function loadData() {
-      const supabase = createClient();
+      const supabase = getSupabaseClient();
       setIsLoading(true);
 
       // 載入航班資料
       const { data: flightsData } = await supabase
-        .from("trip_flights")
+        .from("traveler_trip_flights")
         .select("*")
         .eq("trip_id", orderId)
         .order("departure_date", { ascending: true });
@@ -135,7 +135,7 @@ export default function FlightInfoPage() {
 
       // 載入住宿資料
       const { data: accommodationData } = await supabase
-        .from("trip_accommodations")
+        .from("traveler_trip_accommodations")
         .select("*")
         .eq("trip_id", orderId)
         .single();

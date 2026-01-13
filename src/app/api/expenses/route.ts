@@ -1,168 +1,124 @@
 import { NextResponse } from 'next/server'
 import { getOnlineSupabase } from '@/lib/supabase-server'
+import { jsonResponse, CACHE_CONFIGS } from '@/lib/api-utils'
+import { logger } from '@/lib/logger'
 
-// GET: 取得費用列表（支援 tripId 或 groupId）
+export interface PersonalExpense {
+  id?: string
+  user_id?: string
+  amount: number
+  type: 'expense' | 'income'
+  title: string
+  description?: string
+  category: string
+  payment_method?: string
+  expense_date: string
+  expense_time?: string
+  is_split?: boolean
+  split_group_id?: string
+  split_expense_id?: string
+  tags?: string[]
+  receipt_url?: string
+  location?: string
+  created_at?: string
+}
+
+// GET /api/expenses - 取得用戶的支出記錄
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url)
-    const tripId = searchParams.get('tripId')
-    const groupId = searchParams.get('groupId')
-
-    if (!tripId && !groupId) {
-      return NextResponse.json(
-        { error: '請提供行程 ID 或分帳群組 ID' },
-        { status: 400 }
-      )
-    }
-
-    // 取得費用列表（含分攤資訊）
     const supabase = getOnlineSupabase()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const limit = parseInt(searchParams.get('limit') || '50')
+    const offset = parseInt(searchParams.get('offset') || '0')
+    const month = searchParams.get('month') // 格式: '2026-01'
+    const category = searchParams.get('category')
+    const type = searchParams.get('type') // 'expense' | 'income'
+
     let query = supabase
-      .from('expenses')
-      .select(`
-        *,
-        paid_by_profile:profiles!expenses_paid_by_fkey(id, display_name, avatar_url),
-        expense_splits(
-          id,
-          user_id,
-          amount,
-          is_settled,
-          user:profiles(id, display_name, avatar_url)
-        )
-      `)
+      .from('personal_expenses')
+      .select('*')
+      .eq('user_id', user.id)
       .order('expense_date', { ascending: false })
+      .order('created_at', { ascending: false })
 
-    // 根據參數過濾
-    if (groupId) {
-      query = query.eq('split_group_id', groupId)
-    } else if (tripId) {
-      query = query.eq('trip_id', tripId)
+    if (month) {
+      const [year, mon] = month.split('-')
+      const startDate = `${year}-${mon}-01`
+      const endDate = new Date(parseInt(year), parseInt(mon), 0).toISOString().split('T')[0]
+      query = query.gte('expense_date', startDate).lte('expense_date', endDate)
     }
 
-    const { data: expenses, error } = await query
-
-    if (error) {
-      console.error('Query expenses error:', error)
-      return NextResponse.json(
-        { error: '取得費用失敗' },
-        { status: 500 }
-      )
+    if (category) {
+      query = query.eq('category', category)
     }
 
-    return NextResponse.json({
-      success: true,
-      data: expenses,
-    })
+    if (type) {
+      query = query.eq('type', type)
+    }
+
+    const { data, error } = await query.range(offset, offset + limit - 1)
+
+    if (error) throw error
+
+    return jsonResponse(data || [], { cache: CACHE_CONFIGS.privateShort })
   } catch (error) {
-    console.error('Get expenses error:', error)
-    return NextResponse.json(
-      { error: '系統錯誤' },
-      { status: 500 }
-    )
+    logger.error('Failed to get expenses:', error)
+    return NextResponse.json({ error: 'Failed to get expenses' }, { status: 500 })
   }
 }
 
-// POST: 新增費用記錄
+// POST /api/expenses - 新增支出記錄
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const {
-      tripId,
-      groupId, // 分帳群組 ID（可選，與 tripId 二擇一）
-      title,
-      description,
-      category,
-      amount,
-      currency = 'TWD',
-      paidBy,
-      expenseDate,
-      splitWith = [], // 分攤對象的 user_id 陣列
-      itineraryItemId, // 關聯的行程項目 ID（選填）
-    } = body
-
-    if ((!tripId && !groupId) || !title || !amount || !paidBy) {
-      return NextResponse.json(
-        { error: '請提供必要欄位：(tripId 或 groupId), title, amount, paidBy' },
-        { status: 400 }
-      )
-    }
-
     const supabase = getOnlineSupabase()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    // 如果是透過群組記帳，取得群組關聯的 trip_id（如果有的話）
-    let effectiveTripId = tripId
-    if (groupId && !tripId) {
-      const { data: group } = await supabase
-        .from('split_groups')
-        .select('trip_id')
-        .eq('id', groupId)
-        .single()
-      effectiveTripId = group?.trip_id || null
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // 新增費用記錄
-    const { data: expense, error: expenseError } = await supabase
-      .from('expenses')
-      .insert({
-        trip_id: effectiveTripId,
-        split_group_id: groupId || null,
-        title,
-        description,
-        category: category || 'other',
-        amount: parseFloat(amount),
-        currency,
-        paid_by: paidBy,
-        expense_date: expenseDate || new Date().toISOString().split('T')[0],
-      })
+    const body: PersonalExpense = await request.json()
+
+    // 驗證必填欄位
+    if (!body.amount || !body.title || !body.category) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    const expenseData = {
+      user_id: user.id,
+      amount: body.amount,
+      type: body.type || 'expense',
+      title: body.title,
+      description: body.description,
+      category: body.category,
+      payment_method: body.payment_method || 'cash',
+      expense_date: body.expense_date || new Date().toISOString().split('T')[0],
+      expense_time: body.expense_time,
+      is_split: body.is_split || false,
+      split_group_id: body.split_group_id,
+      split_expense_id: body.split_expense_id,
+      tags: body.tags,
+      receipt_url: body.receipt_url,
+      location: body.location,
+    }
+
+    const { data, error } = await supabase
+      .from('personal_expenses')
+      .insert(expenseData)
       .select()
       .single()
 
-    if (expenseError) {
-      console.error('Insert expense error:', expenseError)
-      return NextResponse.json(
-        { error: '新增費用失敗' },
-        { status: 500 }
-      )
-    }
+    if (error) throw error
 
-    // 如果有分攤對象，新增分攤記錄
-    if (splitWith.length > 0) {
-      const splitAmount = parseFloat(amount) / splitWith.length
-
-      const splits = splitWith.map((userId: string) => ({
-        expense_id: expense.id,
-        user_id: userId,
-        amount: splitAmount,
-        is_settled: false,
-      }))
-
-      const { error: splitError } = await supabase
-        .from('expense_splits')
-        .insert(splits)
-
-      if (splitError) {
-        console.error('Insert splits error:', splitError)
-        // 不中斷，費用已建立
-      }
-    }
-
-    // 如果有關聯行程項目，更新項目的 paid_by
-    if (itineraryItemId) {
-      await supabase
-        .from('trip_itinerary_items')
-        .update({ paid_by: paidBy })
-        .eq('id', itineraryItemId)
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: expense,
-    })
+    return NextResponse.json(data)
   } catch (error) {
-    console.error('Create expense error:', error)
-    return NextResponse.json(
-      { error: '系統錯誤' },
-      { status: 500 }
-    )
+    logger.error('Failed to create expense:', error)
+    return NextResponse.json({ error: 'Failed to create expense' }, { status: 500 })
   }
 }

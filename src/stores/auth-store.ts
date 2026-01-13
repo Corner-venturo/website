@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { User, Session, AuthChangeEvent } from '@supabase/supabase-js'
 import { getSupabaseClient } from '@/lib/supabase'
 import { setErpSession, clearErpSession, getErpSession, getErpSupabaseClient } from '@/lib/erp-supabase'
+import { logger } from '@/lib/logger'
 
 // 領隊/員工資訊
 interface LeaderInfo {
@@ -54,7 +55,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // 如果有主 session 且與 ERP session 用戶不同，清除 ERP session
       // 這表示用戶用不同帳號登入了
       if (session?.user && erpSession?.user && session.user.id !== erpSession.user.id) {
-        console.log('Session mismatch detected, clearing ERP session')
+        logger.log('Session mismatch detected, clearing ERP session')
         await clearErpSession()
         set({
           user: session.user,
@@ -78,7 +79,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
             if (employeeError) {
               // 查詢錯誤時，保持現有 session（不要因為網路錯誤就登出）
-              console.warn('Employee verification failed:', employeeError)
+              logger.warn('Employee verification failed:', employeeError)
               set({
                 user: erpSession.user,
                 session: erpSession,
@@ -99,7 +100,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               })
             } else {
               // 領隊身份已被移除，清除 session
-              console.log('Leader identity removed, clearing session')
+              logger.log('Leader identity removed, clearing session')
               await clearErpSession()
               set({
                 user: session?.user ?? null,
@@ -110,7 +111,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             }
           } catch (verifyError) {
             // 驗證過程出錯，保持現有 session
-            console.error('Leader verification error:', verifyError)
+            logger.error('Leader verification error:', verifyError)
             set({
               user: erpSession.user,
               session: erpSession,
@@ -141,7 +142,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         })
       })
     } catch (error) {
-      console.error('Auth initialization error:', error)
+      logger.error('Auth initialization error:', error)
       set({ isInitialized: true, error: '初始化失敗' })
     }
   },
@@ -311,7 +312,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false,
       })
     } catch (error) {
-      console.error('Sign out error:', error)
+      logger.error('Sign out error:', error)
       set({ isLoading: false })
     }
   },

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getErpSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 interface ItineraryVersion {
   id: string
@@ -27,7 +28,7 @@ export async function GET(
       .order('updated_at', { ascending: false })
 
     if (error) {
-      console.error('Error fetching itinerary versions:', error)
+      logger.error('Error fetching itinerary versions:', error)
       return NextResponse.json(
         { error: '無法取得行程版本' },
         { status: 500 }
@@ -46,7 +47,7 @@ export async function GET(
       total: versionsWithNumber.length,
     })
   } catch (error) {
-    console.error('Itinerary versions error:', error)
+    logger.error('Itinerary versions error:', error)
     return NextResponse.json(
       { error: '取得行程版本失敗' },
       { status: 500 }

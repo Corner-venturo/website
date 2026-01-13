@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 import { getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 async function getAuthSupabase() {
   const cookieStore = await cookies()
@@ -29,7 +30,7 @@ export async function GET(
 
     // 查詢邀請
     const { data: invitation, error } = await serviceSupabase
-      .from('trip_invitations')
+      .from('traveler_trip_invitations')
       .select(`
         id,
         invite_code,
@@ -73,7 +74,7 @@ export async function GET(
       data: invitation,
     })
   } catch (error) {
-    console.error('Get invite code error:', error)
+    logger.error('Get invite code error:', error)
     return NextResponse.json({ error: '查詢失敗' }, { status: 500 })
   }
 }
@@ -96,7 +97,7 @@ export async function POST(
 
     // 查詢邀請
     const { data: invitation, error: fetchError } = await serviceSupabase
-      .from('trip_invitations')
+      .from('traveler_trip_invitations')
       .select('*, trip:trips(id, title)')
       .eq('invite_code', code.toUpperCase())
       .single()
@@ -113,7 +114,7 @@ export async function POST(
     // 檢查過期
     if (invitation.expires_at && new Date(invitation.expires_at) < new Date()) {
       await serviceSupabase
-        .from('trip_invitations')
+        .from('traveler_trip_invitations')
         .update({ status: 'expired' })
         .eq('id', invitation.id)
       return NextResponse.json({ error: '此邀請碼已過期' }, { status: 400 })
@@ -121,7 +122,7 @@ export async function POST(
 
     // 檢查是否已是成員
     const { data: existingMember } = await serviceSupabase
-      .from('trip_members')
+      .from('traveler_trip_members')
       .select('id')
       .eq('trip_id', invitation.trip_id)
       .eq('user_id', user.id)
@@ -138,7 +139,7 @@ export async function POST(
 
     // 加入行程
     const { error: memberError } = await serviceSupabase
-      .from('trip_members')
+      .from('traveler_trip_members')
       .insert({
         trip_id: invitation.trip_id,
         user_id: user.id,
@@ -157,7 +158,7 @@ export async function POST(
       tripTitle: invitation.trip?.title,
     })
   } catch (error) {
-    console.error('Join by invite code error:', error)
+    logger.error('Join by invite code error:', error)
     return NextResponse.json({ error: '加入失敗' }, { status: 500 })
   }
 }

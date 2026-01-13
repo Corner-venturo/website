@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { logger } from '@/lib/logger';
 import { useTripStore } from '@/stores/trip-store';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -75,7 +76,7 @@ function SplitRecordContent() {
               setSplitWith(splitUserIds);
             }
           })
-          .catch(err => console.error('Load expense error:', err));
+          .catch(err => logger.error('Load expense error:', err));
       }
     }
   }, [isEditMode, expenseId, currentSplitGroup]);

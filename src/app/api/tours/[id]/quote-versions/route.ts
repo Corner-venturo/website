@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getErpSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 interface QuoteVersion {
   id: string
@@ -28,7 +29,7 @@ export async function GET(
       .order('version', { ascending: false })
 
     if (error) {
-      console.error('Error fetching quote versions:', error)
+      logger.error('Error fetching quote versions:', error)
       return NextResponse.json(
         { error: '無法取得報價單版本' },
         { status: 500 }
@@ -47,7 +48,7 @@ export async function GET(
       total: versionsWithNumber.length,
     })
   } catch (error) {
-    console.error('Quote versions error:', error)
+    logger.error('Quote versions error:', error)
     return NextResponse.json(
       { error: '取得報價單版本失敗' },
       { status: 500 }

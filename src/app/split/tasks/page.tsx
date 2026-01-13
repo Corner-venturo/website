@@ -31,7 +31,7 @@ const beginnerTasks = [
     icon: "person_add",
     iconBg: "bg-[#CFA5A5]/20",
     iconColor: "text-[#CFA5A5]",
-    title: "新增第一位旅伴",
+    title: "新增第一位朋友",
     description: "邀請好友一起旅行",
     points: 30,
     status: "todo",

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 import { getOnlineSupabase } from '@/lib/supabase-server'
+import { logger } from '@/lib/logger'
 
 async function getAuthSupabase() {
   const cookieStore = await cookies()
@@ -45,7 +46,7 @@ export async function GET(request: Request) {
     const serviceSupabase = getOnlineSupabase()
 
     let query = serviceSupabase
-      .from('trip_invitations')
+      .from('traveler_trip_invitations')
       .select(`
         id,
         trip_id,
@@ -84,7 +85,7 @@ export async function GET(request: Request) {
       data: data || [],
     })
   } catch (error) {
-    console.error('Get trip invitations error:', error)
+    logger.error('Get trip invitations error:', error)
     return NextResponse.json({ error: '讀取失敗' }, { status: 500 })
   }
 }
@@ -117,7 +118,7 @@ export async function POST(request: Request) {
 
     // 驗證是行程成員
     const { data: membership } = await serviceSupabase
-      .from('trip_members')
+      .from('traveler_trip_members')
       .select('role')
       .eq('trip_id', tripId)
       .eq('user_id', user.id)
@@ -136,7 +137,7 @@ export async function POST(request: Request) {
       const inviteCode = generateInviteCode()
 
       const { data, error } = await serviceSupabase
-        .from('trip_invitations')
+        .from('traveler_trip_invitations')
         .insert({
           trip_id: tripId,
           inviter_id: user.id,
@@ -167,7 +168,7 @@ export async function POST(request: Request) {
 
     if (!targetUserId && username) {
       const { data: profile } = await serviceSupabase
-        .from('profiles')
+        .from('traveler_profiles')
         .select('id')
         .eq('username', username)
         .single()
@@ -189,13 +190,13 @@ export async function POST(request: Request) {
     // 平行檢查是否已是成員 + 是否已有邀請
     const [memberResult, inviteResult] = await Promise.all([
       serviceSupabase
-        .from('trip_members')
+        .from('traveler_trip_members')
         .select('id')
         .eq('trip_id', tripId)
         .eq('user_id', targetUserId)
         .single(),
       serviceSupabase
-        .from('trip_invitations')
+        .from('traveler_trip_invitations')
         .select('id, status')
         .eq('trip_id', tripId)
         .eq('invitee_id', targetUserId)
@@ -213,7 +214,7 @@ export async function POST(request: Request) {
 
     // 建立邀請
     const { data, error } = await serviceSupabase
-      .from('trip_invitations')
+      .from('traveler_trip_invitations')
       .insert({
         trip_id: tripId,
         inviter_id: user.id,
@@ -238,7 +239,7 @@ export async function POST(request: Request) {
       data,
     })
   } catch (error) {
-    console.error('Send trip invitation error:', error)
+    logger.error('Send trip invitation error:', error)
     return NextResponse.json({ error: '發送邀請失敗' }, { status: 500 })
   }
 }

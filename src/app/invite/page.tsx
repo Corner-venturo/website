@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { logger } from '@/lib/logger';
 import { useAuthStore } from '@/stores/auth-store';
 import { useFriendsStore } from '@/stores/friends-store';
 import { getSupabaseClient } from '@/lib/supabase';
@@ -79,13 +80,13 @@ function InvitePageContent() {
       try {
         // ref 是完整的 user ID
         const { data, error: fetchError } = await supabase
-          .from('profiles')
+          .from('traveler_profiles')
           .select('id, display_name, full_name, avatar_url, bio')
           .eq('id', ref)
           .maybeSingle();
 
         if (fetchError) {
-          console.error('Fetch error:', fetchError);
+          logger.error('Fetch error:', fetchError);
           throw fetchError;
         }
 
@@ -95,7 +96,7 @@ function InvitePageContent() {
           setInviter(data);
         }
       } catch (err) {
-        console.error('Invite page error:', err);
+        logger.error('Invite page error:', err);
         let errorMessage = '未知錯誤';
         if (err instanceof Error) {
           errorMessage = err.message;
@@ -219,7 +220,7 @@ function InvitePageContent() {
               <p className="text-gray-600">
                 <span className="font-bold text-gray-800">{displayName}</span> 邀請你一起使用 Venturo
               </p>
-              <p className="text-sm text-[#949494] mt-2">成為旅伴，一起探索世界！</p>
+              <p className="text-sm text-[#949494] mt-2">成為朋友，一起探索世界！</p>
             </div>
 
             {/* Bio */}
@@ -239,7 +240,7 @@ function InvitePageContent() {
                       <span className="material-icons-round text-3xl text-[#A8BFA6]">check_circle</span>
                     </div>
                     <p className="text-lg font-bold text-gray-800 mb-2">成功成為好友！</p>
-                    <p className="text-sm text-[#949494] mb-6">你和 {displayName} 現在是旅伴了</p>
+                    <p className="text-sm text-[#949494] mb-6">你和 {displayName} 現在是朋友了</p>
                     <Link
                       href="/my/friends"
                       className="inline-block px-6 py-3 rounded-full bg-[#cfb9a5] text-white font-medium hover:bg-[#b09b88] transition-colors"
