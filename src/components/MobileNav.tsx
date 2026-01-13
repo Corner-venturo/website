@@ -21,13 +21,13 @@ export default function MobileNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#E2E8F0]">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-bone-white/95 backdrop-blur-md border-t border-[var(--divider)]">
       <div className="max-w-md mx-auto h-[72px] flex items-center justify-around px-2">
         {/* Home */}
         <Link
           href="/"
           className={`flex flex-col items-center gap-1 ${
-            pathname === '/' ? 'text-primary' : 'text-[#64748B]'
+            pathname === '/' ? 'text-ocean-teal' : 'text-charcoal/40'
           }`}
         >
           <span className={`material-symbols-outlined text-[24px] ${pathname === '/' ? 'font-medium' : 'font-light'}`}>
@@ -38,20 +38,20 @@ export default function MobileNav() {
 
         {/* Explore */}
         <Link
-          href="/explore"
+          href="/explore/map"
           className={`flex flex-col items-center gap-1 ${
-            pathname.startsWith('/explore') ? 'text-primary' : 'text-[#64748B]'
+            pathname.startsWith('/explore') ? 'text-ocean-teal' : 'text-charcoal/40'
           }`}
         >
           <span className={`material-symbols-outlined text-[24px] ${pathname.startsWith('/explore') ? 'font-medium' : 'font-light'}`}>
             explore
           </span>
-          <span className={`text-[10px] ${pathname.startsWith('/explore') ? 'font-bold' : 'font-medium'}`}>發現</span>
+          <span className={`text-[10px] ${pathname.startsWith('/explore') ? 'font-bold' : 'font-medium'}`}>探索</span>
         </Link>
 
         {/* Add Button */}
         <Link href="/explore/create" className="flex flex-col items-center justify-center">
-          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white">
+          <div className="w-10 h-10 rounded-lg bg-ocean-teal flex items-center justify-center text-bone-white">
             <span className="material-symbols-outlined !text-[24px]">add</span>
           </div>
         </Link>
@@ -60,7 +60,7 @@ export default function MobileNav() {
         <Link
           href="/my/chat"
           className={`flex flex-col items-center gap-1 ${
-            pathname.startsWith('/my/chat') ? 'text-primary' : 'text-[#64748B]'
+            pathname.startsWith('/my/chat') ? 'text-ocean-teal' : 'text-charcoal/40'
           }`}
         >
           <span className={`material-symbols-outlined text-[24px] ${pathname.startsWith('/my/chat') ? 'font-medium' : 'font-light'}`}>
@@ -73,7 +73,7 @@ export default function MobileNav() {
         <Link
           href="/my"
           className={`flex flex-col items-center gap-1 ${
-            pathname === '/my' || (pathname.startsWith('/my') && !pathname.startsWith('/my/chat')) ? 'text-primary' : 'text-[#64748B]'
+            pathname === '/my' || (pathname.startsWith('/my') && !pathname.startsWith('/my/chat')) ? 'text-ocean-teal' : 'text-charcoal/40'
           }`}
         >
           <span className={`material-symbols-outlined text-[24px] ${pathname === '/my' || (pathname.startsWith('/my') && !pathname.startsWith('/my/chat')) ? 'font-medium' : 'font-light'}`}>

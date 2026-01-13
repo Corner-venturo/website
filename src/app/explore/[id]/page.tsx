@@ -1,636 +1,443 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Image from 'next/image';
-import Link from 'next/link';
-import { logger } from '@/lib/logger';
-import { useAuthStore } from '@/stores/auth-store';
-import { useGroupStore, Group } from '@/stores/group-store';
-import { getSupabaseClient } from '@/lib/supabase';
-import { mockTrips } from '../constants';
-import { getCategoryColor, getCategoryTextColor, formatDate } from '../TripCard';
-import ConfirmModal from '@/components/ConfirmModal';
+import { useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import Image from 'next/image'
+import Link from 'next/link'
 
-// 類別中文名稱
-const categoryNames: Record<string, string> = {
-  food: '美食',
-  photo: '攝影',
-  outdoor: '戶外',
-  music: '音樂',
-  coffee: '咖啡',
-  party: '派對',
-  other: '其他',
-};
+// Mock posts data
+const mockPosts = [
+  {
+    id: '1',
+    title: '京都晨間：尋找城市最深處的寧靜',
+    content: `清晨五點半，京都的街道還籠罩在薄霧之中。我獨自漫步在花見小路，聽著自己的腳步聲在石板路上迴響。
 
-// 成員介面
-interface Member {
-  id: string;
-  user_id: string;
-  role: 'organizer' | 'member';
-  status: string;
-  profile?: {
-    display_name: string | null;
-    avatar_url: string | null;
-  };
-}
+這是我第三次來京都，卻是第一次真正感受到這座城市的靈魂。沒有遊客的喧囂，沒有藝妓表演的人潮，只有偶爾經過的晨起居民和遠處傳來的寺廟鐘聲。
 
-export default function GroupDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const { user, initialize, isInitialized } = useAuthStore();
-  const { groups, joinGroup, deleteGroup, isLoading } = useGroupStore();
-  const [group, setGroup] = useState<Group | null>(null);
-  const [mockGroup, setMockGroup] = useState<typeof mockTrips[0] | null>(null);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
-  const [isLoadingGroup, setIsLoadingGroup] = useState(true); // 追蹤載入狀態
+我在一間只有三張桌子的小咖啡店停下，老闆娘用流利的京都腔問我要不要試試她的抹茶拿鐵。那一杯綠色的溫暖，至今仍是我最難忘的味道。`,
+    images: [
+      'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=600&h=800&fit=crop',
+      'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=600&h=800&fit=crop',
+      'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=600&h=800&fit=crop',
+    ],
+    author: {
+      id: 'user1',
+      name: 'Ariel_Travels',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
+      bio: '旅行攝影師 | 用鏡頭記錄世界',
+    },
+    likes: 1247,
+    comments: 89,
+    isLiked: false,
+    isCollected: false,
+    createdAt: '2024-01-15',
+    tags: ['京都', '日本旅行', '晨間散步', '咖啡廳'],
+  },
+  {
+    id: '2',
+    title: '森之谷：與靈魂對話的初夏露營',
+    content: `有些地方，去過一次就會永遠記得。森之谷就是這樣的存在。
 
-  const groupId = params.id as string;
+那是初夏的一個週末，我們四個人背著帳篷，沿著蜿蜒的山路走了兩個小時。當看到那片被群山環抱的草地時，所有的疲憊都消失了。
 
-  // 檢查是否為主辦人
-  const isOrganizer = user && group && group.created_by === user.id;
+夜晚的星空，是我在城市裡從未見過的璀璨。我們圍著營火，分享著彼此的故事，直到凌晨。那一夜，我第一次真正理解了什麼叫做「活在當下」。`,
+    images: [
+      'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1487730116645-74489c95b41b?w=600&h=600&fit=crop',
+    ],
+    author: {
+      id: 'user2',
+      name: 'Camp_Vibe',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
+      bio: '戶外愛好者 | 露營達人',
+    },
+    likes: 856,
+    comments: 42,
+    isLiked: false,
+    isCollected: false,
+    createdAt: '2024-01-10',
+    tags: ['露營', '戶外', '星空', '自然'],
+  },
+  {
+    id: '3',
+    title: '巷弄裡的琥珀色時光',
+    content: `在城市的某個角落，總有一家咖啡店在等你。
 
-  // Debug log
-  useEffect(() => {
-    if (group) {
-      logger.log('Group loaded:', group.id, 'created_by:', group.created_by);
-      logger.log('Current user:', user?.id);
-      logger.log('Is organizer:', isOrganizer);
-    }
-  }, [group, user, isOrganizer]);
+這間藏在巷弄深處的小店，沒有招牌，只有一盞暖黃色的燈。推開那扇老舊的木門，時間彷彿慢了下來。
 
-  // 顯示提示
-  const showNotification = (message: string) => {
-    setToastMessage(message);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000);
-  };
+老闆是個不太說話的中年人，但他的手沖咖啡卻說著最動人的故事。每一滴咖啡都帶著他對這份工藝的執著，那種琥珀色的光澤，是我見過最美的風景。`,
+    images: [
+      'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&h=600&fit=crop',
+    ],
+    author: {
+      id: 'user3',
+      name: 'Coffee_Soul',
+      avatar: '',
+      bio: '咖啡愛好者',
+    },
+    likes: 2400,
+    comments: 156,
+    isLiked: false,
+    isCollected: false,
+    createdAt: '2024-01-08',
+    tags: ['咖啡', '巷弄', '城市探索'],
+  },
+  {
+    id: '4',
+    title: '巴黎街頭的隨性美學：不經意的時尚角落',
+    content: `巴黎的魅力，在於它的不經意。
 
-  // 初始化
-  useEffect(() => {
-    if (!isInitialized) {
-      initialize();
-    }
-  }, [initialize, isInitialized]);
+走在香榭麗舍大道上，你會發現每個轉角都是一幅畫。一位穿著米色風衣的女士走過，手裡拿著一束百合；一對老夫婦在咖啡座前輕聲交談；一個街頭藝人正在演奏著蕭邦。
 
-  // 載入揪團資料
-  useEffect(() => {
-    const fetchGroup = async () => {
-      setIsLoadingGroup(true);
+這座城市教會我，美不需要刻意追求，它就在生活的每一個瞬間。`,
+    images: [
+      'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&h=800&fit=crop',
+      'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=600&h=800&fit=crop',
+    ],
+    author: {
+      id: 'user4',
+      name: 'Wanderlust_L',
+      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
+      bio: '時尚旅人',
+    },
+    likes: 3100,
+    comments: 201,
+    isLiked: false,
+    isCollected: false,
+    createdAt: '2024-01-05',
+    tags: ['巴黎', '法國', '街頭風景', '時尚'],
+  },
+]
 
-      // 先檢查是否為 mock ID
-      const mock = mockTrips.find(t => t.id === groupId);
-      if (mock) {
-        setMockGroup(mock);
-        setIsLoadingGroup(false);
-        return;
-      }
+// Mock comments
+const mockComments = [
+  {
+    id: 'c1',
+    author: {
+      name: '小明愛旅行',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
+    },
+    content: '好美的照片！請問這是用什麼相機拍的？',
+    likes: 24,
+    createdAt: '3小時前',
+    replies: [
+      {
+        id: 'r1',
+        author: {
+          name: 'Ariel_Travels',
+          avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
+        },
+        content: '謝謝！是用 Sony A7III 拍的～',
+        likes: 8,
+        createdAt: '2小時前',
+      },
+    ],
+  },
+  {
+    id: 'c2',
+    author: {
+      name: '咖啡控阿茲',
+      avatar: '',
+    },
+    content: '京都真的很適合清晨去逛，人少又有氣氛',
+    likes: 15,
+    createdAt: '5小時前',
+    replies: [],
+  },
+  {
+    id: 'c3',
+    author: {
+      name: '旅行日記',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
+    },
+    content: '已收藏！下次去京都一定要試試這樣的行程',
+    likes: 31,
+    createdAt: '1天前',
+    replies: [],
+  },
+]
 
-      // 從資料庫直接抓取（包含私人和任何狀態的揪團）
-      const supabase = getSupabaseClient();
-      const { data, error } = await supabase
-        .from('social_groups')
-        .select(`
-          *,
-          creator:profiles!created_by(id, display_name, avatar_url)
-        `)
-        .eq('id', groupId)
-        .single();
+export default function PostDetailPage() {
+  const params = useParams()
+  const router = useRouter()
+  const postId = params.id as string
 
-      if (!error && data) {
-        setGroup(data as Group);
-      } else {
-        // 找不到，可能是無效 ID
-        logger.log('Group not found:', groupId, error);
-      }
-      setIsLoadingGroup(false);
-    };
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [isLiked, setIsLiked] = useState(false)
+  const [isCollected, setIsCollected] = useState(false)
+  const [likeCount, setLikeCount] = useState(0)
+  const [commentText, setCommentText] = useState('')
 
-    fetchGroup();
-  }, [groupId]);
+  // Find the post
+  const post = mockPosts.find(p => p.id === postId) || mockPosts[0]
 
-  // 載入成員列表
-  useEffect(() => {
-    const fetchMembers = async () => {
-      if (!group) return;
+  // Initialize like count
+  useState(() => {
+    setLikeCount(post.likes)
+  })
 
-      setIsLoadingMembers(true);
-      const supabase = getSupabaseClient();
-      const { data, error } = await supabase
-        .from('social_group_members')
-        .select(`
-          id,
-          user_id,
-          role,
-          status,
-          profile:profiles(display_name, avatar_url)
-        `)
-        .eq('group_id', group.id)
-        .eq('status', 'approved')
-        .order('role', { ascending: true }); // organizer 先顯示
+  const handleLike = () => {
+    setIsLiked(!isLiked)
+    setLikeCount(prev => isLiked ? prev - 1 : prev + 1)
+  }
 
-      if (!error && data) {
-        setMembers(data as Member[]);
-      }
-      setIsLoadingMembers(false);
-    };
+  const handleCollect = () => {
+    setIsCollected(!isCollected)
+  }
 
-    fetchMembers();
-  }, [group]);
-
-  // 處理加入
-  const handleJoin = async () => {
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-
-    if (group) {
-      const result = await joinGroup(group.id, user.id);
-      if (result.success) {
-        showNotification('已送出申請！');
-      } else {
-        showNotification(result.error || '加入失敗');
-      }
-    } else {
-      // Mock 資料
-      showNotification('這是展示用的假資料');
-    }
-  };
-
-  // 處理聊聊
-  const handleChat = () => {
-    showNotification('此功能尚未開放');
-  };
-
-  // 處理分享
   const handleShare = async () => {
-    const shareUrl = `${window.location.origin}/explore/${groupId}`;
-    const shareTitle = group?.title || mockGroup?.title || '揪團活動';
-    const shareText = `來參加「${shareTitle}」！`;
-
+    const shareUrl = `${window.location.origin}/explore/${postId}`
     if (navigator.share) {
       try {
         await navigator.share({
-          title: shareTitle,
-          text: shareText,
+          title: post.title,
+          text: post.content.slice(0, 100) + '...',
           url: shareUrl,
-        });
+        })
       } catch {
-        // 用戶取消分享
+        // User cancelled
       }
     } else {
-      // 複製到剪貼簿
-      await navigator.clipboard.writeText(shareUrl);
-      showNotification('已複製連結！');
+      await navigator.clipboard.writeText(shareUrl)
     }
-  };
-
-  // 處理刪除
-  const handleDelete = async () => {
-    if (!group) return;
-
-    const result = await deleteGroup(group.id);
-    if (result.success) {
-      showNotification('已刪除揪團');
-      setTimeout(() => router.push('/explore'), 1000);
-    } else {
-      showNotification(result.error || '刪除失敗');
-    }
-    setShowDeleteModal(false);
-  };
-
-  // 處理編輯
-  const handleEdit = () => {
-    router.push(`/explore/${groupId}/edit`);
-    setShowMoreMenu(false);
-  };
-
-  // Toast 元件
-  const Toast = () => (
-    showToast ? (
-      <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 bg-black/80 text-white text-sm rounded-full backdrop-blur-sm animate-fade-in">
-        {toastMessage}
-      </div>
-    ) : null
-  );
-
-  // Mock 資料顯示
-  if (mockGroup) {
-    return (
-      <div className="min-h-screen bg-[#F0EEE6]">
-        <Toast />
-
-        {/* 封面圖 */}
-        <div className="relative h-[280px]">
-          <Image
-            src={mockGroup.image}
-            alt={mockGroup.title}
-            fill
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
-
-          {/* 返回按鈕 - 使用 top-12 確保不被狀態列遮擋 */}
-          <button
-            onClick={() => {
-              if (window.history.length > 1) {
-                router.back();
-              } else {
-                router.push('/explore');
-              }
-            }}
-            className="absolute top-12 left-4 w-10 h-10 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center text-white"
-          >
-            <span className="material-icons-round">arrow_back</span>
-          </button>
-
-          {/* 分享按鈕 */}
-          <button
-            onClick={handleShare}
-            className="absolute top-12 right-4 w-10 h-10 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center text-white"
-          >
-            <span className="material-icons-round">share</span>
-          </button>
-
-          {/* 類別標籤 */}
-          <div className="absolute bottom-4 left-4">
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(mockGroup.category)} ${getCategoryTextColor(mockGroup.category)}`}>
-              {categoryNames[mockGroup.category] || mockGroup.category}
-            </span>
-          </div>
-        </div>
-
-        {/* 內容區 */}
-        <div className="px-5 py-6 -mt-4 bg-[#F0EEE6] rounded-t-3xl relative">
-          {/* 標題 */}
-          <h1 className="text-2xl font-bold text-[#5C5C5C] mb-3">{mockGroup.title}</h1>
-
-          {/* 時間地點 */}
-          <div className="flex flex-col gap-2 mb-6">
-            <div className="flex items-center gap-3 text-[#5C5C5C]">
-              <span className="material-icons-round text-[#a5bccf]">calendar_today</span>
-              <span className="text-sm">{formatDate(mockGroup.event_date)} · {mockGroup.event_date}</span>
-            </div>
-            <div className="flex items-center gap-3 text-[#5C5C5C]">
-              <span className="material-icons-round text-[#cfa5a5]">location_on</span>
-              <span className="text-sm">{mockGroup.location}</span>
-            </div>
-            <div className="flex items-center gap-3 text-[#5C5C5C]">
-              <span className="material-icons-round text-[#a8bfa6]">group</span>
-              <span className="text-sm">{mockGroup.member_count}/{mockGroup.max_members} 人</span>
-            </div>
-          </div>
-
-          {/* 主辦人 */}
-          <div className="flex items-center gap-3 p-4 bg-white rounded-2xl shadow-sm mb-6">
-            <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-[#cfb9a5]">
-              <Image
-                src={mockGroup.organizer_avatar}
-                alt={mockGroup.organizer_name}
-                width={48}
-                height={48}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm text-[#949494]">主辦人</p>
-              <p className="font-semibold text-[#5C5C5C]">{mockGroup.organizer_name}</p>
-            </div>
-            <button
-              onClick={handleChat}
-              className="px-4 py-2 bg-[#F7F5F2] text-[#5C5C5C] text-sm rounded-xl active:scale-95 transition"
-            >
-              聊聊
-            </button>
-          </div>
-
-          {/* 簡介 */}
-          <div className="mb-6">
-            <h2 className="font-bold text-[#5C5C5C] mb-2">活動簡介</h2>
-            <p className="text-sm text-[#949494] leading-relaxed">
-              一起來探索城市中的美好角落！無論你是咖啡愛好者、攝影迷還是喜歡戶外活動的朋友，都歡迎加入我們的行列。
-            </p>
-          </div>
-
-          {/* 參加者 */}
-          <div className="mb-24">
-            <h2 className="font-bold text-[#5C5C5C] mb-3">參加者 ({mockGroup.member_count})</h2>
-            <div className="flex flex-wrap gap-3">
-              {/* 主辦人 */}
-              <div className="flex flex-col items-center gap-1">
-                <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-[#cfb9a5]">
-                  <Image src={mockGroup.organizer_avatar} alt="" width={48} height={48} className="w-full h-full object-cover" />
-                </div>
-                <span className="text-xs text-[#949494]">{mockGroup.organizer_name}</span>
-              </div>
-              {/* 其他假成員 */}
-              {mockGroup.member_count > 1 && Array.from({ length: Math.min(mockGroup.member_count - 1, 5) }).map((_, i) => (
-                <div key={i} className="flex flex-col items-center gap-1">
-                  <div className="w-12 h-12 rounded-full bg-[#D6CDC8] ring-2 ring-white flex items-center justify-center text-white font-medium">
-                    {String.fromCharCode(65 + i)}
-                  </div>
-                  <span className="text-xs text-[#949494]">成員 {i + 1}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* 底部按鈕 */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-xl border-t border-gray-100">
-          <div className="flex gap-3">
-            <button
-              onClick={handleJoin}
-              className="flex-1 py-3.5 bg-[#cfb9a5] text-white font-bold rounded-2xl shadow-lg shadow-[#cfb9a5]/30 active:scale-95 transition"
-            >
-              我要參加
-            </button>
-          </div>
-        </div>
-      </div>
-    );
   }
 
-  // 真實資料顯示
-  if (group) {
-    return (
-      <div className="min-h-screen bg-[#F0EEE6]">
-        <Toast />
+  const formatNumber = (num: number) => {
+    if (num >= 10000) return (num / 10000).toFixed(1) + 'w'
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'k'
+    return num.toString()
+  }
 
-        {/* 封面圖 */}
-        <div className="relative h-[280px]">
-          <Image
-            src={group.cover_image || 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800&h=600&fit=crop'}
-            alt={group.title}
-            fill
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
-
-          {/* 返回按鈕 - 使用 top-12 確保不被狀態列遮擋 */}
-          <button
-            onClick={() => {
-              if (window.history.length > 1) {
-                router.back();
-              } else {
-                router.push('/explore');
-              }
-            }}
-            className="absolute top-12 left-4 w-10 h-10 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center text-white"
-          >
-            <span className="material-icons-round">arrow_back</span>
-          </button>
-
-          {/* 右上角按鈕區 */}
-          <div className="absolute top-12 right-4 flex items-center gap-2">
-            {/* 分享按鈕 */}
+  return (
+    <div className="font-display text-charcoal antialiased bg-bone-white min-h-screen pb-20">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-bone-white/95 backdrop-blur-md border-b border-[var(--divider)]">
+        <div className="pt-12 pb-3 px-4 max-w-md mx-auto">
+          <div className="flex items-center justify-between">
             <button
-              onClick={handleShare}
-              className="w-10 h-10 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center text-white"
+              onClick={() => router.back()}
+              className="w-10 h-10 flex items-center justify-center -ml-2"
             >
-              <span className="material-icons-round">share</span>
+              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
             </button>
-
-            {/* 主辦人更多選項 */}
-            {isOrganizer && (
-              <div className="relative">
-                <button
-                  onClick={() => setShowMoreMenu(!showMoreMenu)}
-                  className="w-10 h-10 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center text-white"
-                >
-                  <span className="material-icons-round">more_vert</span>
-                </button>
-
-                {/* 下拉選單 */}
-                {showMoreMenu && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)} />
-                    <div className="absolute top-12 right-0 bg-white rounded-2xl shadow-lg py-2 min-w-[140px] z-50">
-                      <button
-                        onClick={handleEdit}
-                        className="w-full px-4 py-3 text-left text-sm text-[#5C5C5C] hover:bg-[#F7F5F2] flex items-center gap-3"
-                      >
-                        <span className="material-icons-round text-lg text-[#a5bccf]">edit</span>
-                        編輯活動
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowMoreMenu(false);
-                          setShowDeleteModal(true);
-                        }}
-                        className="w-full px-4 py-3 text-left text-sm text-[#cfa5a5] hover:bg-[#F7F5F2] flex items-center gap-3"
-                      >
-                        <span className="material-icons-round text-lg">delete</span>
-                        刪除活動
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* 類別標籤 */}
-          <div className="absolute bottom-4 left-4">
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(group.category)} ${getCategoryTextColor(group.category)}`}>
-              {categoryNames[group.category] || group.category}
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleShare}
+                className="w-10 h-10 flex items-center justify-center"
+              >
+                <span className="material-symbols-outlined text-[24px] font-light">share</span>
+              </button>
+              <button className="w-10 h-10 flex items-center justify-center">
+                <span className="material-symbols-outlined text-[24px] font-light">more_horiz</span>
+              </button>
+            </div>
           </div>
         </div>
+      </header>
 
-        {/* 內容區 */}
-        <div className="px-5 py-6 -mt-4 bg-[#F0EEE6] rounded-t-3xl relative">
-          {/* 標題 */}
-          <h1 className="text-2xl font-bold text-[#5C5C5C] mb-3">{group.title}</h1>
+      {/* Content */}
+      <main className="pt-[88px] max-w-md mx-auto">
+        {/* Image Carousel */}
+        <div className="relative aspect-square bg-[var(--divider-light)]">
+          <Image
+            src={post.images[currentImageIndex]}
+            alt={post.title}
+            fill
+            className="object-cover"
+            priority
+          />
 
-          {/* 時間地點 */}
-          <div className="flex flex-col gap-2 mb-6">
-            <div className="flex items-center gap-3 text-[#5C5C5C]">
-              <span className="material-icons-round text-[#a5bccf]">calendar_today</span>
-              <span className="text-sm">{formatDate(group.event_date)} · {group.event_date}</span>
-            </div>
-            {group.location_name && (
-              <div className="flex items-center gap-3 text-[#5C5C5C]">
-                <span className="material-icons-round text-[#cfa5a5]">location_on</span>
-                <span className="text-sm">{group.location_name}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-3 text-[#5C5C5C]">
-              <span className="material-icons-round text-[#a8bfa6]">group</span>
-              <span className="text-sm">{group.current_members}/{group.max_members} 人</span>
-            </div>
-            {group.estimated_cost && (
-              <div className="flex items-center gap-3 text-[#5C5C5C]">
-                <span className="material-icons-round text-[#e0d6a8]">payments</span>
-                <span className="text-sm">預估 ${group.estimated_cost}</span>
-              </div>
-            )}
-          </div>
-
-          {/* 主辦人 */}
-          <div className="flex items-center gap-3 p-4 bg-white rounded-2xl shadow-sm mb-6">
-            <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-[#cfb9a5]">
-              <Image
-                src={group.creator?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop'}
-                alt={group.creator?.display_name || '主辦人'}
-                width={48}
-                height={48}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm text-[#949494]">主辦人</p>
-              <p className="font-semibold text-[#5C5C5C]">{group.creator?.display_name || '主辦人'}</p>
-            </div>
-            <button
-              onClick={handleChat}
-              className="px-4 py-2 bg-[#F7F5F2] text-[#5C5C5C] text-sm rounded-xl active:scale-95 transition"
-            >
-              聊聊
-            </button>
-          </div>
-
-          {/* 簡介 */}
-          {group.description && (
-            <div className="mb-6">
-              <h2 className="font-bold text-[#5C5C5C] mb-2">活動簡介</h2>
-              <p className="text-sm text-[#949494] leading-relaxed">
-                {group.description}
-              </p>
+          {/* Image Indicators */}
+          {post.images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+              {post.images.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentImageIndex(index)}
+                  className={`w-1.5 h-1.5 rounded-full transition-all ${
+                    index === currentImageIndex
+                      ? 'bg-white w-4'
+                      : 'bg-white/50'
+                  }`}
+                />
+              ))}
             </div>
           )}
 
-          {/* 參加者 */}
-          <div className="mb-24">
-            <h2 className="font-bold text-[#5C5C5C] mb-3">參加者 ({members.length || group.current_members})</h2>
-            <div className="flex flex-wrap gap-3">
-              {isLoadingMembers ? (
-                // 載入中顯示骨架
-                Array.from({ length: Math.min(group.current_members || 1, 5) }).map((_, i) => (
-                  <div key={i} className="flex flex-col items-center gap-1">
-                    <div className="w-12 h-12 rounded-full bg-gray-200 animate-pulse" />
-                    <div className="w-10 h-3 bg-gray-200 rounded animate-pulse" />
-                  </div>
-                ))
-              ) : members.length > 0 ? (
-                members.map((member) => (
-                  <div key={member.id} className="flex flex-col items-center gap-1">
-                    <div className={`w-12 h-12 rounded-full overflow-hidden ring-2 ${member.role === 'organizer' ? 'ring-[#cfb9a5]' : 'ring-white'}`}>
-                      {member.profile?.avatar_url ? (
-                        <Image
-                          src={member.profile.avatar_url}
-                          alt={member.profile.display_name || ''}
-                          width={48}
-                          height={48}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-[#D6CDC8] flex items-center justify-center text-white font-medium">
-                          {(member.profile?.display_name || '?')[0].toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                    <span className="text-xs text-[#949494]">
-                      {member.profile?.display_name || '匿名'}
-                      {member.role === 'organizer' && <span className="text-[#cfb9a5]"> (主辦)</span>}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                // 無成員時顯示主辦人
-                <div className="flex flex-col items-center gap-1">
-                  <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-[#cfb9a5]">
-                    <Image
-                      src={group.creator?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop'}
-                      alt=""
-                      width={48}
-                      height={48}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <span className="text-xs text-[#949494]">{group.creator?.display_name || '主辦人'}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* 底部按鈕 */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-xl border-t border-gray-100">
-          <div className="flex gap-3">
-            {isOrganizer ? (
-              // 主辦人看到管理按鈕
-              <>
-                <button
-                  onClick={handleEdit}
-                  className="flex-1 py-3.5 bg-[#F7F5F2] text-[#5C5C5C] font-bold rounded-2xl active:scale-95 transition flex items-center justify-center gap-2"
-                >
-                  <span className="material-icons-round text-lg">edit</span>
-                  編輯活動
-                </button>
-                <button
-                  onClick={handleShare}
-                  className="flex-1 py-3.5 bg-[#cfb9a5] text-white font-bold rounded-2xl shadow-lg shadow-[#cfb9a5]/30 active:scale-95 transition flex items-center justify-center gap-2"
-                >
-                  <span className="material-icons-round text-lg">share</span>
-                  邀請朋友
-                </button>
-              </>
-            ) : (
-              // 一般用戶看到參加按鈕
+          {/* Swipe Areas */}
+          {post.images.length > 1 && (
+            <>
               <button
-                onClick={handleJoin}
-                disabled={isLoading || group.current_members >= group.max_members}
-                className="flex-1 py-3.5 bg-[#cfb9a5] text-white font-bold rounded-2xl shadow-lg shadow-[#cfb9a5]/30 active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {group.current_members >= group.max_members ? '已額滿' : '我要參加'}
-              </button>
+                onClick={() => setCurrentImageIndex(prev => Math.max(0, prev - 1))}
+                className="absolute left-0 top-0 bottom-0 w-1/3"
+              />
+              <button
+                onClick={() => setCurrentImageIndex(prev => Math.min(post.images.length - 1, prev + 1))}
+                className="absolute right-0 top-0 bottom-0 w-1/3"
+              />
+            </>
+          )}
+        </div>
+
+        {/* Author Info */}
+        <div className="px-4 py-3 flex items-center justify-between border-b border-[var(--divider)]">
+          <Link href={`/profile/${post.author.id}`} className="flex items-center gap-3">
+            {post.author.avatar ? (
+              <Image
+                src={post.author.avatar}
+                alt={post.author.name}
+                width={40}
+                height={40}
+                className="w-10 h-10 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-[var(--divider)] flex items-center justify-center">
+                <span className="text-charcoal/40 font-medium">{post.author.name[0]}</span>
+              </div>
             )}
+            <div>
+              <p className="font-bold text-[15px]">{post.author.name}</p>
+              <p className="text-[12px] text-charcoal/50">{post.author.bio}</p>
+            </div>
+          </Link>
+          <button className="px-4 py-1.5 rounded-full bg-ocean-teal text-bone-white text-[13px] font-bold">
+            關注
+          </button>
+        </div>
+
+        {/* Post Content */}
+        <div className="px-4 py-4">
+          <h1 className="text-[18px] font-bold leading-tight mb-3">{post.title}</h1>
+          <p className="text-[14px] leading-relaxed text-charcoal/80 whitespace-pre-line">
+            {post.content}
+          </p>
+
+          {/* Tags */}
+          <div className="flex flex-wrap gap-2 mt-4">
+            {post.tags.map(tag => (
+              <span
+                key={tag}
+                className="px-2.5 py-1 bg-[var(--divider-light)] text-ocean-teal text-[12px] rounded-full"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+
+          {/* Post Date */}
+          <p className="text-[12px] text-charcoal/40 mt-4">{post.createdAt}</p>
+        </div>
+
+        {/* Divider */}
+        <div className="h-2 bg-[var(--divider-light)]" />
+
+        {/* Comments Section */}
+        <div className="px-4 py-4">
+          <h2 className="font-bold text-[16px] mb-4">留言 ({post.comments})</h2>
+
+          {/* Comments List */}
+          <div className="space-y-4">
+            {mockComments.map(comment => (
+              <div key={comment.id} className="flex gap-3">
+                {comment.author.avatar ? (
+                  <Image
+                    src={comment.author.avatar}
+                    alt={comment.author.name}
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-[var(--divider)] flex items-center justify-center flex-shrink-0">
+                    <span className="text-[12px] text-charcoal/40">{comment.author.name[0]}</span>
+                  </div>
+                )}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-[13px]">{comment.author.name}</span>
+                    <span className="text-[11px] text-charcoal/40">{comment.createdAt}</span>
+                  </div>
+                  <p className="text-[14px] mt-1 text-charcoal/80">{comment.content}</p>
+                  <div className="flex items-center gap-4 mt-2">
+                    <button className="flex items-center gap-1 text-charcoal/40">
+                      <span className="material-symbols-outlined text-[16px]">favorite</span>
+                      <span className="text-[12px]">{comment.likes}</span>
+                    </button>
+                    <button className="text-[12px] text-charcoal/40">回覆</button>
+                  </div>
+
+                  {/* Replies */}
+                  {comment.replies.length > 0 && (
+                    <div className="mt-3 space-y-3 pl-2 border-l-2 border-[var(--divider)]">
+                      {comment.replies.map(reply => (
+                        <div key={reply.id} className="flex gap-2">
+                          {reply.author.avatar ? (
+                            <Image
+                              src={reply.author.avatar}
+                              alt={reply.author.name}
+                              width={24}
+                              height={24}
+                              className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-[var(--divider)] flex-shrink-0" />
+                          )}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-[12px] text-ocean-teal">{reply.author.name}</span>
+                              <span className="text-[10px] text-charcoal/40">{reply.createdAt}</span>
+                            </div>
+                            <p className="text-[13px] mt-0.5 text-charcoal/80">{reply.content}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
+      </main>
 
-        {/* 刪除確認 Modal */}
-        <ConfirmModal
-          isOpen={showDeleteModal}
-          onClose={() => setShowDeleteModal(false)}
-          onConfirm={handleDelete}
-          title="確定要刪除？"
-          description="刪除後無法恢復，所有參加者都會收到通知。"
-          confirmText="刪除"
-          variant="danger"
-        />
-      </div>
-    );
-  }
+      {/* Bottom Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-bone-white border-t border-[var(--divider)]">
+        <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">
+          {/* Comment Input */}
+          <div className="flex-1 flex items-center gap-2 px-4 py-2 bg-[var(--divider-light)] rounded-full">
+            <span className="material-symbols-outlined text-[20px] text-charcoal/40">chat_bubble</span>
+            <input
+              type="text"
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              placeholder="說點什麼..."
+              className="flex-1 bg-transparent text-[14px] outline-none placeholder:text-charcoal/40"
+            />
+          </div>
 
-  // 載入中
-  if (isLoadingGroup) {
-    return (
-      <div className="min-h-screen bg-[#F0EEE6] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-10 h-10 border-3 border-[#cfb9a5]/30 border-t-[#cfb9a5] rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[#949494]">載入中...</p>
+          {/* Action Buttons */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleLike}
+              className="flex flex-col items-center justify-center w-12 h-12"
+            >
+              <span className={`material-symbols-outlined text-[24px] ${isLiked ? 'text-[#FF3B30]' : 'text-charcoal/60'}`} style={isLiked ? { fontVariationSettings: "'FILL' 1" } : {}}>
+                favorite
+              </span>
+              <span className="text-[10px] text-charcoal/60">{formatNumber(likeCount)}</span>
+            </button>
+            <button
+              onClick={handleCollect}
+              className="flex flex-col items-center justify-center w-12 h-12"
+            >
+              <span className={`material-symbols-outlined text-[24px] ${isCollected ? 'text-sand-earth' : 'text-charcoal/60'}`} style={isCollected ? { fontVariationSettings: "'FILL' 1" } : {}}>
+                bookmark
+              </span>
+              <span className="text-[10px] text-charcoal/60">{isCollected ? '已收藏' : '收藏'}</span>
+            </button>
+          </div>
         </div>
-      </div>
-    );
-  }
-
-  // 找不到
-  return (
-    <div className="min-h-screen bg-[#F0EEE6] flex items-center justify-center">
-      <div className="text-center">
-        <span className="material-icons-round text-4xl text-[#949494] mb-2">search_off</span>
-        <p className="text-[#949494]">找不到此揪團</p>
-        <Link href="/explore" className="text-[#cfb9a5] text-sm mt-2 inline-block">
-          返回探索
-        </Link>
       </div>
     </div>
-  );
+  )
 }

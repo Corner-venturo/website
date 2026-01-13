@@ -1,25 +1,40 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --primary: #1A1C1E;
-  --primary-dark: #b09b88;
-  --primary-light: #e8ded4;
-  --morandi-blue: #a5bccf;
-  --morandi-pink: #cfa5a5;
-  --morandi-green: #a8bfa6;
-  --morandi-yellow: #e0d6a8;
-  --card-dark: #1e1e1e;
+  /* ========================================
+     Venturo V2 Design System - 唯一標準
+     ======================================== */
 
-  /* New Expense Design System */
-  --base-bg: #F9F9F9;
-  --slate-muted: #8E8E93;
-  --divider: #EFEFEF;
-  --accent-gold: #C5A358;
+  /* 核心色彩 (Core Colors) */
+  --bone-white: #F9F7F2;      /* 象牙白 - 主背景 */
+  --ocean-teal: #4A6B6A;      /* 深海綠 - 主色/強調 */
+  --sand-earth: #D9B48F;      /* 暖沙色 - 次強調 */
+  --charcoal: #2C2E2D;        /* 炭灰色 - 文字 */
+
+  /* 功能色彩 (Functional Colors) */
+  --background: var(--bone-white);
+  --foreground: var(--charcoal);
+  --primary: var(--ocean-teal);
+  --accent: var(--sand-earth);
+
+  /* 分隔線與邊框 */
+  --divider: #E8E4D8;
+  --divider-light: #F0EDE5;
+
+  /* 狀態色彩 */
   --expense-red: #FF3B30;
   --income-green: #34C759;
-  --venturo-bone: #F2F0EB;
+  --muted: #8E8E93;
+
+  /* 深色模式 */
+  --background-dark: #1A1C1B;
+  --card-dark: #2C2E2D;
+
+  /* 舊變數映射 (相容性) */
+  --base-bg: var(--bone-white);
+  --slate-muted: var(--muted);
+  --accent-gold: var(--sand-earth);
+  --venturo-bone: var(--bone-white);
 }
 
 @theme inline {
@@ -33,7 +48,60 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Plus Jakarta Sans", "Noto Sans TC", sans-serif;
+}
+
+/* ========================================
+   Venturo V2 Utility Classes
+   ======================================== */
+
+/* 背景色 */
+.bg-bone-white {
+  background-color: var(--bone-white);
+}
+
+.bg-ocean-teal {
+  background-color: var(--ocean-teal);
+}
+
+.bg-sand-earth {
+  background-color: var(--sand-earth);
+}
+
+.bg-charcoal {
+  background-color: var(--charcoal);
+}
+
+/* 文字色 */
+.text-bone-white {
+  color: var(--bone-white);
+}
+
+.text-ocean-teal {
+  color: var(--ocean-teal);
+}
+
+.text-sand-earth {
+  color: var(--sand-earth);
+}
+
+.text-charcoal {
+  color: var(--charcoal);
+}
+
+/* 邊框色 */
+.border-ocean-teal {
+  border-color: var(--ocean-teal);
+}
+
+.border-sand-earth {
+  border-color: var(--sand-earth);
+}
+
+/* 有機波浪背景紋理 */
+.wave-bg {
+  background-image: radial-gradient(circle at 2px 2px, rgba(74, 107, 106, 0.05) 1px, transparent 0);
+  background-size: 24px 24px;
 }
 
 .hide-scrollbar::-webkit-scrollbar {

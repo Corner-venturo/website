@@ -62,42 +62,45 @@ export default function HomePage() {
   const rightPosts = posts.filter((_, i) => i % 2 === 1)
 
   return (
-    <div className="font-display text-primary antialiased bg-[#F4F5F7]">
-      <div className="relative min-h-screen w-full flex flex-col">
-        {/* Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 bg-[#F4F5F7] border-b border-[#E2E8F0] pt-12 pb-3 px-4">
-          <div className="flex justify-between items-center max-w-md mx-auto relative">
-            <button className="flex items-center justify-start text-primary">
-              <span className="material-symbols-outlined text-[24px] font-light">menu</span>
-            </button>
-            <div className="absolute left-1/2 -translate-x-1/2 text-center">
-              <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-primary leading-none mb-0.5">
-                Venturo
-              </p>
-              <h1 className="text-[15px] font-medium tracking-[0.1em] text-primary">探索生活</h1>
-            </div>
-            <Link href="/explore/search" className="flex items-center justify-end text-primary">
-              <span className="material-symbols-outlined text-[24px] font-light">search</span>
-            </Link>
-          </div>
-        </header>
-
-        {/* Category Tabs */}
-        <div className="mt-[105px] sticky top-[105px] z-40 bg-[#F4F5F7] border-b border-[#E2E8F0]">
-          <div className="px-4 py-3 flex items-center gap-6 overflow-x-auto no-scrollbar max-w-md mx-auto">
-            {categories.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`text-[14px] shrink-0 relative ${
-                  activeCategory === cat
-                    ? "font-bold text-primary after:content-[''] after:absolute after:bottom-[-12px] after:left-0 after:right-0 after:h-[2px] after:bg-primary"
-                    : 'font-normal text-[#64748B]'
-                }`}
-              >
-                {cat}
+    <div className="font-display text-charcoal antialiased bg-bone-white h-screen overflow-hidden">
+      <div className="relative h-full w-full flex flex-col overflow-y-auto">
+        {/* Header + Category Tabs Container */}
+        <div className="sticky top-0 z-50 bg-bone-white/95 backdrop-blur-md">
+          {/* Header */}
+          <header className="pt-12 pb-3 px-4 border-b border-[var(--divider)]">
+            <div className="flex justify-between items-center max-w-md mx-auto relative">
+              <button className="flex items-center justify-start text-charcoal">
+                <span className="material-symbols-outlined text-[24px] font-light">menu</span>
               </button>
-            ))}
+              <div className="absolute left-1/2 -translate-x-1/2 text-center">
+                <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-ocean-teal leading-none mb-0.5">
+                  Venturo
+                </p>
+                <h1 className="text-[15px] font-medium tracking-[0.1em] text-charcoal">探索生活</h1>
+              </div>
+              <Link href="/explore/search" className="flex items-center justify-end text-charcoal">
+                <span className="material-symbols-outlined text-[24px] font-light">search</span>
+              </Link>
+            </div>
+          </header>
+
+          {/* Category Tabs */}
+          <div className="border-b border-[var(--divider)]">
+            <div className="px-4 py-3 flex items-center gap-6 overflow-x-auto no-scrollbar max-w-md mx-auto">
+              {categories.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`text-[14px] shrink-0 relative ${
+                    activeCategory === cat
+                      ? "font-bold text-ocean-teal after:content-[''] after:absolute after:bottom-[-12px] after:left-0 after:right-0 after:h-[2px] after:bg-ocean-teal"
+                      : 'font-normal text-charcoal/50'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -107,7 +110,7 @@ export default function HomePage() {
             {/* Left Column */}
             <div className="flex flex-col gap-3">
               {leftPosts.map(post => (
-                <Link href={`/explore/${post.id}`} key={post.id} className="bg-white overflow-hidden rounded-[4px]">
+                <Link href={`/explore/${post.id}`} key={post.id} className="bg-white overflow-hidden rounded border border-[var(--divider)]">
                   <div className={`aspect-[${post.aspectRatio}] overflow-hidden`}>
                     <Image
                       src={post.image}
@@ -118,7 +121,7 @@ export default function HomePage() {
                     />
                   </div>
                   <div className="p-2.5 bg-white">
-                    <h3 className="text-[13px] font-medium leading-normal line-clamp-2 mb-2 text-primary">
+                    <h3 className="text-[13px] font-medium leading-normal line-clamp-2 mb-2 text-charcoal">
                       {post.title}
                     </h3>
                     <div className="flex items-center justify-between">
@@ -132,11 +135,11 @@ export default function HomePage() {
                             className="w-4 h-4 rounded-full object-cover"
                           />
                         ) : (
-                          <div className="w-4 h-4 rounded-full bg-slate-200" />
+                          <div className="w-4 h-4 rounded-full bg-[var(--divider-light)]" />
                         )}
-                        <span className="text-[10px] text-[#64748B]">{post.author}</span>
+                        <span className="text-[10px] text-charcoal/50">{post.author}</span>
                       </div>
-                      <div className="flex items-center gap-0.5 text-[#64748B]">
+                      <div className="flex items-center gap-0.5 text-sand-earth">
                         <span className="material-symbols-outlined text-[12px]">favorite</span>
                         <span className="text-[10px]">{post.likes}</span>
                       </div>
@@ -149,7 +152,7 @@ export default function HomePage() {
             {/* Right Column */}
             <div className="flex flex-col gap-3">
               {rightPosts.map(post => (
-                <Link href={`/explore/${post.id}`} key={post.id} className="bg-white overflow-hidden rounded-[4px]">
+                <Link href={`/explore/${post.id}`} key={post.id} className="bg-white overflow-hidden rounded border border-[var(--divider)]">
                   <div className={`aspect-[${post.aspectRatio}] overflow-hidden`}>
                     <Image
                       src={post.image}
@@ -160,7 +163,7 @@ export default function HomePage() {
                     />
                   </div>
                   <div className="p-2.5 bg-white">
-                    <h3 className="text-[13px] font-medium leading-normal line-clamp-2 mb-2 text-primary">
+                    <h3 className="text-[13px] font-medium leading-normal line-clamp-2 mb-2 text-charcoal">
                       {post.title}
                     </h3>
                     <div className="flex items-center justify-between">
@@ -174,11 +177,11 @@ export default function HomePage() {
                             className="w-4 h-4 rounded-full object-cover"
                           />
                         ) : (
-                          <div className="w-4 h-4 rounded-full bg-slate-300" />
+                          <div className="w-4 h-4 rounded-full bg-[var(--divider-light)]" />
                         )}
-                        <span className="text-[10px] text-[#64748B]">{post.author}</span>
+                        <span className="text-[10px] text-charcoal/50">{post.author}</span>
                       </div>
-                      <div className="flex items-center gap-0.5 text-[#64748B]">
+                      <div className="flex items-center gap-0.5 text-sand-earth">
                         <span className="material-symbols-outlined text-[12px]">favorite</span>
                         <span className="text-[10px]">{post.likes}</span>
                       </div>
