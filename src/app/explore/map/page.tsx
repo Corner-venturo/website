@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { usePathname } from 'next/navigation'
+import MobileNav from '@/components/MobileNav'
 
 // 動態載入地圖組件
 const MapComponent = dynamic(() => import('../MapComponent'), {
@@ -82,7 +83,6 @@ interface Group {
 }
 
 export default function ExploreMapPage() {
-  const pathname = usePathname()
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(mockGroups[0])
   const [searchCenter, setSearchCenter] = useState<[number, number]>([25.0330, 121.5654])
   const [searchQuery, setSearchQuery] = useState('')
@@ -127,26 +127,36 @@ export default function ExploreMapPage() {
         </div>
 
         {/* Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 pt-14 px-5 pointer-events-none">
-          <div className="max-w-md mx-auto space-y-3 pointer-events-auto">
-            <div className="flex justify-between items-center px-1">
-              <h1 className="text-[22px] font-bold tracking-tight text-charcoal">揪團探索地圖</h1>
-              <button className="w-10 h-10 flex items-center justify-center bg-bone-white/90 backdrop-blur-md rounded-full border border-[var(--divider)] shadow-sm">
-                <span className="material-symbols-outlined text-[20px] font-light">tune</span>
-              </button>
+        <header className="fixed top-0 left-0 right-0 z-50 bg-bone-white pt-12 pb-3 px-4 border-b border-[var(--divider)]">
+          <div className="flex justify-between items-center max-w-md mx-auto relative">
+            <button className="flex items-center justify-start text-charcoal">
+              <span className="material-symbols-outlined text-[24px] font-light">menu</span>
+            </button>
+            <div className="absolute left-1/2 -translate-x-1/2 text-center">
+              <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-ocean-teal leading-none mb-0.5">
+                Venturo
+              </p>
+              <h1 className="text-[15px] font-medium tracking-[0.1em] text-charcoal">探索地圖</h1>
             </div>
-            <div className="relative flex items-center bg-bone-white/95 backdrop-blur-md rounded-2xl border border-[var(--divider)] shadow-[0_8px_30px_rgb(0,0,0,0.04)] px-4 py-3.5">
-              <span className="material-symbols-outlined text-[20px] text-charcoal/40">search</span>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 bg-transparent border-none focus:ring-0 text-[14px] ml-2 placeholder:text-charcoal/40 text-charcoal"
-                placeholder="搜尋目的地、活動或揪團..."
-              />
-            </div>
+            <button className="flex items-center justify-end text-charcoal">
+              <span className="material-symbols-outlined text-[24px] font-light">tune</span>
+            </button>
           </div>
         </header>
+
+        {/* Search Bar */}
+        <div className="fixed top-[88px] left-0 right-0 z-40 px-4 py-2 bg-bone-white border-b border-[var(--divider)]">
+          <div className="relative flex items-center bg-[var(--divider-light)] rounded-xl px-4 py-2.5 max-w-md mx-auto">
+            <span className="material-symbols-outlined text-[20px] text-charcoal/40">search</span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 bg-transparent border-none focus:ring-0 text-[14px] ml-2 placeholder:text-charcoal/40 text-charcoal"
+              placeholder="搜尋目的地、活動或揪團..."
+            />
+          </div>
+        </div>
 
         {/* Map Container */}
         <div className="absolute inset-0 z-0">
@@ -242,59 +252,10 @@ export default function ExploreMapPage() {
             </div>
           )}
 
-          {/* Floating Bottom Navigation */}
-          <div className="px-5 pb-8 max-w-md mx-auto w-full pointer-events-auto">
-            <nav className="bg-bone-white/95 backdrop-blur-md border border-[var(--divider)] rounded-[30px] h-[76px] flex items-center justify-around px-2 shadow-[0_8px_32px_0_rgba(0,0,0,0.12)]">
-              <Link
-                href="/"
-                className={`flex flex-col items-center justify-center gap-1 w-16 ${
-                  pathname === '/' ? 'text-ocean-teal' : 'text-charcoal/40'
-                }`}
-              >
-                <span className={`material-symbols-outlined text-[24px] ${pathname === '/' ? 'font-medium' : 'font-light'}`}>
-                  home
-                </span>
-                <span className={`text-[10px] ${pathname === '/' ? 'font-bold' : 'font-medium'}`}>首頁</span>
-              </Link>
-              <Link
-                href="/explore/map"
-                className={`flex flex-col items-center justify-center gap-1 w-16 ${
-                  pathname.startsWith('/explore') ? 'text-ocean-teal' : 'text-charcoal/40'
-                }`}
-              >
-                <span
-                  className={`material-symbols-outlined text-[24px] ${pathname.startsWith('/explore') ? 'font-medium' : 'font-light'}`}
-                  style={pathname.startsWith('/explore') ? { fontVariationSettings: "'FILL' 1" } : {}}
-                >
-                  explore
-                </span>
-                <span className={`text-[10px] ${pathname.startsWith('/explore') ? 'font-bold' : 'font-medium'}`}>探索</span>
-              </Link>
-              <Link
-                href="/my/chat"
-                className={`flex flex-col items-center justify-center gap-1 w-16 ${
-                  pathname.startsWith('/my/chat') ? 'text-ocean-teal' : 'text-charcoal/40'
-                }`}
-              >
-                <span className={`material-symbols-outlined text-[24px] ${pathname.startsWith('/my/chat') ? 'font-medium' : 'font-light'}`}>
-                  chat_bubble
-                </span>
-                <span className={`text-[10px] ${pathname.startsWith('/my/chat') ? 'font-bold' : 'font-medium'}`}>訊息</span>
-              </Link>
-              <Link
-                href="/my"
-                className={`flex flex-col items-center justify-center gap-1 w-16 ${
-                  pathname === '/my' || (pathname.startsWith('/my') && !pathname.startsWith('/my/chat')) ? 'text-ocean-teal' : 'text-charcoal/40'
-                }`}
-              >
-                <span className={`material-symbols-outlined text-[24px] ${pathname === '/my' || (pathname.startsWith('/my') && !pathname.startsWith('/my/chat')) ? 'font-medium' : 'font-light'}`}>
-                  person
-                </span>
-                <span className={`text-[10px] ${pathname === '/my' || (pathname.startsWith('/my') && !pathname.startsWith('/my/chat')) ? 'font-bold' : 'font-medium'}`}>我的</span>
-              </Link>
-            </nav>
-          </div>
         </div>
+
+        {/* Bottom Navigation */}
+        <MobileNav />
       </div>
     </div>
   )
