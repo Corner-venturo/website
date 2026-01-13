@@ -213,21 +213,27 @@ export default function PostDetailPage() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-bone-white border-b border-[var(--divider)]">
         <div className="pt-12 pb-3 px-4 max-w-md mx-auto">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between relative">
             <button
               onClick={() => router.back()}
-              className="w-10 h-10 flex items-center justify-center -ml-2"
+              className="flex items-center justify-center text-charcoal"
             >
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
+              <span className="material-symbols-outlined text-[24px] font-light">arrow_back</span>
             </button>
-            <div className="flex items-center gap-2">
+            <div className="absolute left-1/2 -translate-x-1/2 text-center">
+              <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-ocean-teal leading-none mb-0.5">
+                Venturo
+              </p>
+              <h1 className="text-[15px] font-medium tracking-[0.1em] text-charcoal">探索生活</h1>
+            </div>
+            <div className="flex items-center gap-1">
               <button
                 onClick={handleShare}
-                className="w-10 h-10 flex items-center justify-center"
+                className="flex items-center justify-center text-charcoal"
               >
                 <span className="material-symbols-outlined text-[24px] font-light">share</span>
               </button>
-              <button className="w-10 h-10 flex items-center justify-center">
+              <button className="flex items-center justify-center text-charcoal">
                 <span className="material-symbols-outlined text-[24px] font-light">more_horiz</span>
               </button>
             </div>
