@@ -333,7 +333,7 @@ export default function ExpensePage() {
                         </div>
                         <p className="text-[10px] text-slate-muted mb-1">本期應繳</p>
                         <p className="text-[16px] font-bold text-primary">
-                          NT$ {formatAmount(Math.abs(Number(account.balance)))}
+                          NT$ {formatAmount(Math.abs(account.current_balance))}
                         </p>
                       </div>
                     ))}
